@@ -1,0 +1,642 @@
+openapi: "3.0.1"
+info:
+  title: "API Gateway"
+  description: "API Gateway for PeerPrep"
+  version: "v1.0.1"
+servers:
+- url: "https://zg75c6kx20.execute-api.ap-southeast-1.amazonaws.com/{basePath}"
+  variables:
+    basePath:
+      default: "export"
+paths:
+  /v1/api/question-service/id/{id}:
+    get:
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.path.id: "method.request.path.id"
+        passthroughBehavior: "when_no_templates"
+    put:
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.path.id: "method.request.path.id"
+        passthroughBehavior: "when_no_templates"
+    delete:
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.path.id: "method.request.path.id"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/user-service/users/changePassword:
+    post:
+      operationId: "changePassword"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/user-service/users/logout:
+    post:
+      operationId: "logout"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/user-service/users/deleteUser:
+    post:
+      operationId: "deleteUser"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/question-service:
+    post:
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/question-service/topic/{topic}/difficulty/{difficulty}:
+    get:
+      parameters:
+      - name: "topic"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      - name: "difficulty"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.path.topic: "method.request.path.topic"
+          integration.request.path.difficulty: "method.request.path.difficulty"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/matching-service/match:
+    post:
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/question-service/difficulty/{difficulty}:
+    get:
+      parameters:
+      - name: "difficulty"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.path.difficulty: "method.request.path.difficulty"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/question-service/topic/{topic}:
+    get:
+      parameters:
+      - name: "topic"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.path.topic: "method.request.path.topic"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/question-service/random/topic/{topic}:
+    get:
+      parameters:
+      - name: "topic"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.path.topic: "method.request.path.topic"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/user-service/auth:
+    post:
+      operationId: "auth"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/question-service/random/difficulty/{difficulty}:
+    get:
+      parameters:
+      - name: "difficulty"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.path.difficulty: "method.request.path.difficulty"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/user-service/users/login:
+    post:
+      operationId: "login"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/user-service/users/createUser:
+    post:
+      operationId: "createUser"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/run-service:
+    post:
+      operationId: "executeCode"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CodeExecutionRequest"
+        required: true
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeExecutionResult"
+      x-amazon-apigateway-request-validator: "Validate body"
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ap-southeast-1:states:action/StartSyncExecution"
+        responses:
+          default:
+            statusCode: "200"
+            responseTemplates:
+              application/json: "#set($string = $input.json('$.output'))\n#set($data\
+                \ = $util.parseJson($string))\n\n$data"
+        requestTemplates:
+          application/json: "#set($data = $util.escapeJavaScript($input.json('$')))\n\
+            {\n    \"input\": \"$data\",\n    \"stateMachineArn\": \"arn:aws:states:ap-southeast-1:730335480348:stateMachine:ExpressStateMachine\"\
+            \n}"
+        passthroughBehavior: "when_no_templates"
+  /v1/api/matching-service/room/{id}:
+    post:
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+        "403":
+          description: "403 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporarySchema"
+      security:
+      - PeerPrepJWTAuthoriser: []
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::730335480348:role/PeerPrepApiGatewayExecutionRole"
+        httpMethod: "ANY"
+        uri: "arn:aws:apigateway:ap-southeast-1:lambda:action/StartExecution"
+        responses:
+          default:
+            statusCode: "200"
+        requestParameters:
+          integration.request.path.id: "method.request.path.id"
+        passthroughBehavior: "when_no_templates"
+components:
+  schemas:
+    CodeExecutionResult:
+      required:
+      - "description"
+      - "details"
+      - "errors"
+      - "memory"
+      - "prints"
+      - "results"
+      - "statusCode"
+      - "time"
+      type: "object"
+      properties:
+        statusCode:
+          type: "string"
+          description: "HTTP status code of the response"
+        description:
+          type: "string"
+          description: "String elaborating details on the status code"
+        results:
+          type: "array"
+          description: "A list of strings that are returned from the execution of\
+            \ your code. This can be empty if your code did not produce any outputs\
+            \ or failed to compile."
+          items:
+            type: "string"
+        prints:
+          type: "array"
+          items:
+            type: "string"
+        errors:
+          type: "array"
+          description: "A list of strings that details errors that are encountered\
+            \ when running your code. This may be empty if there are no errors."
+          items:
+            type: "string"
+        time:
+          type: "number"
+          description: "Time taken to run the Lambda function"
+        memory:
+          type: "number"
+          description: "Memory used to execute the Lambda function"
+    TemporarySchema:
+      type: "object"
+    CodeExecutionRequest:
+      required:
+      - "code"
+      - "language"
+      type: "object"
+      properties:
+        language:
+          type: "string"
+          description: "Language to execute the code in"
+          enum:
+          - "python"
+          - "java"
+          - "javascript"
+        code:
+          type: "string"
+          description: "JSON string representing code to execute"
+  securitySchemes:
+    PeerPrepJWTAuthoriser:
+      type: "apiKey"
+      name: "authorizationToken"
+      in: "header"
+      x-amazon-apigateway-authtype: "custom"
+      x-amazon-apigateway-authorizer:
+        type: "request"
+        authorizerUri: "arn:aws:apigateway:ap-southeast-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ap-southeast-1:730335480348:function:peerprep-jwt/invocations"
+        authorizerResultTtlInSeconds: 300
+        identitySource: "method.request.header.authorizationToken"
+x-amazon-apigateway-request-validators:
+  Validate body:
+    validateRequestParameters: false
+    validateRequestBody: true
