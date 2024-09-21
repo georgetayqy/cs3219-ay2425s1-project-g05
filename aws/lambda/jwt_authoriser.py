@@ -38,7 +38,7 @@ def lambda_handler(event, context):
     
         The example policy below denies access to all resources in the RestApi.
         '''
-        tmp = event['methodArn'].split(':')
+        tmp = methodArn.split(':')
         apiGatewayArnTmp = tmp[5].split('/')
         awsAccountId = tmp[4]
     
@@ -55,11 +55,11 @@ def lambda_handler(event, context):
         # new! -- add additional key-value pairs associated with the authenticated principal
         # these are made available by APIGW like so: $context.authorizer.<key>
         # additional context is cached
-        context = {
-            'key': 'value',  # $context.authorizer.key -> value
-            'number': 1,
-            'bool': True
-        }
+        # context = {
+        #     'key': 'value',  # $context.authorizer.key -> value
+        #     'number': 1,
+        #     'bool': True
+        # }
         # context['arr'] = ['foo'] <- this is invalid, APIGW will not accept it
         # context['obj'] = {'foo':'bar'} <- also invalid
     

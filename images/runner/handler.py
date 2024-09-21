@@ -91,7 +91,6 @@ def handler(event, context):
                     'results': [results.stdout],
                     'prints': [results.stdout],
                     'errors': [results.stderr],
-                    'time': context.get_remaining_time_in_millis(),
                     'details': {
                         'arn': context.invoked_function_arn,
                         'request_id': context.aws_request_id,
@@ -106,7 +105,6 @@ def handler(event, context):
             'results': [],
             'prints': [],
             'errors': ["Missing langauge or code parameter"],
-            'time': context.get_remaining_time_in_millis(),
             'details': {
                 'arn': context.invoked_function_arn,
                 'request_id': context.aws_request_id,
