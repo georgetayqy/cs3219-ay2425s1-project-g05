@@ -1,12 +1,21 @@
-import './App.css'
-
 import '@mantine/core/styles.css';
 import { MantineProvider } from '@mantine/core';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Login from './pages/Login';
 
 function App() {
 
   return <MantineProvider> {
-    <h1>Peer-Prep</h1>
+    <div>
+      <div>Navbar</div>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />}></Route>
+          <Route path="/login" element={<Login />}></Route>
+        </Routes>
+      </BrowserRouter>
+    </div>
   }</MantineProvider>
 }
 
