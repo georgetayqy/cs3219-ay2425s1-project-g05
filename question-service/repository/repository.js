@@ -24,6 +24,14 @@ const deleteQuestionById = async (id) => {
 };
 
 const updateQuestionById = async (id, question) => {
+    if (question.difficulty) {
+        question.difficulty = question.difficulty.toUpperCase();
+    }
+    if (question.categories) {
+        question.categories = question.categories.map((category) =>
+            category.replace(/\s+/g, "_").toUpperCase()
+        );
+    }
   return Question.findByIdAndUpdate(id, question, { new: true });
 };
 
@@ -50,7 +58,7 @@ const getQuestionsByDescription = async (description) => {
 const getQuestionsByTitleAndDifficulty = async (title, difficulty) => {
   return Question.find({
     title: title,
-    difficulty: difficulty,
+    difficulty: difficulty.toUpperCase(),
     isDeleted: false,
   });
 };

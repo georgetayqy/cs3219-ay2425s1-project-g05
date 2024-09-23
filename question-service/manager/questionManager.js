@@ -9,30 +9,39 @@ import {
   ormGetQuestionsByDescription as _getQuestionsByDescription,
   ormGetQuestionsByTitleAndDifficulty as _getQuestionByTitleAndDifficulty,
 } from "../orm/orm.js";
-import joiQuestionSchema from "../middlewares/validation.js";
 
 const createQuestion = async (req, res) => {
   try {
     // CHECK WHETHER QUESTION WITH THE SAME DESCRIPTION ALREADY EXISTS
-    const duplicateDescriptionQuestions = await _getQuestionsByDescription(req.body.description);
+    const duplicateDescriptionQuestions = await _getQuestionsByDescription(
+      req.body.description
+    );
 
     if (duplicateDescriptionQuestions.length > 0) {
-      return res.status(409).json({ message: "A question with this description already exists" });
+      return res
+        .status(409)
+        .json({ message: "A question with this description already exists" });
     }
 
     // CHECK WHETHER QUESTION WITH THE SAME TITLE AND DIFFICULTY ALREADY EXISTS
-    const duplicateTitleAndDifficultyQuestions = await _getQuestionByTitleAndDifficulty(req.body.title, req.body.difficulty);
+    const duplicateTitleAndDifficultyQuestions =
+      await _getQuestionByTitleAndDifficulty(
+        req.body.title,
+        req.body.difficulty
+      );
 
     if (duplicateTitleAndDifficultyQuestions.length > 0) {
-      return res.status(409).json({ message: "A question with such title and difficulty already exists" });
+      return res
+        .status(409)
+        .json({
+          message: "A question with such title and difficulty already exists",
+        });
     }
 
     const question = await _createQuestion(req.body);
     return res.status(201).json({ data: question });
   } catch (err) {
-    console.log("eh")
     console.log(err.title);
-    console.log("edh")
     return res
       .status(500)
       .json({ message: "Database failure when creating new Question!" });
@@ -54,14 +63,12 @@ const getQuestionById = async (req, res) => {
 
   try {
     const question = await _getQuestionById(id);
-    
+
     if (!question) {
       return res.status(404).json({ message: "Question not found!" });
     }
-
     return res.json({ data: question });
   } catch (err) {
-    console.log("hello")
     console.error(err);
     return res.status(500).json({ message: "Error retrieving question!" });
   }
@@ -100,20 +107,34 @@ const updateQuestionById = async (req, res) => {
     }
     // CHECK WHETHER UPDATED QUESTION HAS THE SAME DESCRIPTION AS ANOTHER QUESTION
     if (req.body.description) {
-      const duplicateDescriptionQuestions = await _getQuestionsByDescription(req.body.description);
+      const duplicateDescriptionQuestions = await _getQuestionsByDescription(
+        req.body.description
+      );
 
       if (duplicateDescriptionQuestions.length > 0) {
-        return res.status(409).json({ message: "A question with this description already exists" });
+        return res
+          .status(409)
+          .json({ message: "A question with this description already exists" });
       }
     }
-    // CHECK WHETHER UPDATED QUESTION HAS THE SAME TITLE AS ANOTHER QUESTION
+    // CHECK WHETHER UPDATED QUESTION HAS THE SAME TITLE AND DIFFICULTY LEVEL AS ANOTHER QUESTION
     if (req.body.title || req.body.difficulty) {
-      const titleToCheck = req.body.title ? req.body.title : questionToUpdate.title;
-      const difficultyToCheck = req.body.difficulty ? req.body.difficulty : questionToUpdate.difficulty;
-      const duplicateTitleQuestions = await _getQuestionByTitleAndDifficulty(titleToCheck, difficultyToCheck);
-      console.log(duplicateTitleQuestions);
+      const titleToCheck = req.body.title
+        ? req.body.title
+        : questionToUpdate.title;
+      const difficultyToCheck = req.body.difficulty
+        ? req.body.difficulty
+        : questionToUpdate.difficulty;
+      const duplicateTitleQuestions = await _getQuestionByTitleAndDifficulty(
+        titleToCheck,
+        difficultyToCheck
+      );
       if (duplicateTitleQuestions.length > 0) {
-        return res.status(409).json({ message: "A question with such title and difficulty already exists" });
+        return res
+          .status(409)
+          .json({
+            message: "A question with such title and difficulty already exists",
+          });
       }
     }
 
