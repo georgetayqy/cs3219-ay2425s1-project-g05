@@ -8,7 +8,7 @@ import loggingMiddleware from "./middlewares/logging.js";
 import router from "./router/router.js";
 
 
-dotenv.config({ path: "./config/.env" });
+dotenv.config();
 const app = express();
 const port = process.env.DEV_PORT || 8003;
 
