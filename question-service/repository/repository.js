@@ -20,7 +20,7 @@ const getQuestionById = async (id) => {
 
 const deleteQuestionById = async (id) => {
   // soft delete
-  return Question.findByIdAndUpdate(id, { isDeleted: true });
+  return Question.findByIdAndUpdate(id, { isDeleted: true }, {new: true});
 };
 
 const updateQuestionById = async (id, question) => {

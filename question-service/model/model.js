@@ -8,8 +8,7 @@ const questionSchema = new Schema({
   },
   description: {
     type: String,
-    required: [true, "Description is required"],
-    unique: true,
+    required: [true, "Description is required"]
   },
   image: {
     type: Buffer,

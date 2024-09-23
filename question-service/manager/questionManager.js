@@ -23,7 +23,7 @@ const createQuestion = async (req, res) => {
         .json({ message: "A question with this description already exists" });
     }
 
-    // CHECK WHETHER QUESTION WITH THE SAME TITLE AND DIFFICULTY ALREADY EXISTS
+    // CHECK WHETHER QUESTION WITH THE SAME TITLE AND DIFFICULTY ALREADY EXISTS (ONLY CHECK NOT DELETED ONES)
     const duplicateTitleAndDifficultyQuestions =
       await _getQuestionByTitleAndDifficulty(
         req.body.title,
@@ -41,10 +41,11 @@ const createQuestion = async (req, res) => {
     const question = await _createQuestion(req.body);
     return res.status(201).json({ data: question });
   } catch (err) {
-    console.log(err.title);
+    console.log("er")
+    console.log(err);
     return res
       .status(500)
-      .json({ message: "Database failure when creating new Question!" });
+      .json({ message: "ccDatabase failure when creating new Question!" });
   }
 };
 
@@ -110,8 +111,8 @@ const updateQuestionById = async (req, res) => {
       const duplicateDescriptionQuestions = await _getQuestionsByDescription(
         req.body.description
       );
-
-      if (duplicateDescriptionQuestions.length > 0) {
+      // can have the same description as current question
+      if (duplicateDescriptionQuestions.length > 1) {
         return res
           .status(409)
           .json({ message: "A question with this description already exists" });
@@ -129,7 +130,7 @@ const updateQuestionById = async (req, res) => {
         titleToCheck,
         difficultyToCheck
       );
-      if (duplicateTitleQuestions.length > 0) {
+      if (duplicateTitleQuestions.length > 1) {
         return res
           .status(409)
           .json({
