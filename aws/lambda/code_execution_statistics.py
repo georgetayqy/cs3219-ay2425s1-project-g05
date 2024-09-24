@@ -39,7 +39,7 @@ def lambda_handler(event, context):
         runtime = re.search(r'Duration: ([\d\.]+) ms', current_log_message)
     
         if memory and runtime:
-            returns["time"] = f"{float(runtime.group(1))}"
+            returns["time"] = float(runtime.group(1))
             returns["memory"] = float(memory.group(1))
             break        
 
