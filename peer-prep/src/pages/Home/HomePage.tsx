@@ -18,7 +18,7 @@ import {
   IconMessage2,
   IconLock,
 } from "@tabler/icons-react";
-import classes from "./Home.module.css";
+import classes from "./HomePage.module.css";
 
 export const MOCKDATA = [
   {

@@ -13,13 +13,13 @@ import {
   Stack,
   Image,
 } from "@mantine/core";
-import classes from "./Login.module.css";
+import classes from "./LoginPage.module.css";
 import image from "../../assets/loginimage.svg";
 import { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Navigate } from "react-router-dom";
 
-export default function LoginOrRegister() {
+export default function LoginOrRegisterPage() {
   const [loginMode, setLoginMode] = useState(true); // true = log in, false = register
 
   const { login, user } = useAuth();

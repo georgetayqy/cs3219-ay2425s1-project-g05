@@ -15,8 +15,9 @@ import { useAuth } from "../../hooks/useAuth";
 import QuestionCard from "../../components/Questions/QuestionCard/QuestionCard";
 import { SAMPLE_QUESTIONS } from "../../types/question";
 
-import classes from "./Dashboard.module.css";
-export default function Dashboard() {
+import classes from "./DashboardPage.module.css";
+import { Link } from "react-router-dom";
+export default function DashboardPage() {
   const { user } = useAuth();
 
   return (
@@ -30,7 +31,9 @@ export default function Dashboard() {
               <Text> {user?.email}</Text>
             </Stack>
             <Center>
-              <Button> Join a session </Button>
+              <Button component={Link} to="/session/create">
+                Start a session
+              </Button>
             </Center>
           </Group>
         </Container>
