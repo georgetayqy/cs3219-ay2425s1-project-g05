@@ -12,7 +12,8 @@ def decode_jwt(token: str):
     
     return jwt.decode(
         token.replace("Bearer ", "").encode(),
-        os.environ["JWT_SECRET_KEY"]
+        os.environ["JWT_SECRET_KEY"],
+        algorithms='HS256'
     )
 
 def lambda_handler(event, context):
@@ -20,7 +21,10 @@ def lambda_handler(event, context):
         authorisation = event["authorizationToken"]
         methodArn = event["methodArn"]
         principalUser = decode_jwt(authorisation)
-        principalId = principalUser.get('id')
+        principalEmail = principalUser.get('email')
+        principalDisplayName = principalUser.get('displayName')
+        principalIsAdmin = principalUser.get('isAdmin')
+        
         
         '''
         If the token is valid, a policy must be generated which will allow or deny
@@ -42,11 +46,14 @@ def lambda_handler(event, context):
         apiGatewayArnTmp = tmp[5].split('/')
         awsAccountId = tmp[4]
     
-        policy = AuthPolicy(principalId, awsAccountId)
+        policy = AuthPolicy(principalEmail, awsAccountId)
         policy.restApiId = apiGatewayArnTmp[0]
         policy.region = tmp[3]
         policy.stage = apiGatewayArnTmp[1]
+        
+        # permit access to all paths
         policy.allowAllMethods()
+        
         #policy.allowMethod(HttpVerb.GET, '/pets/*')
     
         # Finally, build the policy
