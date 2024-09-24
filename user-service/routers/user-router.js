@@ -8,8 +8,8 @@ userRouter
     .post("/login", loginUser)
     .post("/logout", logoutUser)
     .post("/", createUser)
-    .post("/deleteUser", verifyAuthMiddleware, deleteUser)
-    .post("/changePassword", verifyAuthMiddleware, changePassword)
-    .post("/changeDisplayName", verifyAuthMiddleware, changeDisplayName)
+    .delete("/", verifyAuthMiddleware, deleteUser)
+    .put("/changePassword", verifyAuthMiddleware, changePassword)
+    .put("/changeDisplayName", verifyAuthMiddleware, changeDisplayName)
 
 export default userRouter
