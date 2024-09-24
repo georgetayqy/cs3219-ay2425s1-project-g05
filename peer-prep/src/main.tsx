@@ -8,7 +8,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import Home from "./pages/Home/Home.tsx";
-import Login from "./pages/Login.tsx";
+import LoginOrRegister from "./pages/Login/Login.tsx";
 import { Button, createTheme, MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
 import { Navbar } from "./components/Navbar/Navbar.tsx";
@@ -24,7 +24,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/login",
-        element: <Login />,
+        element: <LoginOrRegister />,
       },
     ],
   },
