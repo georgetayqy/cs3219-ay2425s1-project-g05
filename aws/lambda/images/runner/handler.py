@@ -29,7 +29,7 @@ def handler(event, context):
                     'statusCode': 200,
                     'description': 'Success',
                     'results': [soln],
-                    'prints': [out.getvalue()],
+                    'prints': [out.getvalue()] if len(out.getvalue()) > 0 else [],
                     'errors': [],
                     'details': {
                         'arn': context.invoked_function_arn,
@@ -43,7 +43,7 @@ def handler(event, context):
                     'statusCode': 400,
                     'description': 'Import Error',
                     'results': [],
-                    'prints': [out.getvalue()],
+                    'prints': [out.getvalue()] if len(out.getvalue()) > 0 else [],
                     'errors': [str(ex)],
                     'details': {
                         'arn': context.invoked_function_arn,
@@ -57,7 +57,7 @@ def handler(event, context):
                     'statusCode': 400,
                     'description': 'Runtime Error',
                     'results': [],
-                    'prints': [out.getvalue()],
+                    'prints': [out.getvalue()] if len(out.getvalue()) > 0 else [],
                     'errors': [str(ex)],
                     'details': {
                         'arn': context.invoked_function_arn,
@@ -86,8 +86,8 @@ def handler(event, context):
             else:
                 results = subprocess.run(['./a.out'], capture_output=True, text=True)
                 return {
-                    'statusCode': 200,
-                    'description': 'Success',
+                    'statusCode': 200 if not results.stderr else 400,
+                    'description': 'Success' if not results.stderr else "Runtime Error",
                     'results': [results.stdout],
                     'prints': [results.stdout],
                     'errors': [results.stderr],
@@ -114,6 +114,14 @@ def handler(event, context):
         }
     
 def __write_to_file(code, filename):
+    """
+    Writes the input string into a code file.
+
+    Args:
+        code (string): String representing the code to write
+        filename (string): Name of the file to write the code string into
+    """
+    
     with open(filename, 'w') as f:
         for line in code.split("\n"):
             f.write(line)
