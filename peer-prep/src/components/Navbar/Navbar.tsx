@@ -116,7 +116,7 @@ export function Navbar() {
               Home
             </Link>
 
-            <HoverCard
+            {/* <HoverCard
               width={600}
               position="bottom"
               radius="md"
@@ -165,7 +165,7 @@ export function Navbar() {
                   </Group>
                 </div>
               </HoverCard.Dropdown>
-            </HoverCard>
+            </HoverCard> */}
             <Link to="/learn" className={classes.link}>
               Learn
             </Link>
@@ -192,7 +192,9 @@ export function Navbar() {
                     <IconHome style={{ width: rem(14), height: rem(14) }} />
                   }
                 >
-                  Dashboard
+                  <Link style={{ textDecoration: "none" }} to="/dashboard">
+                    Dashboard
+                  </Link>
                 </Menu.Item>
 
                 <Menu.Item
@@ -297,7 +299,7 @@ export function Navbar() {
           <a href="#" className={classes.link}>
             Home
           </a>
-          <UnstyledButton className={classes.link} onClick={toggleLinks}>
+          {/* <UnstyledButton className={classes.link} onClick={toggleLinks}>
             <Center inline>
               <Box component="span" mr={5}>
                 Features
@@ -307,7 +309,7 @@ export function Navbar() {
                 color={theme.colors.blue[6]}
               />
             </Center>
-          </UnstyledButton>
+          </UnstyledButton> */}
           <Collapse in={linksOpened}>{links}</Collapse>
           <Link to="/learn" className={classes.link}>
             Learn

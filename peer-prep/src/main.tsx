@@ -15,6 +15,7 @@ import "@mantine/core/styles.css";
 import ApplicationWrapper from "./components/ApplicationWrapper.tsx";
 import ProtectedRouteWrapper from "./pages/ProtectedRouteWrapper.tsx";
 import { AuthProvider } from "./hooks/useAuth.tsx";
+import Dashboard from "./pages/Dashboard/Dashboard.tsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
         path: "/",
         element: <ProtectedRouteWrapper />,
         children: [
+          {
+            path: "/dashboard",
+            element: <Dashboard />,
+          },
           {
             path: "/learn",
             element: <Button>learn!</Button>,

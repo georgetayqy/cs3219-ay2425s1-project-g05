@@ -17,11 +17,17 @@ import classes from "./Login.module.css";
 import image from "../../assets/loginimage.svg";
 import { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import { Navigate } from "react-router-dom";
 
 export default function LoginOrRegister() {
   const [loginMode, setLoginMode] = useState(true); // true = log in, false = register
 
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+
+  if (user) {
+    return <Navigate to="/dashboard" />;
+  }
+
   return (
     // <div className={classes.wrapper}>
     <Flex>
