@@ -11,12 +11,14 @@ import Home from "./pages/Home/Home.tsx";
 import LoginOrRegister from "./pages/Login/Login.tsx";
 import { Button, createTheme, MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
-import { Navbar } from "./components/Navbar/Navbar.tsx";
-import NavbarWrapper from "./components/Navbar/NavbarWrapper.tsx";
+
+import ApplicationWrapper from "./components/ApplicationWrapper.tsx";
+import ProtectedRouteWrapper from "./pages/ProtectedRouteWrapper.tsx";
+import { AuthProvider } from "./hooks/useAuth.tsx";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <NavbarWrapper />,
+    element: <ApplicationWrapper />,
     children: [
       {
         path: "/",
@@ -25,6 +27,18 @@ const router = createBrowserRouter([
       {
         path: "/login",
         element: <LoginOrRegister />,
+      },
+
+      // Protected routes below
+      {
+        path: "/",
+        element: <ProtectedRouteWrapper />,
+        children: [
+          {
+            path: "/learn",
+            element: <Button>learn!</Button>,
+          },
+        ],
       },
     ],
   },
@@ -38,7 +52,7 @@ const theme = createTheme({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <MantineProvider theme={theme}>
-      <RouterProvider router={router} />
+      <RouterProvider router={router}></RouterProvider>
     </MantineProvider>
     {/* <BrowserRouter>
       <App />

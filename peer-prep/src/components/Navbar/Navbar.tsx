@@ -16,6 +16,7 @@ import {
   ScrollArea,
   rem,
   useMantineTheme,
+  Menu,
 } from "@mantine/core";
 // import { MantineLogo } from "@mantinex/mantine-logo";
 import { useDisclosure } from "@mantine/hooks";
@@ -27,9 +28,19 @@ import {
   IconFingerprint,
   IconCoin,
   IconChevronDown,
+  IconArrowsLeftRight,
+  IconMessageCircle,
+  IconPhoto,
+  IconSearch,
+  IconSettings,
+  IconTrash,
+  IconLogout,
+  IconHome,
 } from "@tabler/icons-react";
 import classes from "./Navbar.module.css";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import AvatarWithDetailsButton from "../AvatarIcon/AvatarWithDetailsButton";
 
 const mockdata = [
   {
@@ -90,6 +101,8 @@ export function Navbar() {
       </Group>
     </UnstyledButton>
   ));
+
+  const { user, logout } = useAuth();
 
   return (
     <Box pb="sm">
@@ -153,20 +166,113 @@ export function Navbar() {
                 </div>
               </HoverCard.Dropdown>
             </HoverCard>
-            <a href="#" className={classes.link}>
+            <Link to="/learn" className={classes.link}>
               Learn
-            </a>
+            </Link>
+
             <a href="#" className={classes.link}>
               Academy
             </a>
           </Group>
 
-          <Group visibleFrom="sm">
-            <Link to="/login">
-              <Button variant="default">Log in</Button>
-            </Link>
-            <Button>Sign up</Button>
-          </Group>
+          {user ? (
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
+                <AvatarWithDetailsButton
+                  image="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png"
+                  name={user.name}
+                  email={user.email}
+                />
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Label>Application</Menu.Label>
+                <Menu.Item
+                  leftSection={
+                    <IconHome style={{ width: rem(14), height: rem(14) }} />
+                  }
+                >
+                  Dashboard
+                </Menu.Item>
+
+                <Menu.Item
+                  leftSection={
+                    <IconMessageCircle
+                      style={{ width: rem(14), height: rem(14) }}
+                    />
+                  }
+                >
+                  Messages
+                </Menu.Item>
+                {/* <Menu.Item
+                  leftSection={
+                    <IconPhoto style={{ width: rem(14), height: rem(14) }} />
+                  }
+                >
+                  Gallery
+                </Menu.Item> */}
+
+                <Menu.Item
+                  leftSection={
+                    <IconSearch style={{ width: rem(14), height: rem(14) }} />
+                  }
+                  rightSection={
+                    <Text size="xs" c="dimmed">
+                      ⌘K
+                    </Text>
+                  }
+                >
+                  Search
+                </Menu.Item>
+
+                <Menu.Divider />
+
+                <Menu.Item
+                  leftSection={
+                    <IconSettings style={{ width: rem(14), height: rem(14) }} />
+                  }
+                >
+                  Settings
+                </Menu.Item>
+                <Menu.Divider />
+                {/* <Menu.Label>Danger zone</Menu.Label>
+                <Menu.Item
+                  leftSection={
+                    <IconArrowsLeftRight
+                      style={{ width: rem(14), height: rem(14) }}
+                    />
+                  }
+                >
+                  Transfer my data
+                </Menu.Item> */}
+                {/* <Menu.Item
+                  color="red"
+                  leftSection={
+                    <IconTrash style={{ width: rem(14), height: rem(14) }} />
+                  }
+                >
+                  Delete my account
+                </Menu.Item> */}
+
+                <Menu.Item
+                  color="red"
+                  leftSection={
+                    <IconLogout style={{ width: rem(14), height: rem(14) }} />
+                  }
+                  onClick={logout}
+                >
+                  Logout
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          ) : (
+            <Group visibleFrom="sm">
+              <Link to="/login">
+                <Button variant="default">Log in</Button>
+              </Link>
+              <Button>Sign up</Button>
+            </Group>
+          )}
 
           <Burger
             opened={drawerOpened}
@@ -203,9 +309,10 @@ export function Navbar() {
             </Center>
           </UnstyledButton>
           <Collapse in={linksOpened}>{links}</Collapse>
-          <a href="#" className={classes.link}>
+          <Link to="/learn" className={classes.link}>
             Learn
-          </a>
+          </Link>
+
           <a href="#" className={classes.link}>
             Academy
           </a>

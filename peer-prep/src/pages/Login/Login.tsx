@@ -16,9 +16,12 @@ import {
 import classes from "./Login.module.css";
 import image from "../../assets/loginimage.svg";
 import { useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function LoginOrRegister() {
   const [loginMode, setLoginMode] = useState(true); // true = log in, false = register
+
+  const { login } = useAuth();
   return (
     // <div className={classes.wrapper}>
     <Flex>
@@ -52,7 +55,7 @@ export default function LoginOrRegister() {
         />
         <Checkbox label="Keep me logged in" mt="xl" size="md" />
         {loginMode ? (
-          <Button fullWidth mt="xl" size="md">
+          <Button fullWidth mt="xl" size="md" onClick={() => login({})}>
             Login
           </Button>
         ) : (
