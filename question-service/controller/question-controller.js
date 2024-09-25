@@ -55,7 +55,9 @@ const createQuestion = async (req, res, next) => {
 const getAllQuestions = async (req, res, next) => {
   try {
     const questions = await _getAllQuestions(req.query);
-    return res.json({ data: questions });
+    return res
+      .status(200)
+      .json({ success: true, status: 200, data: questions });
   } catch (err) {
     next(new BaseError(500, "Error retrieving questions"));
   }
@@ -70,7 +72,7 @@ const getQuestionById = async (req, res, next) => {
     if (!question) {
       throw new NotFoundError("Question not found");
     }
-    return res.json({ data: question });
+    return res.status(200).json({ success: true, status: 200, data: question });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -202,8 +204,15 @@ const getFilteredQuestions = async (req, res, next) => {
       if (!Array.isArray(req.body.difficulty)) {
         throw new BadRequestError("Difficulty should be an array!");
       }
-      if (req.body.difficulty.some((difficulty) => !["EASY", "MEDIUM", "HARD"].includes(difficulty.toUpperCase()))) {
-        throw new BadRequestError("Difficulty should be either EASY, MEDIUM or HARD!");
+      if (
+        req.body.difficulty.some(
+          (difficulty) =>
+            !["EASY", "MEDIUM", "HARD"].includes(difficulty.toUpperCase())
+        )
+      ) {
+        throw new BadRequestError(
+          "Difficulty should be either EASY, MEDIUM or HARD!"
+        );
       }
     }
     const filteredQuestions = await _getFilteredQuestions(req.body);
@@ -239,8 +248,15 @@ const findQuestion = async (req, res, next) => {
       if (!Array.isArray(req.body.difficulty)) {
         throw new BadRequestError("Difficulty should be an array!");
       }
-      if (req.body.difficulty.some((difficulty) => !["EASY", "MEDIUM", "HARD"].includes(difficulty.toUpperCase()))) {
-        throw new BadRequestError("Difficulty should be either EASY, MEDIUM or HARD!");
+      if (
+        req.body.difficulty.some(
+          (difficulty) =>
+            !["EASY", "MEDIUM", "HARD"].includes(difficulty.toUpperCase())
+        )
+      ) {
+        throw new BadRequestError(
+          "Difficulty should be either EASY, MEDIUM or HARD!"
+        );
       }
     }
     const foundQuestions = await _findQuestion(req.body);
