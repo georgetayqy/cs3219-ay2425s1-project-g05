@@ -23,7 +23,6 @@ const createQuestion = async (req, res, next) => {
     );
 
     if (duplicateDescriptionQuestions.length > 0) {
-      console.log(duplicateDescriptionQuestions);
       throw new ConflictError(
         "A question with this description already exists"
       );
@@ -45,7 +44,6 @@ const createQuestion = async (req, res, next) => {
     const question = await _createQuestion(req.body);
     return res.status(201).json({ success: true, status: 201, data: question });
   } catch (err) {
-    console.log(err);
     next(
       err instanceof BaseError
         ? err
@@ -224,7 +222,28 @@ const getFilteredQuestions = async (req, res, next) => {
 
 const findQuestion = async (req, res, next) => {
   try {
-    const foundQuestions = await _findQuestion(req.query);
+    if (req.body.categories) {
+      if (!Array.isArray(req.body.categories)) {
+        throw new BadRequestError("Categories should be an array!");
+      }
+      const distinctCategories = await _getDistinctCategories();
+      if (
+        req.body.categories.some(
+          (category) => !distinctCategories.includes(category.toUpperCase())
+        )
+      ) {
+        throw new BadRequestError("Category does not exist!");
+      }
+    }
+    if (req.body.difficulty) {
+      if (!Array.isArray(req.body.difficulty)) {
+        throw new BadRequestError("Difficulty should be an array!");
+      }
+      if (req.body.difficulty.some((difficulty) => !["EASY", "MEDIUM", "HARD"].includes(difficulty.toUpperCase()))) {
+        throw new BadRequestError("Difficulty should be either EASY, MEDIUM or HARD!");
+      }
+    }
+    const foundQuestions = await _findQuestion(req.body);
 
     return res
       .status(200)
