@@ -1,11 +1,11 @@
 import BaseError from "./BaseError.js";
 
-class UnauthorisedError extends BaseError {
+class ForbiddenError extends BaseError {
   constructor(message) {
-    super(401, message);
+    super(403, message);
     this.name = "UnauthorizedError";
     this.statusCode = 401;
   }
 }
 
-export default UnauthorisedError;
+export default ForbiddenError;

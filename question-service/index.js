@@ -6,6 +6,7 @@ import corsMiddleware from "./middlewares/cors.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import loggingMiddleware from "./middlewares/logging.js";
 import router from "./router/router.js";
+import cookieParser from "cookie-parser";
 
 
 dotenv.config();
@@ -14,6 +15,7 @@ const port = process.env.DEV_PORT || 8003;
 
 
 app.use(corsMiddleware);
+app.use(cookieParser());
 app.use(loggingMiddleware);
 app.use(bodyParser.json());
 

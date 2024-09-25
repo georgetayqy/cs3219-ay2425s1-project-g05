@@ -183,7 +183,9 @@ const updateQuestionById = async (req, res, next) => {
         : new BaseError(500, "Error updating question")
     );
   }
-};const getFilteredQuestions = async (req, res, next) => {
+};
+
+const getFilteredQuestions = async (req, res, next) => {
   try {
     const { categories, difficulty } = req.query;
     if (categories) {
