@@ -1,4 +1,4 @@
-import Question from "../model/model.js";
+import Question from "./model.js";
 
 const createQuestion = async (question) => {
   const newQuestion = new Question(question);
@@ -20,18 +20,18 @@ const getQuestionById = async (id) => {
 
 const deleteQuestionById = async (id) => {
   // soft delete
-  return Question.findByIdAndUpdate(id, { isDeleted: true }, {new: true});
+  return Question.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
 };
 
 const updateQuestionById = async (id, question) => {
-    if (question.difficulty) {
-        question.difficulty = question.difficulty.toUpperCase();
-    }
-    if (question.categories) {
-        question.categories = question.categories.map((category) =>
-            category.replace(/\s+/g, "_").toUpperCase()
-        );
-    }
+  if (question.difficulty) {
+    question.difficulty = question.difficulty.toUpperCase();
+  }
+  if (question.categories) {
+    question.categories = question.categories.map((category) =>
+      category.replace(/\s+/g, "_").toUpperCase()
+    );
+  }
   return Question.findByIdAndUpdate(id, question, { new: true });
 };
 
@@ -64,16 +64,15 @@ const getQuestionsByTitleAndDifficulty = async (title, difficulty) => {
 };
 
 const getDistinctCategories = async () => {
-    const distinctCategories = await Question.aggregate([
-      { $unwind: "$categories" },  
-      { $group: { _id: "$categories" } }, 
-      { $sort: { _id: 1 } }  
-    ]);
-    
-    const categories = distinctCategories.map(item => item._id);
-    return categories;
-};
+  const distinctCategories = await Question.aggregate([
+    { $unwind: "$categories" },
+    { $group: { _id: "$categories" } },
+    { $sort: { _id: 1 } },
+  ]);
 
+  const categories = distinctCategories.map((item) => item._id);
+  return categories;
+};
 
 export {
   createQuestion,

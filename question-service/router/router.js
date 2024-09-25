@@ -1,5 +1,5 @@
 import express from "express";
-import { createQuestion, getAllQuestions, getQuestionById, deleteQuestionById, updateQuestionById, getFilteredQuestions, findQuestion, getDistinctCategories } from "../manager/questionManager.js";
+import { createQuestion, getAllQuestions, getQuestionById, deleteQuestionById, updateQuestionById, getFilteredQuestions, findQuestion, getDistinctCategories } from "../controller/question-controller.js";
 import validateQuestion from '../middlewares/validation.js';
 
 const router = express.Router();

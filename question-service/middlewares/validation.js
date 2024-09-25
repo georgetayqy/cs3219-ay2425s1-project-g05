@@ -1,4 +1,6 @@
 import Joi from "joi";
+import BadRequestError from "../errors/BadRequestError.js";
+
 const joiQuestionSchema = Joi.object({
     title: Joi.string().required(),
     description: Joi.object().required(),
@@ -15,10 +17,9 @@ const joiQuestionSchema = Joi.object({
     const { error } = joiQuestionSchema.validate(req.body);
     
     if (error) {
-      error.isJoi = true; 
-      return next(error); 
+      throw new BadRequestError(error.details[0].message);
     }
-    
+
     next(); 
   };
   
