@@ -6,7 +6,8 @@ import {
   updateQuestionById,
   getFilteredQuestions,
   getQuestionsByDescription,
-  getQuestionsByTitleAndDifficulty
+  getQuestionsByTitleAndDifficulty,
+  getDistinctCategories,
 } from "../repository/repository.js";
 
 
@@ -49,6 +50,10 @@ const ormGetQuestionsByTitleAndDifficulty = async (title, difficulty) => {
     return getQuestionsByTitleAndDifficulty(title, difficulty);
 }
 
+const ormGetDistinctCategories = async () => {
+    return getDistinctCategories();
+}
+
 export {
     ormCreateQuestion,
     ormGetAllQuestions,
@@ -58,6 +63,7 @@ export {
     ormGetFilteredQuestions,
     ormFindQuestion,
     ormGetQuestionsByDescription,
-    ormGetQuestionsByTitleAndDifficulty
+    ormGetQuestionsByTitleAndDifficulty,
+    ormGetDistinctCategories,
 };
 

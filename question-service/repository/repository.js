@@ -35,17 +35,17 @@ const updateQuestionById = async (id, question) => {
   return Question.findByIdAndUpdate(id, question, { new: true });
 };
 
-const getFilteredQuestions = async (query) => {
-  const { categories, difficulty } = query;
+const getFilteredQuestions = async (body) => {
+  const { categories, difficulty } = body;
   let filter = { isDeleted: false };
   if (categories) {
     filter.categories = {
-      $in: categories.split(",").map((category) => category.toUpperCase()),
+      $in: categories.map((category) => category.toUpperCase()),
     };
   }
   if (difficulty) {
     filter.difficulty = {
-      $in: difficulty.split(",").map((difficulty) => difficulty.toUpperCase()),
+      $in: difficulty.map((difficulty) => difficulty.toUpperCase()),
     };
   }
   return Question.find(filter);
@@ -63,6 +63,18 @@ const getQuestionsByTitleAndDifficulty = async (title, difficulty) => {
   });
 };
 
+const getDistinctCategories = async () => {
+    const distinctCategories = await Question.aggregate([
+      { $unwind: "$categories" },  
+      { $group: { _id: "$categories" } }, 
+      { $sort: { _id: 1 } }  
+    ]);
+    
+    const categories = distinctCategories.map(item => item._id);
+    return categories;
+};
+
+
 export {
   createQuestion,
   getAllQuestions,
@@ -72,4 +84,5 @@ export {
   getFilteredQuestions,
   getQuestionsByDescription,
   getQuestionsByTitleAndDifficulty,
+  getDistinctCategories,
 };

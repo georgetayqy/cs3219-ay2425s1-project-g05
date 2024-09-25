@@ -1,5 +1,5 @@
 import express from "express";
-import { createQuestion, getAllQuestions, getQuestionById, deleteQuestionById, updateQuestionById, getFilteredQuestions, findQuestion } from "../manager/questionManager.js";
+import { createQuestion, getAllQuestions, getQuestionById, deleteQuestionById, updateQuestionById, getFilteredQuestions, findQuestion, getDistinctCategories } from "../manager/questionManager.js";
 import validateQuestion from '../middlewares/validation.js';
 
 const router = express.Router();
@@ -25,5 +25,7 @@ router.route("/filter/").get(getFilteredQuestions);
 // GET A RANDOM QUESTION BY CATEGORY &/OR DIFFICULTY (CAN HAVE MULTIPLE/NO CATEGORIES/DIFFICULTIES)
 // IF BOTH CATEGORIES & DIFFICULTY ARE PROVIDED, NEED TO SATISFY EITHER ONE OF EACH
 router.route("/random/").get(findQuestion);
+
+router.route("/categories").get(getDistinctCategories);
 
  export default router;

@@ -8,6 +8,7 @@ import {
   ormFindQuestion as _findQuestion,
   ormGetQuestionsByDescription as _getQuestionsByDescription,
   ormGetQuestionsByTitleAndDifficulty as _getQuestionByTitleAndDifficulty,
+  ormGetDistinctCategories as _getDistinctCategories,
 } from "../orm/orm.js";
 
 const createQuestion = async (req, res) => {
@@ -41,11 +42,10 @@ const createQuestion = async (req, res) => {
     const question = await _createQuestion(req.body);
     return res.status(201).json({ data: question });
   } catch (err) {
-    console.log("er")
     console.log(err);
     return res
       .status(500)
-      .json({ message: "ccDatabase failure when creating new Question!" });
+      .json({ message: "Database failure when creating new Question!" });
   }
 };
 
@@ -154,7 +154,19 @@ const updateQuestionById = async (req, res) => {
 
 const getFilteredQuestions = async (req, res) => {
   try {
-    const filteredQuestions = await _getFilteredQuestions(req.query);
+
+    if (req.body.categories) {
+      if (!Array.isArray(req.body.categories)) {
+        return res.status(400).json({ message: "Categories should be an array" });
+      }
+    }
+    if (req.body.difficulty) {
+      if (!Array.isArray(req.body.difficulty)) {
+        return res.status(400).json({ message: "Difficulties should be an array" });
+      }
+    }
+    const filteredQuestions = await _getFilteredQuestions(req.body);
+
 
     return res.json({ data: filteredQuestions });
   } catch (err) {
@@ -176,6 +188,16 @@ const findQuestion = async (req, res) => {
   }
 };
 
+const getDistinctCategories = async (req, res) => {
+  try {
+    const distinctCategories = await _getDistinctCategories();
+    return res.json({ data: distinctCategories });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Error retrieving categories!" });
+  }
+}
+
 export {
   createQuestion,
   getAllQuestions,
@@ -184,4 +206,5 @@ export {
   updateQuestionById,
   getFilteredQuestions,
   findQuestion,
+  getDistinctCategories
 };
