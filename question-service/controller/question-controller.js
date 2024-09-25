@@ -183,31 +183,29 @@ const updateQuestionById = async (req, res, next) => {
         : new BaseError(500, "Error updating question")
     );
   }
-};
-
-const getFilteredQuestions = async (req, res, next) => {
+};const getFilteredQuestions = async (req, res, next) => {
   try {
-    if (req.body.categories) {
-      if (!Array.isArray(req.body.categories)) {
+    const { categories, difficulty } = req.query;
+    if (categories) {
+      if (!Array.isArray(categories)) {
         throw new BadRequestError("Categories should be an array!");
       }
       const distinctCategories = await _getDistinctCategories();
       if (
-        req.body.categories.some(
+        categories.some(
           (category) => !distinctCategories.includes(category.toUpperCase())
         )
       ) {
         throw new BadRequestError("Category does not exist!");
       }
     }
-    if (req.body.difficulty) {
-      if (!Array.isArray(req.body.difficulty)) {
+    if (difficulty) {
+      if (!Array.isArray(difficulty)) {
         throw new BadRequestError("Difficulty should be an array!");
       }
       if (
-        req.body.difficulty.some(
-          (difficulty) =>
-            !["EASY", "MEDIUM", "HARD"].includes(difficulty.toUpperCase())
+        difficulty.some(
+          (diff) => !["EASY", "MEDIUM", "HARD"].includes(diff.toUpperCase())
         )
       ) {
         throw new BadRequestError(
@@ -215,7 +213,9 @@ const getFilteredQuestions = async (req, res, next) => {
         );
       }
     }
-    const filteredQuestions = await _getFilteredQuestions(req.body);
+
+    // Fetch filtered questions based on the query parameters
+    const filteredQuestions = await _getFilteredQuestions({ categories, difficulty });
 
     return res
       .status(200)
@@ -231,27 +231,29 @@ const getFilteredQuestions = async (req, res, next) => {
 
 const findQuestion = async (req, res, next) => {
   try {
-    if (req.body.categories) {
-      if (!Array.isArray(req.body.categories)) {
+    const { categories, difficulty } = req.query;
+
+    if (categories) {
+      if (!Array.isArray(categories)) {
         throw new BadRequestError("Categories should be an array!");
       }
       const distinctCategories = await _getDistinctCategories();
       if (
-        req.body.categories.some(
+        categories.some(
           (category) => !distinctCategories.includes(category.toUpperCase())
         )
       ) {
         throw new BadRequestError("Category does not exist!");
       }
     }
-    if (req.body.difficulty) {
-      if (!Array.isArray(req.body.difficulty)) {
+
+    if (difficulty) {
+      if (!Array.isArray(difficulty)) {
         throw new BadRequestError("Difficulty should be an array!");
       }
       if (
-        req.body.difficulty.some(
-          (difficulty) =>
-            !["EASY", "MEDIUM", "HARD"].includes(difficulty.toUpperCase())
+        difficulty.some(
+          (diff) => !["EASY", "MEDIUM", "HARD"].includes(diff.toUpperCase())
         )
       ) {
         throw new BadRequestError(
@@ -259,7 +261,9 @@ const findQuestion = async (req, res, next) => {
         );
       }
     }
-    const foundQuestions = await _findQuestion(req.body);
+
+    // Find questions based on the query parameters
+    const foundQuestions = await _findQuestion({ categories, difficulty });
 
     return res
       .status(200)
@@ -272,7 +276,6 @@ const findQuestion = async (req, res, next) => {
     );
   }
 };
-
 const getDistinctCategories = async (req, res, next) => {
   try {
     const distinctCategories = await _getDistinctCategories();

@@ -4,7 +4,7 @@ const createQuestion = async (question) => {
   const newQuestion = new Question(question);
   newQuestion.difficulty = question.difficulty.toUpperCase();
   newQuestion.categories = question.categories.map((category) =>
-    category.replace(/\s+/g, "_").toUpperCase()
+    category.toUpperCase()
   );
 
   return newQuestion.save();
@@ -29,7 +29,7 @@ const updateQuestionById = async (id, question) => {
   }
   if (question.categories) {
     question.categories = question.categories.map((category) =>
-      category.replace(/\s+/g, "_").toUpperCase()
+      category.toUpperCase()
     );
   }
   return Question.findByIdAndUpdate(id, question, { new: true });
