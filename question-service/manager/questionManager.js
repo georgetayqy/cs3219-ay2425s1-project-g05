@@ -111,12 +111,17 @@ const updateQuestionById = async (req, res) => {
       const duplicateDescriptionQuestions = await _getQuestionsByDescription(
         req.body.description
       );
-      // can have the same description as current question
-      if (duplicateDescriptionQuestions.length > 1) {
+      const otherQuestionsWithSameDescription = duplicateDescriptionQuestions.filter(
+        (question) => question._id.toString() !== id
+      );
+
+      // If there are other questions with the same description, throw a 409 error
+      if (otherQuestionsWithSameDescription.length > 0) {
         return res
           .status(409)
           .json({ message: "A question with this description already exists" });
       }
+
     }
     // CHECK WHETHER UPDATED QUESTION HAS THE SAME TITLE AND DIFFICULTY LEVEL AS ANOTHER QUESTION
     if (req.body.title || req.body.difficulty) {

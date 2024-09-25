@@ -7,11 +7,8 @@ const questionSchema = new Schema({
     required: [true, "Title is required"],
   },
   description: {
-    type: String,
+    type: Object,
     required: [true, "Description is required"]
-  },
-  image: {
-    type: Buffer,
   },
   categories: {
     type: [String],
