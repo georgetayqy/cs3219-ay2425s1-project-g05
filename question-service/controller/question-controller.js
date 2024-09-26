@@ -55,11 +55,18 @@ const createQuestion = async (req, res, next) => {
 const getAllQuestions = async (req, res, next) => {
   try {
     const questions = await _getAllQuestions(req.query);
+
+    if (questions.length === 0) {
+      throw new NotFoundError("No questions found");
+    }
+
     return res
       .status(200)
       .json({ success: true, status: 200, data: questions });
   } catch (err) {
-    next(new BaseError(500, "Error retrieving questions"));
+    err instanceof BaseError
+      ? err
+      : next(new BaseError(500, "Error retrieving questions"));
   }
 };
 
@@ -216,8 +223,14 @@ const getFilteredQuestions = async (req, res, next) => {
       }
     }
 
-    // Fetch filtered questions based on the query parameters
-    const filteredQuestions = await _getFilteredQuestions({ categories, difficulty });
+    const filteredQuestions = await _getFilteredQuestions({
+      categories,
+      difficulty,
+    });
+
+    if (filteredQuestions.length === 0) {
+      throw new NotFoundError("No questions with matching categories and difficulty found");
+    }
 
     return res
       .status(200)
@@ -264,12 +277,16 @@ const findQuestion = async (req, res, next) => {
       }
     }
 
-    // Find questions based on the query parameters
-    const foundQuestions = await _findQuestion({ categories, difficulty });
+    const foundQuestion = await _findQuestion({ categories, difficulty });
+
+    if (!foundQuestion) {
+      console.log("No questions found");
+      throw new NotFoundError("No question with matching categories and difficulty found");
+    }
 
     return res
       .status(200)
-      .json({ success: true, status: 200, data: foundQuestions });
+      .json({ success: true, status: 200, data: foundQuestion });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -278,6 +295,7 @@ const findQuestion = async (req, res, next) => {
     );
   }
 };
+
 const getDistinctCategories = async (req, res, next) => {
   try {
     const distinctCategories = await _getDistinctCategories();

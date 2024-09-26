@@ -65,6 +65,7 @@ const getQuestionsByTitleAndDifficulty = async (title, difficulty) => {
 
 const getDistinctCategories = async () => {
   const distinctCategories = await Question.aggregate([
+    { $match: { isDeleted: false } },
     { $unwind: "$categories" },
     { $group: { _id: "$categories" } },
     { $sort: { _id: 1 } },
