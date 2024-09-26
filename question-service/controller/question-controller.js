@@ -64,9 +64,11 @@ const getAllQuestions = async (req, res, next) => {
       .status(200)
       .json({ success: true, status: 200, data: questions });
   } catch (err) {
-    err instanceof BaseError
-      ? err
-      : next(new BaseError(500, "Error retrieving questions"));
+    next(
+      err instanceof BaseError
+        ? err
+        : new BaseError(500, "Error retrieving question")
+    );
   }
 };
 
@@ -299,11 +301,20 @@ const findQuestion = async (req, res, next) => {
 const getDistinctCategories = async (req, res, next) => {
   try {
     const distinctCategories = await _getDistinctCategories();
+    
+    if (distinctCategories.length === 0) {
+      throw new NotFoundError("No categories found");
+    }
+
     return res
       .status(200)
       .json({ success: true, status: 200, data: distinctCategories });
   } catch (err) {
-    next(new BaseError(500, "Error retrieving distinct categories"));
+    next(
+      err instanceof BaseError
+        ? err
+        : new BaseError(500, "Error retrieving distinct categories")
+    );
   }
 };
 
