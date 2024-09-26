@@ -1,12 +1,12 @@
 import express from "express";
 import { createQuestion, getAllQuestions, getQuestionById, deleteQuestionById, updateQuestionById, getFilteredQuestions, findQuestion, getDistinctCategories } from "../controller/question-controller.js";
 import validateQuestion from '../middlewares/validation.js';
+import checkAdmin from "../middlewares/access-control.js";
 
 const router = express.Router();
 
 // CREATE NEW QUESTION
-router.post('/', validateQuestion, createQuestion);
-// router.post('/', checkAdmin, validateQuestion, createQuestion);
+router.post('/', checkAdmin, validateQuestion, createQuestion);
 
 // GET ALL QUESTIONS
 router.route("/").get(getAllQuestions);
@@ -15,12 +15,10 @@ router.route("/").get(getAllQuestions);
 router.route("/id/:id").get(getQuestionById);
 
 // DELETE QUESTION BY ID
-router.route("/id/:id").delete(deleteQuestionById);
-//router.route("/id/:id").delete(checkAdmin, deleteQuestionById);
+router.route("/id/:id").delete(checkAdmin, deleteQuestionById);
 
 // UPDATE QUESTION BY ID
-router.route("/id/:id").put(updateQuestionById);
-//router.route("/id/:id").put(checkAdmin, updateQuestionById);
+router.route("/id/:id").put(checkAdmin, updateQuestionById);
 
 // GET ALL QUESTIONS BY CATEGORY & DIFFICULTY (CAN HAVE MULTIPLE/NO CATEGORIES/DIFFICULTIES)
 router.route("/filter/").get(getFilteredQuestions);

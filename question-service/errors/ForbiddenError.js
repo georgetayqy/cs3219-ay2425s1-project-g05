@@ -4,7 +4,7 @@ class ForbiddenError extends BaseError {
   constructor(message) {
     super(403, message);
     this.name = "UnauthorizedError";
-    this.statusCode = 401;
+    this.statusCode = 403;
   }
 }
 
