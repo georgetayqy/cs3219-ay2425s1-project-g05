@@ -24,8 +24,8 @@ app.use("/api/question-service", router);
 app.use(errorHandler);
 
 // Test Route for Health Checks
-app.get("/", (req, res) => {
-  res.status(200).json({ message: "Connected to / route of question-service" });
+app.get("/healthz", (req, res) => {
+  res.status(200).json({ message: "Connected to /healthz route of question-service" });
 });
 
 // MongoDB connection
