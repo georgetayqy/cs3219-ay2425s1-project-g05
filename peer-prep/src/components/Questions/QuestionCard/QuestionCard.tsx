@@ -10,7 +10,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { Question } from "../../../types/question";
+import { QuestionOlsd } from "../../../types/question";
 
 import classes from "./QuestionCard.module.css";
 import ComplexityDisplay from "../Complexity/Complexity";
@@ -18,7 +18,11 @@ import { IconBrandLeetcode } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
 import CategoryDisplay from "../Category/Category";
 
-export default function QuestionCard({ question }: { question: Question }) {
+export default function QuestionCard({
+  question,
+}: {
+  question: QuestionOlsd | any;
+}) {
   return (
     <Box className={classes.card}>
       <Stack className={classes.contents}>

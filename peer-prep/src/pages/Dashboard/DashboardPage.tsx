@@ -25,9 +25,9 @@ export default function DashboardPage() {
       <section>
         <Container mt={"4rem"}>
           <Group>
-            <Avatar size="8rem" name={user?.name}></Avatar>
+            <Avatar size="8rem" name={user?.displayName}></Avatar>
             <Stack ml={12} flex={1}>
-              <Title> {user?.name} </Title>
+              <Title> {user?.displayName} </Title>
               <Text> {user?.email}</Text>
             </Stack>
             <Center>

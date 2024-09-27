@@ -173,6 +173,9 @@ export function Navbar() {
             <a href="#" className={classes.link}>
               Academy
             </a>
+            <Link to="/questions" className={classes.link}>
+              Questions
+            </Link>
           </Group>
 
           {user ? (

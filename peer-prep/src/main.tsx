@@ -18,6 +18,7 @@ import { AuthProvider } from "./hooks/useAuth.tsx";
 import DashboardPage from "./pages/Dashboard/DashboardPage.tsx";
 import SearchingPage from "./pages/Session/Search/SearchingPage.tsx";
 import CreateSessionPage from "./pages/Session/Create/CreateSessionPage.tsx";
+import QuestionPage from "./pages/Questions/QuestionPage.tsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -30,6 +31,15 @@ const router = createBrowserRouter([
       {
         path: "/login",
         element: <LoginOrRegisterPage />,
+      },
+      {
+        path: "/questions",
+        element: <QuestionPage />,
+        loader: async () =>
+          // fetch(`${import.meta.env.VITE_API_URL}/question-service`),
+          fetch(
+            `https://virtserver.swaggerhub.com/PeerPrep/question-service/1.0.0/api/question-service`
+          ),
       },
 
       // Protected routes below
@@ -45,6 +55,7 @@ const router = createBrowserRouter([
             path: "/learn",
             element: <Button>learn!</Button>,
           },
+
           {
             path: "/session",
             children: [

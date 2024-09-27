@@ -1,6 +1,6 @@
 export type Complexity = "easy" | "medium" | "hard";
 
-export type Question = {
+export type QuestionOlsd = {
   id: number,
   title: string,
   shortDescription: string,
@@ -10,7 +10,15 @@ export type Question = {
   link: string
 }
 
-export const SAMPLE_QUESTIONS: Question[] = [{
+export type Question = {
+  title: string,
+  description: string,
+  categories: string[],
+  difficulty: Complexity,
+  isDeleted: boolean
+}
+
+export const SAMPLE_QUESTIONS: any[] = [{
   id: 1,
   title: "Reverse a string",
   shortDescription: `Write a function that reverses a string. The input string is given as an array of characters s.  

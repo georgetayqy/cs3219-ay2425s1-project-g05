@@ -2,6 +2,12 @@ import { useState } from "react";
 import { User } from "../types/user";
 import { useLocalStorage } from "@mantine/hooks";
 
+export interface ServerResponse<T> {
+  success: boolean;
+  status: number;
+  data: T;
+}
+
 export default function useApi() {
   // const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(false);
