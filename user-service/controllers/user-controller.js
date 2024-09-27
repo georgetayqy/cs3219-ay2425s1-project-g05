@@ -17,6 +17,10 @@ export async function loginUser(req, res) {
             return res.status(401).json({ message: "Incorrect email or password" })
         }
 
+        // Delete password field from user object
+        const returnedUser = { ...user}
+        delete returnedUser.password
+
         // Check if password is correct
         const isCorrectPassword = await comparePassword(password, user.password);
         if (!isCorrectPassword) {
@@ -26,9 +30,13 @@ export async function loginUser(req, res) {
         // Generate access token
         const accessToken = generateAccessToken(user);
         console.log(accessToken)
-        res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true }); // 5 minutes
+        if (process.env.NODE_ENV === 'DEV') {
+            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true, sameSite: 'none' }); // 5 minutes
+        } else {
+            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true }); // 5 minutes
+        }
 
-        return res.status(200).json({ message: "Login successful" })
+        return res.status(200).json({ message: "Login successful", user: returnedUser })
     } catch (error) {
         console.log(error)
         return res.status(500).json({ message: "Unknown server error" })
