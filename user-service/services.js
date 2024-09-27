@@ -12,7 +12,7 @@ export async function comparePassword(password, hashedPassword) {
 }
 
 export function checkPasswordStrength(password) {
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
     return password.match(passwordRegex) !== null;
 }
 
