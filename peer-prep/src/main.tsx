@@ -20,6 +20,7 @@ import SearchingPage from "./pages/Session/Search/SearchingPage.tsx";
 import CreateSessionPage from "./pages/Session/Create/CreateSessionPage.tsx";
 import QuestionPage from "./pages/Questions/QuestionPage.tsx";
 import CreateQuestionPage from "./pages/Questions/CreateQuestionPage/CreateQuestionPage.tsx";
+import EditQuestionPage from "./pages/Questions/EditQuestionPage/EditQuestionPage.tsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
           {
             path: "/questions/create",
             element: <CreateQuestionPage />,
+          },
+          {
+            path: "/questions/edit/:id",
+            element: <EditQuestionPage />,
           },
         ],
       },

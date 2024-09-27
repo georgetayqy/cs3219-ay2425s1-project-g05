@@ -36,7 +36,7 @@ export default function CreateQuestionPage() {
           label="Categories"
           value={categories}
           onChange={(value: string[]) => setCategories(value)} 
-          data={["Category 1", "Category 2", "Category 3"]} // TODO: fetch categories from the database and display as options
+          data={["Category 1", "Category 2", "Category 3"]} // TODO: fetch categories from the database and display as
           multiple
           required
         />
