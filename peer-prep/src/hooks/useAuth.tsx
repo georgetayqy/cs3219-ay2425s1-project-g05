@@ -1,11 +1,7 @@
 import { useLocalStorage } from "@mantine/hooks";
 import { createContext, ReactElement, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-
-type User = {
-  name: string;
-  email: string;
-};
+import { User } from "../types/user";
 
 export interface AuthContextType {
   user: User | null;
@@ -14,8 +10,10 @@ export interface AuthContextType {
 }
 
 const DEFAULT_TEMP_USER: User = {
-  name: "John Doe",
   email: "johndoe@gmail.com",
+  displayName: "John Doe",
+  isAdmin: false,
+  // password: "password",
 };
 
 const DEFAULT: AuthContextType = {
@@ -39,14 +37,70 @@ export const AuthProvider = ({
   const navigate = useNavigate();
 
   // call this function when you want to authenticate the user
-  const login = async (data: any) => {
+  const login = async (data: { email: string; password: string }) => {
     // TODO: uncomment the below line
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/user-service/users/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      console.error("ERROR:: Login failed");
+      return;
+    }
+
+    if (response.status === 200) {
+      setUser(DEFAULT_TEMP_USER);
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
     // setUser(data);
 
-    console.log("INFO:: Logging in...");
+    // console.log("INFO:: Logging in...");
 
-    setUser(DEFAULT_TEMP_USER);
-    navigate("/dashboard", { replace: true });
+    // setUser(DEFAULT_TEMP_USER);
+    // navigate("/dashboard", { replace: true });
+  };
+
+  const register = async (data: {
+    email: string;
+    password: string;
+    displayName: string;
+  }) => {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/user-service/users`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      console.error("ERROR:: Registration failed");
+      return;
+    }
+
+    if (response.status === 201) {
+      console.log("INFO:: Registration successful");
+
+      // login the user
+      login({
+        email: data.email,
+        password: data.password,
+      });
+      return;
+    }
   };
 
   // call this function to sign out logged in user

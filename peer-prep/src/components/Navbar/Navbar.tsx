@@ -180,7 +180,7 @@ export function Navbar() {
               <Menu.Target>
                 <AvatarWithDetailsButton
                   image="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png"
-                  name={user.name}
+                  name={user.displayName}
                   email={user.email}
                 />
               </Menu.Target>
@@ -272,7 +272,9 @@ export function Navbar() {
               <Link to="/login">
                 <Button variant="default">Log in</Button>
               </Link>
-              <Button>Sign up</Button>
+              <Link to="/login?register=true">
+                <Button>Sign up</Button>
+              </Link>
             </Group>
           )}
 

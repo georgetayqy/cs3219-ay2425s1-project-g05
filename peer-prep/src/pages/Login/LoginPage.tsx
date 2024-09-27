@@ -15,7 +15,7 @@ import {
 } from "@mantine/core";
 import classes from "./LoginPage.module.css";
 import image from "../../assets/loginimage.svg";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Navigate } from "react-router-dom";
 
@@ -27,6 +27,34 @@ export default function LoginOrRegisterPage() {
   if (user) {
     return <Navigate to="/dashboard" />;
   }
+
+  // if register mode from query params, show register form
+  const query = new URLSearchParams(window.location.search);
+  useEffect(() => {
+    const register = query.get("register");
+    console.log({ query: query.get("register") });
+    if (register) {
+      setLoginMode(false);
+    }
+  }, []);
+
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = () => {
+    // validate
+
+    // call
+    login({
+      email,
+      password,
+    });
+  };
+
+  const handleRegister = () => {};
 
   return (
     // <div className={classes.wrapper}>
@@ -44,20 +72,38 @@ export default function LoginOrRegisterPage() {
         ></Image>
       </Flex>
       <Flex className={classes.form}>
-        <Title order={2} className={classes.title} ta="center" mt="md" mb={50}>
+        <Title order={2} className={classes.title} ta="center" mt="md" mb={36}>
           Welcome {loginMode && "back"} to PeerPrep!
         </Title>
+
+        {!loginMode && (
+          <TextInput
+            label="Display name"
+            placeholder="Your display name"
+            size="md"
+            required
+            onChange={(event) => setDisplayName(event.currentTarget.value)}
+            value={displayName}
+          />
+        )}
 
         <TextInput
           label="Email address"
           placeholder="hello@gmail.com"
           size="md"
+          mt="md"
+          required
+          onChange={(event) => setEmail(event.currentTarget.value)}
+          value={email}
         />
         <PasswordInput
           label="Password"
           placeholder="Your password"
           mt="md"
+          required
           size="md"
+          onChange={(event) => setPassword(event.currentTarget.value)}
+          value={password}
         />
         <Checkbox label="Keep me logged in" mt="xl" size="md" />
         {loginMode ? (
