@@ -26,7 +26,11 @@ export async function loginUser(req, res) {
         // Generate access token
         const accessToken = generateAccessToken(user);
         console.log(accessToken)
-        res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true, sameSite: 'none' }); // 5 minutes
+        if (process.env.NODE_ENV === 'DEV') {
+            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true, sameSite: 'none' }); // 5 minutes
+        } else {
+            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true }); // 5 minutes
+        }
 
         return res.status(200).json({ message: "Login successful" })
     } catch (error) {
