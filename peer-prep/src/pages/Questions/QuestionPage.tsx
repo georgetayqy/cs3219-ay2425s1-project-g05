@@ -1,4 +1,4 @@
-import { Box, CloseButton, Container, Flex, Input, Stack } from "@mantine/core";
+import { Box, CloseButton, Container, Flex, Input, Stack, Button, Modal, TextInput, Select, Textarea } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Question, SAMPLE_QUESTIONS } from "../../types/question";
@@ -10,7 +10,6 @@ import classes from "./QuestionPage.module.css";
 
 export default function QuestionPage() {
   const [searchValue, setSearchValue] = useState("");
-
   const [questions, setQuestions] = useState<Question[]>([]);
 
   // const { isLoading, error, fetchData } = useApi();
@@ -41,11 +40,16 @@ export default function QuestionPage() {
           />
         </Stack>
       </Container>
+
+      <Container mt={16}>
+        <Button component="a" href="/questions/create">Add New Question</Button>
+      </Container>
+
       <section>
         {/* <Container mt="4rem"> */}
         <Box px={"xl"} mt="4rem">
           <Flex className={classes["question-list"]}>
-            {questions.map((question, key) => (
+            {SAMPLE_QUESTIONS.map((question, key) => ( // TODO: replace SAMPLE_QUESTIONS with questions
               <QuestionCard key={key} question={question} />
             ))}
           </Flex>

@@ -19,6 +19,7 @@ import DashboardPage from "./pages/Dashboard/DashboardPage.tsx";
 import SearchingPage from "./pages/Session/Search/SearchingPage.tsx";
 import CreateSessionPage from "./pages/Session/Create/CreateSessionPage.tsx";
 import QuestionPage from "./pages/Questions/QuestionPage.tsx";
+import CreateQuestionPage from "./pages/Questions/CreateQuestionPage/CreateQuestionPage.tsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -34,12 +35,21 @@ const router = createBrowserRouter([
       },
       {
         path: "/questions",
-        element: <QuestionPage />,
-        loader: async () =>
-          // fetch(`${import.meta.env.VITE_API_URL}/question-service`),
-          fetch(
-            `https://virtserver.swaggerhub.com/PeerPrep/question-service/1.0.0/api/question-service`
-          ),
+        children: [
+          {
+            path: "/questions",
+            element: <QuestionPage />,
+            loader: async () =>
+              fetch(`${import.meta.env.VITE_API_URL}/question-service`),
+              // fetch(
+              //   `https://virtserver.swaggerhub.com/PeerPrep/question-service/1.0.0/api/question-service`
+              // ),
+          },
+          {
+            path: "/questions/create",
+            element: <CreateQuestionPage />,
+          },
+        ],
       },
 
       // Protected routes below
