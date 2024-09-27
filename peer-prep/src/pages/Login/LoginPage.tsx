@@ -12,17 +12,60 @@ import {
   Center,
   Stack,
   Image,
+  Progress,
+  Group,
 } from "@mantine/core";
 import classes from "./LoginPage.module.css";
 import image from "../../assets/loginimage.svg";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Navigate } from "react-router-dom";
+import { IconCheck, IconX } from "@tabler/icons-react";
+
+function PasswordRequirement({
+  meets,
+  label,
+}: {
+  meets: boolean;
+  label: string;
+}) {
+  return (
+    <Text component="div" c={meets ? "teal" : "red"} mt={5} size="sm" fw={500}>
+      <Center inline>
+        {meets ? (
+          <IconCheck size="0.9rem" stroke={1.5} />
+        ) : (
+          <IconX size="0.9rem" stroke={1.5} />
+        )}
+        <Box ml={7}>{label}</Box>
+      </Center>
+    </Text>
+  );
+}
+
+const requirements = [
+  { re: /[0-9]/, label: "Includes number" },
+  { re: /[a-z]/, label: "Includes lowercase letter" },
+  { re: /[A-Z]/, label: "Includes uppercase letter" },
+  { re: /[$&+,:;=?@#|'<>.^*()%!-]/, label: "Includes special symbol" },
+];
+
+function getStrength(password: string) {
+  let multiplier = password.length > 5 ? 0 : 1;
+
+  requirements.forEach((requirement) => {
+    if (!requirement.re.test(password)) {
+      multiplier += 1;
+    }
+  });
+
+  return Math.max(100 - (100 / (requirements.length + 1)) * multiplier, 0);
+}
 
 export default function LoginOrRegisterPage() {
   const [loginMode, setLoginMode] = useState(true); // true = log in, false = register
 
-  const { login, user } = useAuth();
+  const { login, user, register } = useAuth();
 
   if (user) {
     return <Navigate to="/dashboard" />;
@@ -54,7 +97,70 @@ export default function LoginOrRegisterPage() {
     });
   };
 
-  const handleRegister = () => {};
+  const handleRegister = () => {
+    // validate
+
+    // call
+    setIsLoading(true);
+    console.log({ email, password, displayName });
+    register({
+      email,
+      password,
+      displayName,
+    });
+
+    // fetch(`/user-service/users`, {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify({
+    //     email,
+    //     password,
+    //     displayName,
+    //   }),
+    // })
+    //   .then((response) => {
+    //     setIsLoading(false);
+    //     if (!response.ok) {
+    //       throw new Error("Failed to register");
+    //     }
+    //     return response.json();
+    //   })
+    //   .then((data) => {
+    //     console.log("Registered", data);
+    //     login({ email, password });
+    //   })
+    //   .catch((error) => {
+    //     console.error("Failed to register", error);
+    //   });
+  };
+
+  const strength = getStrength(password);
+  const checks = requirements.map((requirement, index) => (
+    <PasswordRequirement
+      key={index}
+      label={requirement.label}
+      meets={requirement.re.test(password)}
+    />
+  ));
+  const bars = Array(4)
+    .fill(0)
+    .map((_, index) => (
+      <Progress
+        styles={{ section: { transitionDuration: "0ms" } }}
+        value={
+          password.length > 0 && index === 0
+            ? 100
+            : strength >= ((index + 1) / 4) * 100
+            ? 100
+            : 0
+        }
+        color={strength > 80 ? "teal" : strength > 50 ? "yellow" : "red"}
+        key={index}
+        size={4}
+      />
+    ));
 
   return (
     // <div className={classes.wrapper}>
@@ -105,13 +211,26 @@ export default function LoginOrRegisterPage() {
           onChange={(event) => setPassword(event.currentTarget.value)}
           value={password}
         />
+        {!loginMode && (
+          <Group gap={5} grow mt="xs" mb="md">
+            {bars}
+          </Group>
+        )}
+
+        {!loginMode && (
+          <PasswordRequirement
+            label="Has at least 6 characters"
+            meets={password.length > 5}
+          />
+        )}
+        {!loginMode && checks}
         <Checkbox label="Keep me logged in" mt="xl" size="md" />
         {loginMode ? (
-          <Button fullWidth mt="xl" size="md" onClick={() => login({})}>
+          <Button fullWidth mt="xl" size="md" onClick={handleLogin}>
             Login
           </Button>
         ) : (
-          <Button fullWidth mt="xl" size="md">
+          <Button fullWidth mt="xl" size="md" onClick={handleRegister}>
             Register
           </Button>
         )}

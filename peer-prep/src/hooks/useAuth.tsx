@@ -2,11 +2,13 @@ import { useLocalStorage } from "@mantine/hooks";
 import { createContext, ReactElement, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "../types/user";
+import useApi from "./useApi";
 
 export interface AuthContextType {
   user: User | null;
   login: (data: any) => void;
   logout: () => void;
+  register: (data: any) => void;
 }
 
 const DEFAULT_TEMP_USER: User = {
@@ -22,6 +24,7 @@ const DEFAULT: AuthContextType = {
     console.log("log");
   },
   logout: () => {},
+  register: () => {},
 };
 const AuthContext = createContext<AuthContextType>(DEFAULT);
 
@@ -34,40 +37,28 @@ export const AuthProvider = ({
     key: "user",
     defaultValue: null,
   });
+
+  const { fetchData, isLoading, error } = useApi();
   const navigate = useNavigate();
 
   // call this function when you want to authenticate the user
   const login = async (data: { email: string; password: string }) => {
-    // TODO: uncomment the below line
-
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/user-service/users/login`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
-
-    if (!response.ok) {
-      console.error("ERROR:: Login failed");
-      return;
-    }
-
-    if (response.status === 200) {
-      setUser(DEFAULT_TEMP_USER);
-      navigate("/dashboard", { replace: true });
-      return;
-    }
-
-    // setUser(data);
-
-    // console.log("INFO:: Logging in...");
-
-    // setUser(DEFAULT_TEMP_USER);
-    // navigate("/dashboard", { replace: true });
+    fetchData<User>(`/user-service/users/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+      .then((data) => {
+        // ok!
+        setUser(DEFAULT_TEMP_USER);
+        console.log(data, "<<<<");
+        navigate("/dashboard", { replace: true });
+      })
+      .catch((e) => {
+        console.error("ERROR:: Login failed");
+      });
   };
 
   const register = async (data: {
@@ -75,38 +66,52 @@ export const AuthProvider = ({
     password: string;
     displayName: string;
   }) => {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/user-service/users`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
-
-    if (!response.ok) {
-      console.error("ERROR:: Registration failed");
-      return;
-    }
-
-    if (response.status === 201) {
-      console.log("INFO:: Registration successful");
-
-      // login the user
+    fetchData(`/user-service/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }).then((_) => {
+      // ok!
+      // need to login to set cookie
       login({
         email: data.email,
         password: data.password,
       });
       return;
-    }
+    });
+    // const response = await fetch(`/user-service/users`);
+
+    // if (!response.ok) {
+    //   console.error("ERROR:: Registration failed");
+    //   return;
+    // }
+
+    // if (response.status === 201) {
+    //   console.log("INFO:: Registration successful");
+
+    //   // login the user
+    // }
   };
 
   // call this function to sign out logged in user
   const logout = () => {
-    setUser(null);
-    navigate("/", { replace: true });
+    fetchData(`/user-service/users/logout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    })
+      .then((_) => {
+        // ok!
+        setUser(null);
+        navigate("/", { replace: true });
+      })
+      .catch((e) => {
+        console.error("ERROR:: Logout failed");
+      });
   };
 
   const value = useMemo(
@@ -114,6 +119,7 @@ export const AuthProvider = ({
       user,
       login,
       logout,
+      register,
     }),
     [user]
   );
