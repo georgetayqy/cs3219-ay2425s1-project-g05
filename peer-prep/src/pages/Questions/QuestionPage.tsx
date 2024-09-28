@@ -49,7 +49,7 @@ export default function QuestionPage() {
         {/* <Container mt="4rem"> */}
         <Box px={"xl"} mt="4rem">
           <Flex className={classes["question-list"]}>
-            {SAMPLE_QUESTIONS.map((question, key) => ( // TODO: replace SAMPLE_QUESTIONS with questions
+            {questions.map((question, key) => ( 
               <QuestionCard key={key} question={question} isClickable />
             ))}
           </Flex>

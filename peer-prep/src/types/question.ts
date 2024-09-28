@@ -1,4 +1,11 @@
-export type Complexity = "easy" | "medium" | "hard";
+export type Complexity = "EASY" | "MEDIUM" | "HARD";
+
+export type TestCase = {
+  testCode: string;
+  isPublic: boolean;
+  expectedOutput: string;
+  meta: { [key: string]: any }; 
+};
 
 export type QuestionOlsd = {
   id: number,
@@ -16,6 +23,7 @@ export type Question = {
   categories: string[],
   difficulty: Complexity,
   isDeleted: boolean
+  testCases: TestCase[]
 }
 
 export const SAMPLE_QUESTIONS: any[] = [{

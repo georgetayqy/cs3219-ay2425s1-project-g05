@@ -31,7 +31,7 @@ export default function QuestionCard({
 
   const handleCardClick = () => {
     if (isClickable) {
-      navigate(`/questions/edit/${question.id}`);
+      navigate(`/questions/edit/${question._id}`);
     }
   }
 
@@ -45,7 +45,7 @@ export default function QuestionCard({
             flex: 1,
           }}
         >
-          {question.shortDescription}
+          {question.description.testDescription }
         </Text>
         <Flex gap={"md"} justify={"end"}>
           {question.categories.map((category, index) => (
@@ -54,7 +54,8 @@ export default function QuestionCard({
         </Flex>
         <Divider />
         <Flex justify={"space-between"} align={"center"}>
-          <ComplexityDisplay complexity={question.complexity} />
+          {/* TODO: send question difficulty in lower case */}
+          <ComplexityDisplay complexity={question.difficulty} /> 
           <Button
             color="black"
             size="compact-md"
