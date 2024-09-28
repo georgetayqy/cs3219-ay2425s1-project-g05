@@ -1,7 +1,7 @@
 import cors from "cors"
 
 const allowedOrigins = [
-    "http://localhost:8000", // frontend
+    "http://localhost:5173", // frontend
     "http://localhost:8001", // user service
     "http://localhost:8002", // matching service
     "http://localhost:8003", // question service
@@ -11,7 +11,7 @@ const allowedOrigins = [
 const corsOptions = {
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key' , 'X-Amz-Security-Token'],
     credentials: true,
 };
 
