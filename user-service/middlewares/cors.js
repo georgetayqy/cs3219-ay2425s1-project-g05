@@ -1,7 +1,9 @@
 import cors from "cors"
 
 const allowedOrigins = [
-    "http://localhost:5173", // frontend
+    "http://localhost:5173", // frontend dev
+    "http://peerprep.s3-website-ap-southeast-1.amazonaws.com", // frontend prod
+    "http://peerprep-frontend-bucket.s3-website-ap-southeast-1.amazonaws.com", // frontend staging
     "http://localhost:8001", // user service
     "http://localhost:8002", // matching service
     "http://localhost:8003", // question service
