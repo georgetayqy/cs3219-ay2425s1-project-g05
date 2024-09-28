@@ -31,9 +31,9 @@ export async function loginUser(req, res) {
         const accessToken = generateAccessToken(user);
         console.log(accessToken)
         if (process.env.NODE_ENV === 'DEV') {
-            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true, sameSite: 'none', secure: true }); // 5 minutes
+            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (60 * 60 * 1000)), httpOnly: true, sameSite: 'none', secure: true }); // 60 minutes
         } else {
-            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true }); // 5 minutes
+            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (60 * 60 * 1000)), httpOnly: true }); // 60 minutes
         }
 
         return res.status(200).json({ message: "Login successful", user: returnedUser })
