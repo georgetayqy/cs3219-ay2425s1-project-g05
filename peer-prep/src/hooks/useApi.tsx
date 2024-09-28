@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { User } from "../types/user";
 import { useLocalStorage } from "@mantine/hooks";
+import { useAuth } from "./useAuth";
+import { useNavigate } from "react-router-dom";
 
 export interface ServerResponse<T> {
   success: boolean;
@@ -13,10 +15,12 @@ export default function useApi() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<any | null>(null);
 
-  // const [user, setUser] = useLocalStorage<User | null>({
-  //   key: "user",
-  //   defaultValue: null,
-  // });
+  const navigate = useNavigate();
+
+  const [user, setUser] = useLocalStorage<User | null>({
+    key: "user",
+    defaultValue: null,
+  });
 
   async function fetchData<T>(
     url: string,
@@ -33,14 +37,20 @@ export default function useApi() {
           // bearer token
           // "Authorization": `Bearer ${accessToken}`,
         },
+        credentials: "include",
       });
 
       // if the response status indicates not logged in, clear data and redirect to login
       // if (response.status === 401) {
-      //   // setUser(null);
-      //   // navigate("/login");
+      //   //
+      //   //
       //   return;
       // }
+
+      if (response.status === 401) {
+        setUser(null);
+        navigate("/login");
+      }
       if (!response.ok) {
         throw new Error("Failed to fetch data");
       }
