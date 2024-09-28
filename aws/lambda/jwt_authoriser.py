@@ -18,13 +18,25 @@ def decode_jwt(token: str):
 
 def lambda_handler(event, context):
     try:
-        authorisation = event["authorizationToken"]
+        authHeader = event["headers"].get("Authorization", None)
+        cookieHeader = event["headers"].get("Cookie", None)
         methodArn = event["methodArn"]
-        principalUser = decode_jwt(authorisation)
+        
+        if authHeader:
+            principalUser = decode_jwt(authHeader)
+        else:
+            cookieHeader = cookieHeader.split(";")
+            principalUser = None
+            
+            for header in cookieHeader:
+                key, value = header.split("=")
+                
+                if key == "accessToken":
+                    principalUser = decode_jwt(value)
+        
         principalEmail = principalUser.get('email')
         principalDisplayName = principalUser.get('displayName')
         principalIsAdmin = principalUser.get('isAdmin')
-        
         
         '''
         If the token is valid, a policy must be generated which will allow or deny
@@ -50,10 +62,7 @@ def lambda_handler(event, context):
         policy.restApiId = apiGatewayArnTmp[0]
         policy.region = tmp[3]
         policy.stage = apiGatewayArnTmp[1]
-        
-        # permit access to all paths
         policy.allowAllMethods()
-        
         #policy.allowMethod(HttpVerb.GET, '/pets/*')
     
         # Finally, build the policy
@@ -73,13 +82,13 @@ def lambda_handler(event, context):
         # authResponse['context'] = context
     
         return authResponse
-    
     except:
         """
         You can send a 401 Unauthorized response to the client by failing like so:
 
         raise Exception('Unauthorized')
         """
+        
         raise Exception("Unauthorized")
 
 
