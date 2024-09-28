@@ -24,14 +24,6 @@ const deleteQuestionById = async (id) => {
 };
 
 const updateQuestionById = async (id, question) => {
-  if (question.difficulty) {
-    question.difficulty = question.difficulty.toUpperCase();
-  }
-  if (question.categories) {
-    question.categories = question.categories.map((category) =>
-      category.toUpperCase()
-    );
-  }
   return Question.findByIdAndUpdate(id, question, { new: true });
 };
 

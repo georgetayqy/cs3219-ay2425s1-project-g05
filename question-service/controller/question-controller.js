@@ -119,77 +119,55 @@ const deleteQuestionById = async (req, res, next) => {
 
 const updateQuestionById = async (req, res, next) => {
   const { id } = req.params;
+  const { description, title, difficulty } = req.body;
 
   try {
     // CHECK WHETHER QUESTION TO UPDATE EXISTS
     const questionToUpdate = await _getQuestionById(id);
-
     if (!questionToUpdate) {
       throw new NotFoundError("Question not found");
     }
-    // CHECK WHETHER UPDATED QUESTION HAS THE SAME DESCRIPTION AS ANOTHER QUESTION
-    if (req.body.description) {
-      const duplicateDescriptionQuestions = await _getQuestionsByDescription(
-        req.body.description
+
+    // CHECK FOR DUPLICATE DESCRIPTION IF PROVIDED
+    if (description) {
+      const duplicateDescriptionQuestions = await _getQuestionsByDescription(description);
+      const otherQuestionsWithSameDescription = duplicateDescriptionQuestions.filter(
+        (question) => question._id.toString() !== id
       );
-      const otherQuestionsWithSameDescription =
-        duplicateDescriptionQuestions.filter(
-          (question) => question._id.toString() !== id
-        );
 
       if (otherQuestionsWithSameDescription.length > 0) {
-        throw new ConflictError(
-          "A question with this description already exists"
-        );
+        throw new ConflictError("A question with this description already exists");
       }
     }
-    // CHECK WHETHER UPDATED QUESTION HAS THE SAME TITLE AND DIFFICULTY LEVEL AS ANOTHER QUESTION
-    if (req.body.title || req.body.difficulty) {
-      if (req.body.difficulty) {
-        if (
-          !["EASY", "MEDIUM", "HARD"].includes(
-            req.body.difficulty.toUpperCase()
-          )
-        ) {
-          throw new BadRequestError(
-            "Difficulty should be either EASY, MEDIUM or HARD"
-          );
-        }
-      }
 
-      const titleToCheck = req.body.title
-        ? req.body.title
-        : questionToUpdate.title;
-      const difficultyToCheck = req.body.difficulty
-        ? req.body.difficulty
-        : questionToUpdate.difficulty;
+    // CHECK FOR DUPLICATE TITLE AND DIFFICULTY IF PROVIDED
+    if (title || difficulty) {
+      const titleToCheck = title || questionToUpdate.title;
+      const difficultyToCheck = difficulty || questionToUpdate.difficulty;
+
       const duplicateTitleAndDifficultyQuestions =
         await _getQuestionByTitleAndDifficulty(titleToCheck, difficultyToCheck);
       const otherQuestionsWithSameTitleAndDifficulty =
         duplicateTitleAndDifficultyQuestions.filter(
           (question) => question._id.toString() !== id
         );
+
       if (otherQuestionsWithSameTitleAndDifficulty.length > 0) {
-        throw new ConflictError(
-          "A question with such title and difficulty already exists"
-        );
+        throw new ConflictError("A question with such title and difficulty already exists");
       }
     }
 
+    // UPDATE THE QUESTION
     const updatedQuestion = await _updateQuestionById(id, req.body);
-
     if (!updatedQuestion) {
       throw new NotFoundError("Question not found");
     }
 
-    return res
-      .status(200)
-      .json({ success: true, status: 200, data: updatedQuestion });
+    return res.status(200).json({ success: true, status: 200, data: updatedQuestion });
   } catch (err) {
+    console.log(err);
     next(
-      err instanceof BaseError
-        ? err
-        : new BaseError(500, "Error updating question")
+      err instanceof BaseError ? err : new BaseError(500, "Error updating question")
     );
   }
 };

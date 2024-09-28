@@ -1,6 +1,25 @@
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
+const testCaseSchema = new Schema({
+  testCode: {
+    type: String,
+    required: [true, "Test code is required"],
+  },
+  isPublic:{
+    type: Boolean,
+    required: [true, "isPublic status is required"]
+  },
+  meta: {
+    type: Object,
+    // required: [true, "Meta is required"], -- Assuming optional for now
+  },
+  expectedOutput: {
+    type: String,
+    required: [true, "Expected output is required"],
+  },
+});
+
 const questionSchema = new Schema({
   title: {
     type: String,
@@ -17,16 +36,23 @@ const questionSchema = new Schema({
       validator: (value) => {
         return value.length > 0;
       },
-      message: "At least one topic is required",
     },
   },
   difficulty: {
     type: String,
     enum: {
       values: ["EASY", "MEDIUM", "HARD"],
-      message: "{VALUE} is not a valid difficulty level",
     },
     required: true,
+  },
+  testCases: {
+    type: [testCaseSchema],
+    required: [true, "Test cases are required"],
+    validate: {
+      validator: (value) => {
+        return value.length > 0;
+      },
+    },
   },
   isDeleted: {
     type: Boolean,
