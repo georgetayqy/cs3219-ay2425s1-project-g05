@@ -115,7 +115,6 @@ const validateNewQuestion = (req, res, next) => {
 // VALIDATION MIDDLEWARE - UPDATE QUESTION
 const validateUpdatedQuestion = (req, res, next) => {
   const questionToUpdate = req.body;
-  console.log("no error?");
   console.log(questionToUpdate);
   if (questionToUpdate.difficulty) {
     questionToUpdate.difficulty = questionToUpdate.difficulty.toUpperCase();
@@ -126,11 +125,8 @@ const validateUpdatedQuestion = (req, res, next) => {
     );
   }
   const { error } = joiPartialQuestionSchema.validate(req.body);
-  console.log(error);
-  console.log("no error?");
 
   if (error) {
-    console.log(error);
     throw new BadRequestError(error.details[0].message);
   }
 
