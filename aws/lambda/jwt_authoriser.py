@@ -18,13 +18,13 @@ def decode_jwt(token: str):
 
 def lambda_handler(event, context):
     try:
-        authHeader = event["headers"].get("Authorization", None)
-        cookieHeader = event["headers"].get("Cookie", None)
+        authHeader = event["headers"].get("Authorization", event["headers"].get("authorization", None))
+        cookieHeader = event["headers"].get("Cookie", event["headers"].get("cookie", None))
         methodArn = event["methodArn"]
         
         if authHeader:
             principalUser = decode_jwt(authHeader)
-        else:
+        elif cookieHeader:
             cookieHeader = cookieHeader.split(";")
             principalUser = None
             
@@ -33,6 +33,8 @@ def lambda_handler(event, context):
                 
                 if key == "accessToken":
                     principalUser = decode_jwt(value)
+        else:
+            raise Exception("Unauthorized")
         
         principalEmail = principalUser.get('email')
         principalDisplayName = principalUser.get('displayName')
