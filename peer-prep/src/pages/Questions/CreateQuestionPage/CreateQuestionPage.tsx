@@ -20,7 +20,8 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 import classes from "./CreateQuestionPage.module.css";
-import { TestCase } from "../../../types/question";
+import { Question, QuestionOlsd, TestCase } from "../../../types/question";
+import useApi, { QuestionServerResponse } from "../../../hooks/useApi";
 
 export default function CreateQuestionPage() {
   const [name, setName] = useState("");
@@ -29,7 +30,7 @@ export default function CreateQuestionPage() {
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]); 
 
-  const [fetchedCategories, setFetchedCategories] = useState<string[]>([]);
+  const [fetchedCategories, setFetchedCategories] = useState<{ value: string; label: string; }[]>([]);
 
   // Mapping for difficulty display
   const difficultyOptions = [
@@ -42,13 +43,11 @@ export default function CreateQuestionPage() {
     fetchCategories();
   } , []);
 
+  const { fetchData, isLoading, error } = useApi();
+
   const fetchCategories = async () => {
     try {
-      // TODO: replace fetch with a fetchdata function
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/question-service/categories`
-      );
-      const categories = await response.json();
+      const categories = await fetchData<QuestionServerResponse<string[]>>("/question-service/categories");
 
       const transformedCategories = categories.data.map((category: string) => ({
         value: category.toUpperCase(), 
@@ -64,28 +63,33 @@ export default function CreateQuestionPage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    // TODO: replace fetch with a fetchdata function
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/question-service`,
+    // Remove _id from test cases
+    const updatedTestCases = testCases.map(({ _id, ...rest }) => ({
+      ...rest,
+    }));
+
+    const response = await fetchData<QuestionServerResponse<Question>>(
+      "/question-service",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({
           title: name,
           description: { testDescription: description },
           categories,
           difficulty,
-          testCases,
+          testCases: updatedTestCases,
         }),
       }
     );
-    if (response.ok) {
-      // Redirect to question page
+
+    if (response.success) {
+      alert("Question added successfully.");
       window.location.href = "/questions";
     } else {
+      console.log("Failed to update question.", response);
       alert("Failed to update question.");
     }
   };
@@ -160,7 +164,10 @@ export default function CreateQuestionPage() {
             </ReactQuill>
           </Input.Wrapper> */}
 
-          <Text className={classes.testCaseHeader}>Test Cases</Text>
+          <Flex style={{ alignItems: "baseline", gap: 4 }}>
+            <Text className={classes.testCaseHeader}>Test Cases</Text>
+            <Text style={{ color: "red" }}>*</Text>
+          </Flex>
 
           <Stack>
             {testCases.map((testCase, index) => (

@@ -5,8 +5,8 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 import classes from "./EditQuestionPage.module.css";
-import { TestCase } from "../../../types/question";
-import useApi from "../../../hooks/useApi";
+import { Question, QuestionOlsd, TestCase } from "../../../types/question";
+import useApi, { QuestionServerResponse } from "../../../hooks/useApi";
 
 export default function EditQuestionPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,7 +16,7 @@ export default function EditQuestionPage() {
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]); 
 
-  const [fetchedCategories, setFetchedCategories] = useState<string[]>([]);
+  const [fetchedCategories, setFetchedCategories] = useState<{ value: string; label: string; }[]>([]);
 
   // Mapping for difficulty display
   const difficultyOptions = [
@@ -36,18 +36,17 @@ export default function EditQuestionPage() {
 
   const fetchQuestionDetails = async (questionId: string) => {
     try {
-      // TODO: replace fetch with a fetchdata function
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/question-service/id/${questionId}`
-      );
-      const question = await response.json();
-      const questionData = question.data;
-      console.log("Question details:", questionData);
-      setName(questionData.title);
-      setDifficulty(questionData.difficulty);
-      setCategories(questionData.categories);
-      setDescription(questionData.description.testDescription);
-      setTestCases(questionData.testCases);
+      const response = await fetchData<QuestionServerResponse<Question>>(`/question-service/id/${questionId}`);
+
+      if (response.success) {
+        const question = response.data;
+        setName(question.title);
+        setDifficulty(question.difficulty);
+        setCategories(question.categories);
+        setDescription(question.description.testDescription);
+        setTestCases(question.testCases);
+      }
+
     } catch (error) {
       console.error("Error fetching question details:", error);
     }
@@ -55,11 +54,7 @@ export default function EditQuestionPage() {
 
   const fetchCategories = async () => {
     try {
-      const categories = await fetchData<[]>("/question-service/categories");
-      // const response = await fetch(
-      //   `${import.meta.env.VITE_API_URL}/question-service/categories`
-      // );
-      // const categories = await response.json();
+      const categories = await fetchData<QuestionServerResponse<string[]>>("/question-service/categories");
 
       const transformedCategories = categories.data.map((category: string) => ({
         value: category.toUpperCase(), 
@@ -75,44 +70,51 @@ export default function EditQuestionPage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/question-service/id/${id}`,
+    // Remove _id from test cases
+    const updatedTestCases = testCases.map(({ _id, ...rest }) => ({
+      ...rest,
+    }));
+
+    const response = await fetchData<QuestionServerResponse<Question>>(
+      `/question-service/id/${id}`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({
           title: name,
           description: { testDescription: description },
           categories,
           difficulty,
-          testCases,
+          testCases: updatedTestCases,
         }),
       }
     );
-  
-    // const response = await fetchData(`/question-service/id/${id}`, {
-    //   method: "PUT",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     title: name,
-    //     description: { testDescription: description },
-    //     categories,
-    //     difficulty,
-    //     testCases,
-    //   }),
-    // });
 
-    if (response.ok) {
+    if (response.success) {
       alert("Question updated successfully!");
     } else {
       alert("Failed to update question.");
     }
   };
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetchData<QuestionServerResponse<Question>>(`/question-service/id/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.success) {
+        alert("Question deleted successfully!");
+        window.location.href = "/questions";
+      } else {
+        alert("Failed to delete question.");
+      }
+    } catch (error) {
+      console.error("Error deleting question:", error);
+    }
+  }
 
   const addTestCase = () => {
     setTestCases([...testCases, { testCode: "", isPublic: false, meta: {}, expectedOutput: "" }]);
@@ -127,11 +129,6 @@ export default function EditQuestionPage() {
     updatedTestCases[index][field] = value;
     setTestCases(updatedTestCases);
   };
-
-  const handleDelete = async () => {
-    // TODO: add logic to delete the question from the database
-    console.log("Deleting question with id:", id);
-  }
 
   return (
     <Container mt={48}>
@@ -178,7 +175,10 @@ export default function EditQuestionPage() {
           </ReactQuill>
         </Input.Wrapper> */}
 
-        <Text className={classes.testCaseHeader}>Test Cases</Text>
+        <Flex style={{ alignItems: "baseline", gap: 4 }}>
+          <Text className={classes.testCaseHeader}>Test Cases</Text>
+          <Text style={{ color: "red" }}>*</Text>
+        </Flex>
 
         <Stack>
           {testCases.map((testCase, index) => (
