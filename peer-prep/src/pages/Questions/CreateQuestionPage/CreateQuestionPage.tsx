@@ -50,21 +50,25 @@ export default function CreateQuestionPage() {
 
   const fetchCategories = async () => {
     try {
-      const categories = await fetchData<QuestionServerResponse<string[]>>(
-        "/question-service/categories"
-      );
+      const response = await fetchData<QuestionServerResponse<string[]>>("/question-service/categories");
 
-      const transformedCategories = categories.data.map((category: string) => ({
-        value: category.toUpperCase(),
-        label:
-          category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
-      }));
-
-      setFetchedCategories(transformedCategories);
-    } catch (error) {
+      if (response.success) {
+        const categories = response.data;
+        const transformedCategories = categories.map((category: string) => ({
+          value: category.toUpperCase(), 
+          label: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(), 
+        }));
+        setFetchedCategories(transformedCategories);
+      } else {
+        notifications.show({
+          message: response.message || "Error fetching categories, please try again later.",
+          color: "red",
+        });
+      }
+    } catch (error: any) {
       console.error("Error fetching categories", error);
       notifications.show({
-        message: "Error getting question categories, please try again later.",
+        message: error.message,
         color: "red",
       });
     }
@@ -100,22 +104,10 @@ export default function CreateQuestionPage() {
         alert("Question created successfully!");
         window.location.href = "/questions";
       } else {
-        switch (response.status) {
-          case 400:
-            alert("Bad Request: Validation error.");
-            break;
-          case 403:
-            alert("Forbidden: You are not authorized.");
-            break;
-          case 409:
-            alert("Conflict: This question may already exist.");
-            break;
-          case 500:
-            alert("Server Error: There was an error creating the question.");
-            break;
-          default:
-            alert("An unexpected error occurred.");
-        }
+        notifications.show({
+          message: response.message || "Error creating question, please try again later.",
+          color: "red",
+        });
       }
     } catch (error: any) {
       console.log("Error creating question:", error);

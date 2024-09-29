@@ -46,33 +46,45 @@ export default function EditQuestionPage() {
         setCategories(question.categories);
         setDescription(question.description.testDescription);
         setTestCases(question.testCases);
+      } else {
+        notifications.show({
+          message: response.message || "Error fetching question details, please try again later.",
+          color: "red",
+        });
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching question details:", error);
       notifications.show({
-        message: "Error getting question details, please try again later.",
+        message: error.message,
         color: "red",
-      })
+      });
     }
   };
 
   const fetchCategories = async () => {
     try {
-      const categories = await fetchData<QuestionServerResponse<string[]>>("/question-service/categories");
+      const response = await fetchData<QuestionServerResponse<string[]>>("/question-service/categories");
 
-      const transformedCategories = categories.data.map((category: string) => ({
-        value: category.toUpperCase(), 
-        label: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(), 
-      }));
-
-      setFetchedCategories(transformedCategories);
-    } catch (error) {
+      if (response.success) {
+        const categories = response.data;
+        const transformedCategories = categories.map((category: string) => ({
+          value: category.toUpperCase(), 
+          label: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(), 
+        }));
+        setFetchedCategories(transformedCategories);
+      } else {
+        notifications.show({
+          message: response.message || "Error fetching categories, please try again later.",
+          color: "red",
+        });
+      }
+    } catch (error: any) {
       console.error("Error fetching categories", error);
       notifications.show({
-        message: "Error getting question categories, please try again later.",
+        message: error.message,
         color: "red",
-      })
+      });
     }
   }
 
@@ -109,16 +121,16 @@ export default function EditQuestionPage() {
         })
       } else {
         notifications.show({
-          message: "Error updating question, please try again later.",
+          message: response.message || "Error updating question, please try again later.",
           color: "red",
         })
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating question:", error);
       notifications.show({
-        message: "Error updating question, please try again later.",
+        message: error.message,
         color: "red",
-      })
+      });
     }
   };
 
@@ -136,14 +148,14 @@ export default function EditQuestionPage() {
         window.location.href = "/questions";
       } else {
         notifications.show({
-          message: "Error deleting question, please try again later.",
+          message: response.message || "Error deleting question, please try again later.",
           color: "red",
         })
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting question:", error);
       notifications.show({
-        message: "Error deleting question, please try again later.",
+        message: error.message,
         color: "red",
       })
     }
