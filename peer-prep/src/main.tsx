@@ -23,6 +23,7 @@ import QuestionPage from "./pages/Questions/QuestionPage.tsx";
 import CreateQuestionPage from "./pages/Questions/CreateQuestionPage/CreateQuestionPage.tsx";
 import EditQuestionPage from "./pages/Questions/EditQuestionPage/EditQuestionPage.tsx";
 import { Notifications } from "@mantine/notifications";
+import AdminRouteWrapper from "./pages/AdminRouteWrapper.tsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -36,36 +37,46 @@ const router = createBrowserRouter([
         path: "/login",
         element: <LoginOrRegisterPage />,
       },
-      {
-        path: "/questions",
-        children: [
-          {
-            path: "/questions",
-            element: <QuestionPage />,
-            loader: async () =>
-              fetch(
-                `${import.meta.env.VITE_API_URL_QUESTION}/question-service`
-              ),
-            // fetch(
-            //   `https://virtserver.swaggerhub.com/PeerPrep/question-service/1.0.0/api/question-service`
-            // ),
-          },
-          {
-            path: "/questions/create",
-            element: <CreateQuestionPage />,
-          },
-          {
-            path: "/questions/edit/:id",
-            element: <EditQuestionPage />,
-          },
-        ],
-      },
 
       // Protected routes below
       {
         path: "/",
         element: <ProtectedRouteWrapper />,
         children: [
+          // admin-only routes
+          {
+            path: "/",
+            element: <AdminRouteWrapper />,
+            children: [
+              {
+                path: "/questions",
+                children: [
+                  {
+                    path: "/questions",
+                    element: <QuestionPage />,
+                    loader: async () =>
+                      fetch(
+                        `${
+                          import.meta.env.VITE_API_URL_QUESTION
+                        }/question-service`
+                      ),
+                    // fetch(
+                    //   `https://virtserver.swaggerhub.com/PeerPrep/question-service/1.0.0/api/question-service`
+                    // ),
+                  },
+                  {
+                    path: "/questions/create",
+                    element: <CreateQuestionPage />,
+                  },
+                  {
+                    path: "/questions/edit/:id",
+                    element: <EditQuestionPage />,
+                  },
+                ],
+              },
+            ],
+          },
+
           {
             path: "/dashboard",
             element: <DashboardPage />,
