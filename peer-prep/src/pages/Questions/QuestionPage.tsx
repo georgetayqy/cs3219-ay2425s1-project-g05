@@ -46,16 +46,17 @@ export default function QuestionPage() {
       </Container>
 
       <section>
-        {/* <Container mt="4rem"> */}
-        <Box px={"xl"} mt="4rem">
-          <Flex className={classes["question-list"]}>
-            {questions.map((question, key) => ( 
-              <QuestionCard key={key} question={question} isClickable />
-            ))}
-          </Flex>
-        </Box>
-        {/* </Container> */}
+        <Container mt="4rem">
+          <Box px={"xl"} mt="4rem">
+            <Flex className={classes["question-list"]}>
+              {questions.map((question, key) => ( 
+                <QuestionCard key={key} question={question} isClickable />
+              ))}
+            </Flex>
+          </Box>
+        </Container>
       </section>
+
     </>
   );
 }

@@ -54,7 +54,6 @@ export default function QuestionCard({
         </Flex>
         <Divider />
         <Flex justify={"space-between"} align={"center"}>
-          {/* TODO: send question difficulty in lower case */}
           <ComplexityDisplay complexity={question.difficulty} /> 
           <Button
             color="black"

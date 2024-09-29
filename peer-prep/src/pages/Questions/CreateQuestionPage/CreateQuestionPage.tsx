@@ -131,7 +131,14 @@ export default function CreateQuestionPage() {
             data={fetchedCategories} 
             required
           />
-          <Input.Wrapper label="Description" required>
+          <Textarea
+            label={'Description'}
+            value={description}
+            onChange={(event) => setDescription(event.currentTarget.value)}
+            minRows={8}
+            required
+          />
+          {/* <Input.Wrapper label="Description" required>
             <ReactQuill
               theme="snow"
               value={description}
@@ -151,10 +158,11 @@ export default function CreateQuestionPage() {
             >
               <div className={classes.quillEditor} />
             </ReactQuill>
-          </Input.Wrapper>
+          </Input.Wrapper> */}
+
+          <Text className={classes.testCaseHeader}>Test Cases</Text>
 
           <Stack>
-            <Text>Test Cases</Text>
             {testCases.map((testCase, index) => (
               <Card key={index} shadow="sm" padding="lg" radius="md">
                 <Textarea

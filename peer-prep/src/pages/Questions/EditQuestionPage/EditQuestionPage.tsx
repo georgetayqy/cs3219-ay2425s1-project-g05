@@ -75,7 +75,6 @@ export default function EditQuestionPage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    // TODO: replace fetch with a fetchdata function
     const response = await fetch(
       `${import.meta.env.VITE_API_URL}/question-service/id/${id}`,
       {
@@ -93,6 +92,21 @@ export default function EditQuestionPage() {
         }),
       }
     );
+  
+    // const response = await fetchData(`/question-service/id/${id}`, {
+    //   method: "PUT",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify({
+    //     title: name,
+    //     description: { testDescription: description },
+    //     categories,
+    //     difficulty,
+    //     testCases,
+    //   }),
+    // });
+
     if (response.ok) {
       alert("Question updated successfully!");
     } else {
@@ -144,29 +158,29 @@ export default function EditQuestionPage() {
           multiple
           required
         />
-        <Input.Wrapper label="Description" required>
+        <Textarea
+          label={'Description'}
+          value={description}
+          onChange={(event) => setDescription(event.currentTarget.value)}
+          minRows={8}
+          required
+        />
+
+        {/* <Input.Wrapper label="Description" required>
           <ReactQuill
             theme="snow"
             value={description}
-            onChange={setDescription}
+            onChange={newDescription => setDescription(newDescription)}
             style={{ height: "576px", marginTop: "12px" }}
-            modules={{
-              toolbar: [
-                "bold",
-                "underline",
-                "italic",
-                "link",
-                "blockquote",
-                "code-block",
-                "image",
-              ],
-            }}
+            modules={ modules }
           >
             <div className={classes.quillEditor} />
           </ReactQuill>
-        </Input.Wrapper>
+        </Input.Wrapper> */}
+
+        <Text className={classes.testCaseHeader}>Test Cases</Text>
+
         <Stack>
-          <Text>Test Cases</Text>
           {testCases.map((testCase, index) => (
             <Card key={index} shadow="sm" padding="lg" radius="md">
               <Textarea
@@ -195,7 +209,7 @@ export default function EditQuestionPage() {
           ))}
           <Button 
             onClick={addTestCase} 
-            style={{ width: 'fit-content' }}
+            style={{ width: 'fit-content', marginTop: '8px'}}
           >  
             Add Test Case
           </Button>        
