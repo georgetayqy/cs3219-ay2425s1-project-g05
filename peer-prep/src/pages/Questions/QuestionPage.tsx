@@ -15,7 +15,7 @@ import { IconSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Question, SAMPLE_QUESTIONS } from "../../types/question";
 import useApi, { QuestionServerResponse } from "../../hooks/useApi";
-import { useLoaderData } from "react-router-dom";
+import { Link, useLoaderData } from "react-router-dom";
 import QuestionCard from "../../components/Questions/QuestionCard/QuestionCard";
 
 import classes from "./QuestionPage.module.css";
@@ -54,8 +54,11 @@ export default function QuestionPage() {
       </Container>
 
       <Container mt={16}>
-        <Button component="a" href="/questions/create">
+        {/* <Button component="a" href="/questions/create">
           Add New Question
+        </Button> */}
+        <Button component={Link} to="/questions/create">
+          Add new question
         </Button>
       </Container>
 
