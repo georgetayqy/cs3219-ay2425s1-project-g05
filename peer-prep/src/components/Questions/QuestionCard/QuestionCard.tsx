@@ -38,13 +38,10 @@ export default function QuestionCard({
   return (
     <Box className={classes.card} onClick={handleCardClick}>
       <Stack className={classes.contents}>
-        <Title order={3}> {question.title} </Title>
-        <Text
-          style={{
-            whiteSpace: "pre-wrap",
-            flex: 1,
-          }}
-        >
+        <Title order={3} className={classes.title}>
+          {question.title}
+        </Title>
+        <Text className={classes.description}>
           {question.description.testDescription }
         </Text>
         <Flex gap={"md"} justify={"end"}>

@@ -1,7 +1,8 @@
-.question-list {
-  display: flex;
-  /* flex-direction: column; */
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
+.question-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); 
+  width: 66%;
+  justify-content: center;
+  margin: 0 auto;
+  row-gap: 2rem;
 }

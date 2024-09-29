@@ -59,17 +59,11 @@ export default function QuestionPage() {
         </Button>
       </Container>
 
-      <section>
-        <Container mt="4rem">
-          <Box px={"xl"} mt="4rem">
-            <Flex className={classes["question-list"]}>
-              {questions.map((question, key) => (
-                <QuestionCard key={key} question={question} isClickable />
-              ))}
-            </Flex>
-          </Box>
-        </Container>
-      </section>
+      <Box px={"xl"} mt="4rem" className={classes["question-grid"]}>
+        {questions.map((question, key) => (
+          <QuestionCard key={key} question={question} isClickable />
+        ))}
+      </Box>
     </>
   );
 }
