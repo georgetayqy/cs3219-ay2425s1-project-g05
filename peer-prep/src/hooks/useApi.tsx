@@ -56,10 +56,13 @@ export default function useApi() {
         setUser(null);
         navigate("/login");
       }
-      if (!response.ok) {
-        throw new Error("Failed to fetch data");
-      }
+
       const data: T = await response.json();
+
+      if (!response.ok) {
+        // @ts-ignore
+        throw new Error(data!.message);
+      }
 
       // setData(data);
       return data;

@@ -3,6 +3,7 @@ import { createContext, ReactElement, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "../types/user";
 import useApi from "./useApi";
+import { notifications } from "@mantine/notifications";
 
 export interface AuthContextType {
   user: User | null;
@@ -55,9 +56,21 @@ export const AuthProvider = ({
         setUser(DEFAULT_TEMP_USER);
         console.log(data, "<<<<");
         navigate("/dashboard", { replace: true });
+
+        notifications.show({
+          message: "Welcome to PeerPrep!",
+          title: "Login successful",
+          color: "green",
+        });
       })
       .catch((e) => {
-        console.error("ERROR:: Login failed");
+        console.log("ERROR:: Login failed", e);
+
+        notifications.show({
+          message: e.toString(),
+          title: "Error - Login failed!",
+          color: "red",
+        });
       });
   };
 
@@ -72,15 +85,29 @@ export const AuthProvider = ({
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
-    }).then((_) => {
-      // ok!
-      // need to login to set cookie
-      login({
-        email: data.email,
-        password: data.password,
+    })
+      .then((_) => {
+        // ok!
+        notifications.show({
+          message: "Registration successful",
+          color: "green",
+        });
+
+        // need to login to set cookie
+        login({
+          email: data.email,
+          password: data.password,
+        });
+        return;
+      })
+      .catch((e) => {
+        console.error("ERROR:: Registration failed");
+
+        notifications.show({
+          message: "Registration failed",
+          color: "red",
+        });
       });
-      return;
-    });
     // const response = await fetch(`/user-service/users`);
 
     // if (!response.ok) {
@@ -108,6 +135,12 @@ export const AuthProvider = ({
         // ok!
         setUser(null);
         navigate("/", { replace: true });
+
+        notifications.show({
+          message: "Logged out",
+          title: "Success",
+          color: "green",
+        });
       })
       .catch((e) => {
         console.error("ERROR:: Logout failed");

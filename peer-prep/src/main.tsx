@@ -11,6 +11,7 @@ import Home from "./pages/Home/HomePage.tsx";
 import LoginOrRegisterPage from "./pages/Login/LoginPage.tsx";
 import { Button, createTheme, MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 
 import ApplicationWrapper from "./components/ApplicationWrapper.tsx";
 import ProtectedRouteWrapper from "./pages/ProtectedRouteWrapper.tsx";
@@ -21,6 +22,7 @@ import CreateSessionPage from "./pages/Session/Create/CreateSessionPage.tsx";
 import QuestionPage from "./pages/Questions/QuestionPage.tsx";
 import CreateQuestionPage from "./pages/Questions/CreateQuestionPage/CreateQuestionPage.tsx";
 import EditQuestionPage from "./pages/Questions/EditQuestionPage/EditQuestionPage.tsx";
+import { Notifications } from "@mantine/notifications";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -108,6 +110,7 @@ const theme = createTheme({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <MantineProvider theme={theme}>
+      <Notifications />
       <RouterProvider router={router}></RouterProvider>
     </MantineProvider>
     {/* <BrowserRouter>
