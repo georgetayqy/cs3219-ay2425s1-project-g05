@@ -31,21 +31,18 @@ export default function QuestionCard({
 
   const handleCardClick = () => {
     if (isClickable) {
-      navigate(`/questions/edit/${question.id}`);
+      navigate(`/questions/edit/${question._id}`);
     }
   }
 
   return (
     <Box className={classes.card} onClick={handleCardClick}>
       <Stack className={classes.contents}>
-        <Title order={3}> {question.title} </Title>
-        <Text
-          style={{
-            whiteSpace: "pre-wrap",
-            flex: 1,
-          }}
-        >
-          {question.shortDescription}
+        <Title order={3} className={classes.title}>
+          {question.title}
+        </Title>
+        <Text className={classes.description}>
+          {question.description.testDescription }
         </Text>
         <Flex gap={"md"} justify={"end"}>
           {question.categories.map((category, index) => (
@@ -54,7 +51,7 @@ export default function QuestionCard({
         </Flex>
         <Divider />
         <Flex justify={"space-between"} align={"center"}>
-          <ComplexityDisplay complexity={question.complexity} />
+          <ComplexityDisplay complexity={question.difficulty} /> 
           <Button
             color="black"
             size="compact-md"

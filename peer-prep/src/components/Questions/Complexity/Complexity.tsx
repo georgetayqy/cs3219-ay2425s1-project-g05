@@ -7,13 +7,13 @@ export default function ComplexityDisplay({
   complexity: Complexity;
 }) {
   let rating = 0;
-  if (complexity == "easy") {
+  if (complexity == "EASY") {
     rating = 1;
-  } else if (complexity == "medium") {
+  } else if (complexity == "MEDIUM") {
     rating = 2;
-  } else if (complexity == "hard") {
+  } else if (complexity == "HARD") {
     rating = 3;
   }
 
-  return <Rating value={rating} readOnly />;
+  return <Rating defaultValue={rating} count={3} readOnly />;
 }

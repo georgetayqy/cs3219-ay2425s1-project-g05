@@ -1,8 +1,12 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { TextInput, Select, Textarea, Button, Container } from "@mantine/core";
+import { TextInput, Select, Textarea, Text, Button, Container, MultiSelect, Input, Stack, Flex, Switch, Card, Center, Divider } from "@mantine/core";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+
+import classes from "./EditQuestionPage.module.css";
+import { Question, QuestionOlsd, TestCase } from "../../../types/question";
+import useApi, { QuestionServerResponse } from "../../../hooks/useApi";
 
 export default function EditQuestionPage() {
   const { id } = useParams<{ id: string }>();
@@ -10,62 +14,121 @@ export default function EditQuestionPage() {
   const [difficulty, setDifficulty] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
-  const [testCases, setTestCases] = useState("");
+  const [testCases, setTestCases] = useState<TestCase[]>([]); 
+
+  const [fetchedCategories, setFetchedCategories] = useState<{ value: string; label: string; }[]>([]);
+
+  // Mapping for difficulty display
+  const difficultyOptions = [
+    { value: "EASY", label: "Easy" },
+    { value: "MEDIUM", label: "Medium" },
+    { value: "HARD", label: "Hard" },
+  ];
 
   useEffect(() => {
     if (typeof id === "string") {
       fetchQuestionDetails(id);
+      fetchCategories();
     }
   }, [id]);
 
+  const { fetchData, isLoading, error } = useApi();
+
   const fetchQuestionDetails = async (questionId: string) => {
     try {
-      // TODO: fetch question details from the database
-      // const response = await fetch(
-      //   `${import.meta.env.VITE_API_URL}/question-service/${questionId}`
-      // );
-      // const question = await response.json();
-      // setName(question.name);
-      // setDifficulty(question.difficulty);
-      // setCategories(question.categories);
-      // setDescription(question.description);
-      // setTestCases(question.testCases);
+      const response = await fetchData<QuestionServerResponse<Question>>(`/question-service/id/${questionId}`);
+
+      if (response.success) {
+        const question = response.data;
+        setName(question.title);
+        setDifficulty(question.difficulty);
+        setCategories(question.categories);
+        setDescription(question.description.testDescription);
+        setTestCases(question.testCases);
+      }
+
     } catch (error) {
       console.error("Error fetching question details:", error);
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const categories = await fetchData<QuestionServerResponse<string[]>>("/question-service/categories");
+
+      const transformedCategories = categories.data.map((category: string) => ({
+        value: category.toUpperCase(), 
+        label: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(), 
+      }));
+
+      setFetchedCategories(transformedCategories);
+    } catch (error) {
+      console.error("Error fetching categories", error);
+    }
+  }
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    console.log("Updating question with id:", id);
-    // TODO: add logic to update the question in the database
-    // const response = await fetch(
-    //   `${import.meta.env.VITE_API_URL}/question-service/${id}`,
-    //   {
-    //     method: "PUT",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({
-    //       name,
-    //       difficulty,
-    //       categories,
-    //       description,
-    //       testCases,
-    //     }),
-    //   }
-    // );
-    // if (response.ok) {
-    //   alert("Question updated successfully!");
-    // } else {
-    //   alert("Failed to update question.");
-    // }
+
+    // Remove _id from test cases
+    const updatedTestCases = testCases.map(({ _id, ...rest }) => ({
+      ...rest,
+    }));
+
+    const response = await fetchData<QuestionServerResponse<Question>>(
+      `/question-service/id/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: name,
+          description: { testDescription: description },
+          categories,
+          difficulty,
+          testCases: updatedTestCases,
+        }),
+      }
+    );
+
+    if (response.success) {
+      alert("Question updated successfully!");
+    } else {
+      alert("Failed to update question.");
+    }
   };
 
   const handleDelete = async () => {
-    // TODO: add logic to delete the question from the database
-    console.log("Deleting question with id:", id);
+    try {
+      const response = await fetchData<QuestionServerResponse<Question>>(`/question-service/id/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.success) {
+        alert("Question deleted successfully!");
+        window.location.href = "/questions";
+      } else {
+        alert("Failed to delete question.");
+      }
+    } catch (error) {
+      console.error("Error deleting question:", error);
+    }
   }
+
+  const addTestCase = () => {
+    setTestCases([...testCases, { testCode: "", isPublic: false, meta: {}, expectedOutput: "" }]);
+  };
+
+  const removeTestCase = (index: number) => {
+    setTestCases(testCases.filter((_, i) => i !== index));
+  };
+
+  const handleTestCaseChange = (index: number, field: keyof TestCase, value: any) => {
+    const updatedTestCases = [...testCases];
+    updatedTestCases[index][field] = value;
+    setTestCases(updatedTestCases);
+  };
 
   return (
     <Container mt={48}>
@@ -73,39 +136,91 @@ export default function EditQuestionPage() {
       <form onSubmit={handleSubmit}>
         <TextInput
           label="Name"
-          value="dummy name"
+          value={name}
           onChange={(event) => setName(event.currentTarget.value)}
           required
         />
         <Select
           label="Difficulty"
-          value="Easy"
+          value={difficulty}
           onChange={(value: string | null) => setDifficulty(value)}
-          data={["Easy", "Medium", "Hard"]}
+          data={difficultyOptions}
           required
         />
-        <Select
+        <MultiSelect
           label="Categories"
-          value="Category 1"
+          value={categories}
           onChange={(value: string[]) => setCategories(value)}
-          data={["Category 1", "Category 2", "Category 3"]}
+          data={fetchedCategories}
           multiple
           required
         />
-        <ReactQuill
-          theme="snow"
-          value="DUMMY DESCRIPTION for now, to update with actual question description"
-          onChange={setDescription}
-          style={{ height: "200px", marginTop: "12px" }}
-        />
         <Textarea
-          label="Test Cases"
-          value={testCases}
-          onChange={(event) => setTestCases(event.currentTarget.value)}
-          style={{ marginTop: '48px' }}
+          label={'Description'}
+          value={description}
+          onChange={(event) => setDescription(event.currentTarget.value)}
+          minRows={8}
+          required
         />
-        <Button type="submit" style={{ marginTop: '12px' }}>Update Question</Button>
-        <Button type="button" style={{ marginTop: '12px', marginLeft: "8px", backgroundColor: "red"}} onClick={handleDelete}>Delete Question</Button>
+
+        {/* <Input.Wrapper label="Description" required>
+          <ReactQuill
+            theme="snow"
+            value={description}
+            onChange={newDescription => setDescription(newDescription)}
+            style={{ height: "576px", marginTop: "12px" }}
+            modules={ modules }
+          >
+            <div className={classes.quillEditor} />
+          </ReactQuill>
+        </Input.Wrapper> */}
+
+        <Flex style={{ alignItems: "baseline", gap: 4 }}>
+          <Text className={classes.testCaseHeader}>Test Cases</Text>
+          <Text style={{ color: "red" }}>*</Text>
+        </Flex>
+
+        <Stack>
+          {testCases.map((testCase, index) => (
+            <Card key={index} shadow="sm" padding="lg" radius="md">
+              <Textarea
+                label={`Test Code ${index + 1}`}
+                value={testCase.testCode}
+                onChange={(event) => handleTestCaseChange(index, 'testCode', event.currentTarget.value)}
+                minRows={8}
+                required
+              />
+              <Textarea
+                label={`Expected Output ${index + 1}`}
+                value={testCase.expectedOutput}
+                onChange={(event) => handleTestCaseChange(index, 'expectedOutput', event.currentTarget.value)}
+                minRows={8}
+                required
+              />
+              <Flex justify="space-between" align="center" style={{ paddingTop: 12 }}>
+                <Switch
+                  label={"Public Test Case"}
+                  checked={testCase.isPublic}
+                  onChange={(event) => handleTestCaseChange(index, 'isPublic', event.currentTarget.checked)}
+                />
+                <Button color="red" onClick={() => removeTestCase(index)}>Remove Test Case</Button>
+              </Flex>
+            </Card>
+          ))}
+          <Button 
+            onClick={addTestCase} 
+            style={{ width: 'fit-content', marginTop: '8px'}}
+          >  
+            Add Test Case
+          </Button>        
+        </Stack>
+
+        <Divider my="md" />
+        
+        <Center>
+          <Button type="submit" style={{ marginTop: '12px' }}>Update Question</Button>
+          <Button type="button" style={{ marginTop: '12px', marginLeft: "8px", backgroundColor: "red"}} onClick={handleDelete}>Delete Question</Button>
+        </Center>
       </form>
     </Container>
   );
