@@ -72,7 +72,7 @@ export const AuthProvider = ({
         console.log("ERROR:: Login failed", e);
 
         notifications.show({
-          message: e.toString(),
+          message: e.message || "Login failed",
           title: "Error - Login failed!",
           color: "red",
         });
@@ -109,7 +109,8 @@ export const AuthProvider = ({
         console.error("ERROR:: Registration failed");
 
         notifications.show({
-          message: "Registration failed",
+          message: e.message || "Registration failed",
+          title: "Error - Registration failed!",
           color: "red",
         });
       });
