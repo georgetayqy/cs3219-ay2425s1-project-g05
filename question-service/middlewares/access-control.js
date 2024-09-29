@@ -5,7 +5,7 @@ const checkAdmin = (req, res, next) => {
     console.log(req.cookies);
     const { isAdmin }= req.cookies;
 
-    if (isAdmin === 'true') {
+    if (isAdmin) {
         return next();
     } else {
         throw new ForbiddenError("You are not authorized to perform this action");
