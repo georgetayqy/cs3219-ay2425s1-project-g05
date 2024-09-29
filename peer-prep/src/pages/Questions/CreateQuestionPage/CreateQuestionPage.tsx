@@ -144,6 +144,7 @@ export default function CreateQuestionPage() {
     value: any
   ) => {
     const updatedTestCases = [...testCases];
+    // @ts-ignore
     updatedTestCases[index][field] = value;
     setTestCases(updatedTestCases);
   };
