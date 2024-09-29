@@ -29,9 +29,11 @@ export default function CreateQuestionPage() {
   const [difficulty, setDifficulty] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
-  const [testCases, setTestCases] = useState<TestCase[]>([]); 
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
 
-  const [fetchedCategories, setFetchedCategories] = useState<{ value: string; label: string; }[]>([]);
+  const [fetchedCategories, setFetchedCategories] = useState<
+    { value: string; label: string }[]
+  >([]);
 
   // Mapping for difficulty display
   const difficultyOptions = [
@@ -42,17 +44,20 @@ export default function CreateQuestionPage() {
 
   useEffect(() => {
     fetchCategories();
-  } , []);
+  }, []);
 
   const { fetchData, isLoading, error } = useApi();
 
   const fetchCategories = async () => {
     try {
-      const categories = await fetchData<QuestionServerResponse<string[]>>("/question-service/categories");
+      const categories = await fetchData<QuestionServerResponse<string[]>>(
+        "/question-service/categories"
+      );
 
       const transformedCategories = categories.data.map((category: string) => ({
-        value: category.toUpperCase(), 
-        label: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(), 
+        value: category.toUpperCase(),
+        label:
+          category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
       }));
 
       setFetchedCategories(transformedCategories);
@@ -61,9 +66,9 @@ export default function CreateQuestionPage() {
       notifications.show({
         message: "Error getting question categories, please try again later.",
         color: "red",
-      })
+      });
     }
-  }
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -90,7 +95,7 @@ export default function CreateQuestionPage() {
           }),
         }
       );
-  
+
       if (response.success) {
         alert("Question created successfully!");
         window.location.href = "/questions";
@@ -112,24 +117,31 @@ export default function CreateQuestionPage() {
             alert("An unexpected error occurred.");
         }
       }
-    } catch (error) {
-      console.error("Error creating question:", error);
+    } catch (error: any) {
+      console.log("Error creating question:", error);
       notifications.show({
-        message: "Error creating question, please ensure question is not a duplicate and all fields are filled out correctly.",
+        message: error.message,
         color: "red",
-      })
+      });
     }
   };
 
   const addTestCase = () => {
-    setTestCases([...testCases, { testCode: "", isPublic: false, meta: {}, expectedOutput: "" }]);
+    setTestCases([
+      ...testCases,
+      { testCode: "", isPublic: false, meta: {}, expectedOutput: "" },
+    ]);
   };
 
   const removeTestCase = (index: number) => {
     setTestCases(testCases.filter((_, i) => i !== index));
   };
 
-  const handleTestCaseChange = (index: number, field: keyof TestCase, value: any) => {
+  const handleTestCaseChange = (
+    index: number,
+    field: keyof TestCase,
+    value: any
+  ) => {
     const updatedTestCases = [...testCases];
     updatedTestCases[index][field] = value;
     setTestCases(updatedTestCases);
@@ -159,11 +171,11 @@ export default function CreateQuestionPage() {
             label="Categories"
             value={categories}
             onChange={(value: string[]) => setCategories(value)}
-            data={fetchedCategories} 
+            data={fetchedCategories}
             required
           />
           <Textarea
-            label={'Description'}
+            label={"Description"}
             value={description}
             onChange={(event) => setDescription(event.currentTarget.value)}
             minRows={8}
@@ -202,41 +214,60 @@ export default function CreateQuestionPage() {
                 <Textarea
                   label={`Test Code ${index + 1}`}
                   value={testCase.testCode}
-                  onChange={(event) => handleTestCaseChange(index, 'testCode', event.currentTarget.value)}
+                  onChange={(event) =>
+                    handleTestCaseChange(
+                      index,
+                      "testCode",
+                      event.currentTarget.value
+                    )
+                  }
                   minRows={8}
                   required
                 />
                 <Textarea
                   label={`Expected Output ${index + 1}`}
                   value={testCase.expectedOutput}
-                  onChange={(event) => handleTestCaseChange(index, 'expectedOutput', event.currentTarget.value)}
+                  onChange={(event) =>
+                    handleTestCaseChange(
+                      index,
+                      "expectedOutput",
+                      event.currentTarget.value
+                    )
+                  }
                   minRows={8}
                   required
                 />
-                <Flex justify="space-between" align="center" style={{ paddingTop: 12 }}>
+                <Flex
+                  justify="space-between"
+                  align="center"
+                  style={{ paddingTop: 12 }}
+                >
                   <Switch
                     label={"Public Test Case"}
                     checked={testCase.isPublic}
-                    onChange={(event) => handleTestCaseChange(index, 'isPublic', event.currentTarget.checked)}
+                    onChange={(event) =>
+                      handleTestCaseChange(
+                        index,
+                        "isPublic",
+                        event.currentTarget.checked
+                      )
+                    }
                   />
-                  <Button color="red" onClick={() => removeTestCase(index)}>Remove Test Case</Button>
+                  <Button color="red" onClick={() => removeTestCase(index)}>
+                    Remove Test Case
+                  </Button>
                 </Flex>
               </Card>
             ))}
-            <Button 
-              onClick={addTestCase} 
-              style={{ width: 'fit-content'}}
-            >  
+            <Button onClick={addTestCase} style={{ width: "fit-content" }}>
               Add Test Case
-            </Button>        
+            </Button>
           </Stack>
 
           <Divider my="md" />
 
           <Center>
-            <Button type="submit">
-              Submit
-            </Button>
+            <Button type="submit">Submit</Button>
           </Center>
         </Stack>
       </form>

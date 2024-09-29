@@ -8,12 +8,17 @@ export interface QuestionServerResponse<T> {
   success: boolean;
   status: number;
   data: T;
+  message?: string;
 }
 
 export interface UserServerResponse<T> {
   user?: T;
   message: string;
 }
+
+// export interface ServerError {
+//   message: string;
+// }
 
 export default function useApi() {
   // const [data, setData] = useState<T | null>(null);
@@ -27,7 +32,7 @@ export default function useApi() {
     defaultValue: null,
   });
 
-  async function fetchData<T>(
+  async function fetchData<Q>(
     url: string,
     options?: RequestInit,
     suppressWarning?: boolean
@@ -57,11 +62,12 @@ export default function useApi() {
         navigate("/login");
       }
 
-      const data: T = await response.json();
+      const data: Q = await response.json();
 
       if (!response.ok) {
+        console.log("RESPONSE NOT OK!");
         // @ts-ignore
-        throw new Error(data!.message);
+        throw data;
       }
 
       // setData(data);
