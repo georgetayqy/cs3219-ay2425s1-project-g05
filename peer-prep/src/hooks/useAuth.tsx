@@ -2,7 +2,7 @@ import { useLocalStorage } from "@mantine/hooks";
 import { createContext, ReactElement, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "../types/user";
-import useApi, { UserServerResponse } from "./useApi";
+import useApi, { SERVICE, UserServerResponse } from "./useApi";
 import { notifications } from "@mantine/notifications";
 
 export interface AuthContextType {
@@ -45,13 +45,17 @@ export const AuthProvider = ({
 
   // call this function when you want to authenticate the user
   const login = async (data: { email: string; password: string }) => {
-    fetchData<UserServerResponse<User>>(`/user-service/users/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    })
+    fetchData<UserServerResponse<User>>(
+      `/user-service/users/login`,
+      SERVICE.USER,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    )
       .then((data) => {
         // ok!
         setUser(data.user || null);
@@ -80,7 +84,7 @@ export const AuthProvider = ({
     password: string;
     displayName: string;
   }) => {
-    fetchData(`/user-service/users`, {
+    fetchData(`/user-service/users`, SERVICE.USER, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -125,7 +129,7 @@ export const AuthProvider = ({
 
   // call this function to sign out logged in user
   const logout = () => {
-    fetchData(`/user-service/users/logout`, {
+    fetchData(`/user-service/users/logout`, SERVICE.USER, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

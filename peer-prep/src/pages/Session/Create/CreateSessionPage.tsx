@@ -14,7 +14,7 @@ import classes from "./CreateSessionPage.module.css";
 import { useEffect, useState } from "react";
 import { capitalizeFirstLetter } from "../../../utils/utils";
 import { Link, useLoaderData } from "react-router-dom";
-import useApi, { QuestionServerResponse } from "../../../hooks/useApi";
+import useApi, { QuestionServerResponse, SERVICE } from "../../../hooks/useApi";
 
 // Arrays
 // Algorithms
@@ -30,7 +30,8 @@ export default function CreateSessionPage() {
   const { fetchData } = useApi();
   useEffect(() => {
     fetchData<QuestionServerResponse<string[]>>(
-      `/question-service/categories`
+      `/question-service/categories`,
+      SERVICE.QUESTION
     ).then((data) => {
       if (data.success) {
         setCategories(data.data);

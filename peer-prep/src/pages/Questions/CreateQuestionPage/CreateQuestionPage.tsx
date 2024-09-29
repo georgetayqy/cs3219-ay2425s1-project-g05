@@ -21,12 +21,12 @@ import "react-quill/dist/quill.snow.css";
 
 import classes from "./CreateQuestionPage.module.css";
 import { Question, QuestionOlsd, TestCase } from "../../../types/question";
-import useApi, { QuestionServerResponse } from "../../../hooks/useApi";
+import useApi, { QuestionServerResponse, SERVICE } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 
 export default function CreateQuestionPage() {
   const [name, setName] = useState("");
-  const [difficulty, setDifficulty] = useState<string | null>('EASY');
+  const [difficulty, setDifficulty] = useState<string | null>("EASY");
   const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -50,18 +50,24 @@ export default function CreateQuestionPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetchData<QuestionServerResponse<string[]>>("/question-service/categories");
+      const response = await fetchData<QuestionServerResponse<string[]>>(
+        "/question-service/categories",
+        SERVICE.QUESTION
+      );
 
       if (response.success) {
         const categories = response.data;
         const transformedCategories = categories.map((category: string) => ({
-          value: category.toUpperCase(), 
-          label: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(), 
+          value: category.toUpperCase(),
+          label:
+            category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
         }));
         setFetchedCategories(transformedCategories);
       } else {
         notifications.show({
-          message: response.message || "Error fetching categories, please try again later.",
+          message:
+            response.message ||
+            "Error fetching categories, please try again later.",
           color: "red",
         });
       }
@@ -85,6 +91,7 @@ export default function CreateQuestionPage() {
     try {
       const response = await fetchData<QuestionServerResponse<Question>>(
         "/question-service",
+        SERVICE.QUESTION,
         {
           method: "POST",
           headers: {
@@ -105,7 +112,9 @@ export default function CreateQuestionPage() {
         window.location.href = "/questions";
       } else {
         notifications.show({
-          message: response.message || "Error creating question, please try again later.",
+          message:
+            response.message ||
+            "Error creating question, please try again later.",
           color: "red",
         });
       }

@@ -1,12 +1,27 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { TextInput, Select, Textarea, Text, Button, Container, MultiSelect, Input, Stack, Flex, Switch, Card, Center, Divider } from "@mantine/core";
+import {
+  TextInput,
+  Select,
+  Textarea,
+  Text,
+  Button,
+  Container,
+  MultiSelect,
+  Input,
+  Stack,
+  Flex,
+  Switch,
+  Card,
+  Center,
+  Divider,
+} from "@mantine/core";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 import classes from "./EditQuestionPage.module.css";
 import { Question, QuestionOlsd, TestCase } from "../../../types/question";
-import useApi, { QuestionServerResponse } from "../../../hooks/useApi";
+import useApi, { QuestionServerResponse, SERVICE } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 
 export default function EditQuestionPage() {
@@ -15,9 +30,11 @@ export default function EditQuestionPage() {
   const [difficulty, setDifficulty] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
-  const [testCases, setTestCases] = useState<TestCase[]>([]); 
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
 
-  const [fetchedCategories, setFetchedCategories] = useState<{ value: string; label: string; }[]>([]);
+  const [fetchedCategories, setFetchedCategories] = useState<
+    { value: string; label: string }[]
+  >([]);
 
   // Mapping for difficulty display
   const difficultyOptions = [
@@ -37,7 +54,10 @@ export default function EditQuestionPage() {
 
   const fetchQuestionDetails = async (questionId: string) => {
     try {
-      const response = await fetchData<QuestionServerResponse<Question>>(`/question-service/id/${questionId}`);
+      const response = await fetchData<QuestionServerResponse<Question>>(
+        `/question-service/id/${questionId}`,
+        SERVICE.QUESTION
+      );
 
       if (response.success) {
         const question = response.data;
@@ -48,11 +68,12 @@ export default function EditQuestionPage() {
         setTestCases(question.testCases);
       } else {
         notifications.show({
-          message: response.message || "Error fetching question details, please try again later.",
+          message:
+            response.message ||
+            "Error fetching question details, please try again later.",
           color: "red",
         });
       }
-
     } catch (error: any) {
       console.error("Error fetching question details:", error);
       notifications.show({
@@ -64,18 +85,24 @@ export default function EditQuestionPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetchData<QuestionServerResponse<string[]>>("/question-service/categories");
+      const response = await fetchData<QuestionServerResponse<string[]>>(
+        "/question-service/categories",
+        SERVICE.QUESTION
+      );
 
       if (response.success) {
         const categories = response.data;
         const transformedCategories = categories.map((category: string) => ({
-          value: category.toUpperCase(), 
-          label: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(), 
+          value: category.toUpperCase(),
+          label:
+            category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
         }));
         setFetchedCategories(transformedCategories);
       } else {
         notifications.show({
-          message: response.message || "Error fetching categories, please try again later.",
+          message:
+            response.message ||
+            "Error fetching categories, please try again later.",
           color: "red",
         });
       }
@@ -86,7 +113,7 @@ export default function EditQuestionPage() {
         color: "red",
       });
     }
-  }
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -99,6 +126,7 @@ export default function EditQuestionPage() {
     try {
       const response = await fetchData<QuestionServerResponse<Question>>(
         `/question-service/id/${id}`,
+        SERVICE.QUESTION,
         {
           method: "PUT",
           headers: {
@@ -113,17 +141,19 @@ export default function EditQuestionPage() {
           }),
         }
       );
-  
+
       if (response.success) {
         notifications.show({
           message: "Question updated successfully!",
           color: "green",
-        })
+        });
       } else {
         notifications.show({
-          message: response.message || "Error updating question, please try again later.",
+          message:
+            response.message ||
+            "Error updating question, please try again later.",
           color: "red",
-        })
+        });
       }
     } catch (error: any) {
       console.error("Error updating question:", error);
@@ -136,40 +166,53 @@ export default function EditQuestionPage() {
 
   const handleDelete = async () => {
     try {
-      const response = await fetchData<QuestionServerResponse<Question>>(`/question-service/id/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetchData<QuestionServerResponse<Question>>(
+        `/question-service/id/${id}`,
+        SERVICE.QUESTION,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (response.success) {
         notifications.show({
           message: "Question deleted successfully!",
           color: "green",
-        })
+        });
         window.location.href = "/questions";
       } else {
         notifications.show({
-          message: response.message || "Error deleting question, please try again later.",
+          message:
+            response.message ||
+            "Error deleting question, please try again later.",
           color: "red",
-        })
+        });
       }
     } catch (error: any) {
       console.error("Error deleting question:", error);
       notifications.show({
         message: error.message,
         color: "red",
-      })
+      });
     }
-  }
+  };
 
   const addTestCase = () => {
-    setTestCases([...testCases, { testCode: "", isPublic: false, meta: {}, expectedOutput: "" }]);
+    setTestCases([
+      ...testCases,
+      { testCode: "", isPublic: false, meta: {}, expectedOutput: "" },
+    ]);
   };
 
   const removeTestCase = (index: number) => {
     setTestCases(testCases.filter((_, i) => i !== index));
   };
 
-  const handleTestCaseChange = (index: number, field: keyof TestCase, value: any) => {
+  const handleTestCaseChange = (
+    index: number,
+    field: keyof TestCase,
+    value: any
+  ) => {
     const updatedTestCases = [...testCases];
     updatedTestCases[index][field] = value;
     setTestCases(updatedTestCases);
@@ -201,7 +244,7 @@ export default function EditQuestionPage() {
           required
         />
         <Textarea
-          label={'Description'}
+          label={"Description"}
           value={description}
           onChange={(event) => setDescription(event.currentTarget.value)}
           minRows={8}
@@ -231,40 +274,76 @@ export default function EditQuestionPage() {
               <Textarea
                 label={`Test Code ${index + 1}`}
                 value={testCase.testCode}
-                onChange={(event) => handleTestCaseChange(index, 'testCode', event.currentTarget.value)}
+                onChange={(event) =>
+                  handleTestCaseChange(
+                    index,
+                    "testCode",
+                    event.currentTarget.value
+                  )
+                }
                 minRows={8}
                 required
               />
               <Textarea
                 label={`Expected Output ${index + 1}`}
                 value={testCase.expectedOutput}
-                onChange={(event) => handleTestCaseChange(index, 'expectedOutput', event.currentTarget.value)}
+                onChange={(event) =>
+                  handleTestCaseChange(
+                    index,
+                    "expectedOutput",
+                    event.currentTarget.value
+                  )
+                }
                 minRows={8}
                 required
               />
-              <Flex justify="space-between" align="center" style={{ paddingTop: 12 }}>
+              <Flex
+                justify="space-between"
+                align="center"
+                style={{ paddingTop: 12 }}
+              >
                 <Switch
                   label={"Public Test Case"}
                   checked={testCase.isPublic}
-                  onChange={(event) => handleTestCaseChange(index, 'isPublic', event.currentTarget.checked)}
+                  onChange={(event) =>
+                    handleTestCaseChange(
+                      index,
+                      "isPublic",
+                      event.currentTarget.checked
+                    )
+                  }
                 />
-                <Button color="red" onClick={() => removeTestCase(index)}>Remove Test Case</Button>
+                <Button color="red" onClick={() => removeTestCase(index)}>
+                  Remove Test Case
+                </Button>
               </Flex>
             </Card>
           ))}
-          <Button 
-            onClick={addTestCase} 
-            style={{ width: 'fit-content', marginTop: '8px'}}
-          >  
+          <Button
+            onClick={addTestCase}
+            style={{ width: "fit-content", marginTop: "8px" }}
+          >
             Add Test Case
-          </Button>        
+          </Button>
         </Stack>
 
         <Divider my="md" />
-        
+
         <Center>
-          <Button type="submit" style={{ marginTop: '12px' }}>Update Question</Button>
-          <Button type="button" style={{ marginTop: '12px', marginLeft: "8px", backgroundColor: "red"}} onClick={handleDelete}>Delete Question</Button>
+          <Button type="submit" style={{ marginTop: "12px" }}>
+            Update Question
+          </Button>
+          <Button
+            type="button"
+            style={{
+              marginTop: "12px",
+              marginLeft: "8px",
+              backgroundColor: "red",
+            }}
+            onClick={handleDelete}
+          >
+            Delete Question
+          </Button>
         </Center>
       </form>
     </Container>

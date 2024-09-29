@@ -43,7 +43,9 @@ const router = createBrowserRouter([
             path: "/questions",
             element: <QuestionPage />,
             loader: async () =>
-              fetch(`${import.meta.env.VITE_API_URL}/question-service`),
+              fetch(
+                `${import.meta.env.VITE_API_URL_QUESTION}/question-service`
+              ),
             // fetch(
             //   `https://virtserver.swaggerhub.com/PeerPrep/question-service/1.0.0/api/question-service`
             // ),

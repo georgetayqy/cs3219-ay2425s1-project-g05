@@ -20,6 +20,11 @@ export interface UserServerResponse<T> {
 //   message: string;
 // }
 
+export enum SERVICE {
+  USER,
+  QUESTION,
+}
+
 export default function useApi() {
   // const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,21 +39,30 @@ export default function useApi() {
 
   async function fetchData<Q>(
     url: string,
+    service: SERVICE,
     options?: RequestInit,
     suppressWarning?: boolean
   ) {
     setIsLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}${url}`, {
-        ...options,
-        headers: {
-          ...options?.headers,
-          "x-api-key": import.meta.env.VITE_API_KEY as string,
-          // bearer token
-          // "Authorization": `Bearer ${accessToken}`,
-        },
-        credentials: "include",
-      });
+      // todo make this nicer...
+      const response = await fetch(
+        `${
+          service === SERVICE.USER
+            ? import.meta.env.VITE_API_URL_USER
+            : import.meta.env.VITE_API_URL_QUESTION
+        }${url}`,
+        {
+          ...options,
+          headers: {
+            ...options?.headers,
+            // "x-api-key": import.meta.env.VITE_API_KEY as string,
+            // bearer token
+            // "Authorization": `Bearer ${accessToken}`,
+          },
+          credentials: "include",
+        }
+      );
 
       // if the response status indicates not logged in, clear data and redirect to login
       // if (response.status === 401) {
