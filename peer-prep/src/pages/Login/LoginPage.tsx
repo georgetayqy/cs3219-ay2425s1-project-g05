@@ -19,7 +19,7 @@ import classes from "./LoginPage.module.css";
 import image from "../../assets/loginimage.svg";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 function PasswordRequirement({
@@ -45,9 +45,8 @@ function PasswordRequirement({
 
 const requirements = [
   { re: /[0-9]/, label: "Includes number" },
-  { re: /[a-z]/, label: "Includes lowercase letter" },
-  { re: /[A-Z]/, label: "Includes uppercase letter" },
-  { re: /[$&+,:;=?@#|'<>.^*()%!-]/, label: "Includes special symbol" },
+  { re: /[a-zA-Z]/, label: "Includes alphabets" },
+  { label: "At least 8 characters", re: /.{8,}/ },
 ];
 
 function getStrength(password: string) {
@@ -72,14 +71,16 @@ export default function LoginOrRegisterPage() {
   }
 
   // if register mode from query params, show register form
-  const query = new URLSearchParams(window.location.search);
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
+  const param = searchParams.get("register");
   useEffect(() => {
-    const register = query.get("register");
-    console.log({ query: query.get("register") });
-    if (register) {
+    if (param) {
       setLoginMode(false);
+    } else {
+      setLoginMode(true);
     }
-  }, []);
+  }, [param]);
 
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -108,32 +109,6 @@ export default function LoginOrRegisterPage() {
       password,
       displayName,
     });
-
-    // fetch(`/user-service/users`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     email,
-    //     password,
-    //     displayName,
-    //   }),
-    // })
-    //   .then((response) => {
-    //     setIsLoading(false);
-    //     if (!response.ok) {
-    //       throw new Error("Failed to register");
-    //     }
-    //     return response.json();
-    //   })
-    //   .then((data) => {
-    //     console.log("Registered", data);
-    //     login({ email, password });
-    //   })
-    //   .catch((error) => {
-    //     console.error("Failed to register", error);
-    //   });
   };
 
   const strength = getStrength(password);
@@ -144,6 +119,10 @@ export default function LoginOrRegisterPage() {
       meets={requirement.re.test(password)}
     />
   ));
+
+  const canRegister = requirements.every((requirement) =>
+    requirement.re.test(password)
+  );
   const bars = Array(4)
     .fill(0)
     .map((_, index) => (
@@ -162,110 +141,139 @@ export default function LoginOrRegisterPage() {
       />
     ));
 
+  function onSubmit() {
+    if (loginMode) {
+      handleLogin();
+    } else {
+      handleRegister();
+    }
+  }
+
   return (
     // <div className={classes.wrapper}>
-    <Flex>
-      <Flex
-        flex={1}
-        className={classes["left-image-container"]}
-        justify={"center"}
-        align={"center"}
-      >
-        <Image
-          fit="contain"
-          src={image}
-          className={classes["left-image"]}
-        ></Image>
-      </Flex>
-      <Flex className={classes.form}>
-        <Title order={2} className={classes.title} ta="center" mt="md" mb={36}>
-          Welcome {loginMode && "back"} to PeerPrep!
-        </Title>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+    >
+      <Flex>
+        <Flex
+          flex={1}
+          className={classes["left-image-container"]}
+          justify={"center"}
+          align={"center"}
+        >
+          <Image
+            fit="contain"
+            src={image}
+            className={classes["left-image"]}
+          ></Image>
+        </Flex>
+        <Flex className={classes.form}>
+          <Title
+            order={2}
+            className={classes.title}
+            ta="center"
+            mt="md"
+            mb={36}
+          >
+            Welcome {loginMode && "back"} to PeerPrep!
+          </Title>
 
-        {!loginMode && (
+          {!loginMode && (
+            <TextInput
+              label="Display name"
+              placeholder="Your display name"
+              size="md"
+              required
+              onChange={(event) => setDisplayName(event.currentTarget.value)}
+              value={displayName}
+            />
+          )}
+
           <TextInput
-            label="Display name"
-            placeholder="Your display name"
+            label="Email address"
+            placeholder="hello@gmail.com"
             size="md"
+            mt="md"
             required
-            onChange={(event) => setDisplayName(event.currentTarget.value)}
-            value={displayName}
+            onChange={(event) => setEmail(event.currentTarget.value)}
+            value={email}
+            // email must include an "@"
+            pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
           />
-        )}
+          <PasswordInput
+            label="Password"
+            placeholder="Your password"
+            mt="md"
+            required
+            size="md"
+            onChange={(event) => setPassword(event.currentTarget.value)}
+            value={password}
+          />
+          {!loginMode && (
+            <Group gap={5} grow mt="xs" mb="md">
+              {bars}
+            </Group>
+          )}
 
-        <TextInput
-          label="Email address"
-          placeholder="hello@gmail.com"
-          size="md"
-          mt="md"
-          required
-          onChange={(event) => setEmail(event.currentTarget.value)}
-          value={email}
-        />
-        <PasswordInput
-          label="Password"
-          placeholder="Your password"
-          mt="md"
-          required
-          size="md"
-          onChange={(event) => setPassword(event.currentTarget.value)}
-          value={password}
-        />
-        {!loginMode && (
-          <Group gap={5} grow mt="xs" mb="md">
-            {bars}
-          </Group>
-        )}
-
-        {!loginMode && (
+          {/* {!loginMode && (
           <PasswordRequirement
             label="Has at least 6 characters"
             meets={password.length > 5}
           />
-        )}
-        {!loginMode && checks}
-        <Checkbox label="Keep me logged in" mt="xl" size="md" />
-        {loginMode ? (
-          <Button fullWidth mt="xl" size="md" onClick={handleLogin}>
-            Login
-          </Button>
-        ) : (
-          <Button fullWidth mt="xl" size="md" onClick={handleRegister}>
-            Register
-          </Button>
-        )}
-
-        {loginMode ? (
-          <Text ta="center" mt="md">
-            Don&apos;t have an account?{" "}
-            <Anchor<"a">
-              href="#"
-              fw={700}
-              onClick={(event) => {
-                event.preventDefault();
-                setLoginMode(false);
-              }}
+        )} */}
+          {!loginMode && checks}
+          <Checkbox label="Keep me logged in" mt="xl" size="md" />
+          {loginMode ? (
+            <Button fullWidth mt="xl" size="md" type="submit">
+              Login
+            </Button>
+          ) : (
+            <Button
+              disabled={!canRegister}
+              fullWidth
+              mt="xl"
+              size="md"
+              type="submit"
             >
               Register
-            </Anchor>
-          </Text>
-        ) : (
-          <Text ta="center" mt="md">
-            Already have an account?{" "}
-            <Anchor<"a">
-              href="#"
-              fw={700}
-              onClick={(event) => {
-                event.preventDefault();
-                setLoginMode(true);
-              }}
-            >
-              Login instead
-            </Anchor>
-          </Text>
-        )}
+            </Button>
+          )}
+
+          {loginMode ? (
+            <Text ta="center" mt="md">
+              Don&apos;t have an account?{" "}
+              <Anchor<"a">
+                href="#"
+                fw={700}
+                onClick={(event) => {
+                  event.preventDefault();
+                  setLoginMode(false);
+                }}
+              >
+                Register
+              </Anchor>
+            </Text>
+          ) : (
+            <Text ta="center" mt="md">
+              Already have an account?{" "}
+              <Anchor<"a">
+                href="#"
+                fw={700}
+                onClick={(event) => {
+                  event.preventDefault();
+                  setLoginMode(true);
+                }}
+              >
+                Login instead
+              </Anchor>
+            </Text>
+          )}
+        </Flex>
       </Flex>
-    </Flex>
+    </form>
     // </div>
   );
 }
