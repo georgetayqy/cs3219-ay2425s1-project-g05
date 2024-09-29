@@ -26,7 +26,7 @@ import { notifications } from "@mantine/notifications";
 
 export default function CreateQuestionPage() {
   const [name, setName] = useState("");
-  const [difficulty, setDifficulty] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<string | null>('EASY');
   const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
