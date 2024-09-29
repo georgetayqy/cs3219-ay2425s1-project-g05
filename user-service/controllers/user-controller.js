@@ -18,7 +18,7 @@ export async function loginUser(req, res) {
         }
 
         // Delete password field from user object
-        const returnedUser = { ...user}
+        const returnedUser = { ...user }
         delete returnedUser.password
 
         // Check if password is correct
@@ -31,9 +31,9 @@ export async function loginUser(req, res) {
         const accessToken = generateAccessToken(user);
         console.log(accessToken)
         if (process.env.NODE_ENV === 'DEV') {
-            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true, sameSite: 'none', secure: true }); // 5 minutes
+            res.cookie('accessToken', accessToken, { httpOnly: true, sameSite: 'none', secure: true }); // 60 minutes
         } else {
-            res.cookie('accessToken', accessToken, { expires: new Date(Date.now() + (5 * 60 * 1000)), httpOnly: true }); // 5 minutes
+            res.cookie('accessToken', accessToken, { httpOnly: true }); // 60 minutes
         }
 
         return res.status(200).json({ message: "Login successful", user: returnedUser })
@@ -85,7 +85,11 @@ export async function createUser(req, res) {
             return res.status(500).json({ message: "Unknown server error" })
         }
 
-        return res.status(201).json({ message: "New user created successfully" })
+        // Delete password field from user object
+        const returnedUser = { ...user }
+        delete returnedUser.password
+
+        return res.status(201).json({ message: "New user created successfully", user: returnedUser })
     } catch (error) {
         console.log(error)
         return res.status(500).json({ message: "Unknown server error" })
@@ -114,10 +118,14 @@ export async function deleteUser(req, res) {
             return res.status(500).json({ message: "Unknown server error" })
         }
 
+        // Delete password field from user object
+        const returnedUser = { ...user }
+        delete returnedUser.password
+
         // Clear access token cookie
         res.clearCookie('accessToken');
 
-        return res.status(200).json({ message: "User deleted successfully" })
+        return res.status(200).json({ message: "User deleted successfully", user: returnedUser })
     } catch (error) {
         console.log(error)
         return res.status(500).json({ message: "Unknown server error" })
@@ -162,7 +170,11 @@ export async function changePassword(req, res) {
             return res.status(500).json({ message: "Unknown server error" })
         }
 
-        return res.status(200).json({ message: "User password updated successfully" })
+        // Delete password field from user object
+        const returnedUser = { ...updatedUser }
+        delete returnedUser.password
+
+        return res.status(200).json({ message: "User password updated successfully", user: returnedUser })
     } catch (error) {
         return res.status(500).json({ message: "Unknown server error" })
     }
@@ -190,7 +202,11 @@ export async function changeDisplayName(req, res) {
             return res.status(500).json({ message: "Unknown server error" })
         }
 
-        return res.status(200).json({ message: "User display name updated successfully" })
+        // Delete password field from user object
+        const returnedUser = { ...updatedUser }
+        delete returnedUser.password
+
+        return res.status(200).json({ message: "User display name updated successfully", user: returnedUser })
     } catch (error) {
         return res.status(500).json({ message: "Unknown server error" })
     }
