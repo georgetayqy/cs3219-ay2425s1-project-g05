@@ -57,6 +57,7 @@ export default function CreateQuestionPage() {
       setFetchedCategories(transformedCategories);
     } catch (error) {
       console.error("Error fetching categories", error);
+      alert(error);
     }
   }
 
@@ -68,31 +69,51 @@ export default function CreateQuestionPage() {
       ...rest,
     }));
 
-    const response = await fetchData<QuestionServerResponse<Question>>(
-      "/question-service",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: name,
-          description: { testDescription: description },
-          categories,
-          difficulty,
-          testCases: updatedTestCases,
-        }),
+    try {
+      const response = await fetchData<QuestionServerResponse<Question>>(
+        "/question-service",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: name,
+            description: { testDescription: description },
+            categories,
+            difficulty,
+            testCases: updatedTestCases,
+          }),
+        }
+      );
+  
+      if (response.success) {
+        alert("Question created successfully!");
+        window.location.href = "/questions";
+      } else {
+        switch (response.status) {
+          case 400:
+            alert("Bad Request: Validation error.");
+            break;
+          case 403:
+            alert("Forbidden: You are not authorized.");
+            break;
+          case 409:
+            alert("Conflict: This question may already exist.");
+            break;
+          case 500:
+            alert("Server Error: There was an error creating the question.");
+            break;
+          default:
+            alert("An unexpected error occurred.");
+        }
       }
-    );
-
-    if (response.success) {
-      alert("Question added successfully.");
-      window.location.href = "/questions";
-    } else {
-      console.log("Failed to update question.", response);
-      alert("Failed to update question.");
+    } catch (error) {
+      console.error("Error creating question:", error);
+      alert(error);
     }
   };
+
 
   const addTestCase = () => {
     setTestCases([...testCases, { testCode: "", isPublic: false, meta: {}, expectedOutput: "" }]);
