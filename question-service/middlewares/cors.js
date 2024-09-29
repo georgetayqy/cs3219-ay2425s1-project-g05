@@ -1,6 +1,9 @@
 import cors from "cors";
 
 const allowedOrigins = [
+  "http://localhost:5173", // frontend dev
+  "http://peerprep.s3-website-ap-southeast-1.amazonaws.com", // frontend prod
+  "http://peerprep-frontend-bucket.s3-website-ap-southeast-1.amazonaws.com", // frontend staging
   "http://localhost:8000",
   "http://localhost:8001",
   "http://localhost:8002",
@@ -15,8 +18,8 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
 
