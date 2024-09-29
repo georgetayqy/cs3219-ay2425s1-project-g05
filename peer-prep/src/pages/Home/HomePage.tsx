@@ -115,9 +115,12 @@ export default function Home() {
   );
 }
 
-export function Feature({ icon: Icon, title, description }: FeatureProps) {
+export function Feature(
+  { icon: Icon, title, description }: FeatureProps,
+  index: number
+) {
   return (
-    <div>
+    <div key={index}>
       <ThemeIcon variant="light" size={40} radius={40}>
         <Icon style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
       </ThemeIcon>
