@@ -42,9 +42,9 @@ const router = createBrowserRouter([
             element: <QuestionPage />,
             loader: async () =>
               fetch(`${import.meta.env.VITE_API_URL}/question-service`),
-              // fetch(
-              //   `https://virtserver.swaggerhub.com/PeerPrep/question-service/1.0.0/api/question-service`
-              // ),
+            // fetch(
+            //   `https://virtserver.swaggerhub.com/PeerPrep/question-service/1.0.0/api/question-service`
+            // ),
           },
           {
             path: "/questions/create",
@@ -77,6 +77,15 @@ const router = createBrowserRouter([
               {
                 path: "/session/create",
                 element: <CreateSessionPage />,
+                // loader: async () => {
+                //   return await Promise.all([
+                //     fetch(
+                //       `${
+                //         import.meta.env.VITE_API_URL
+                //       }/question-service/categories`
+                //     ),
+                //   ]);
+                // },
               },
               {
                 path: "/session/search",

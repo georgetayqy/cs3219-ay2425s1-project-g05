@@ -11,9 +11,10 @@ import {
   Title,
 } from "@mantine/core";
 import classes from "./CreateSessionPage.module.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { capitalizeFirstLetter } from "../../../utils/utils";
-import { Link } from "react-router-dom";
+import { Link, useLoaderData } from "react-router-dom";
+import useApi, { QuestionServerResponse } from "../../../hooks/useApi";
 
 // Arrays
 // Algorithms
@@ -26,6 +27,18 @@ import { Link } from "react-router-dom";
 
 export default function CreateSessionPage() {
   // TODO: query the question service to get a list of categories and difficulties
+  const { fetchData } = useApi();
+  useEffect(() => {
+    fetchData<QuestionServerResponse<string[]>>(
+      `/question-service/categories`
+    ).then((data) => {
+      if (data.success) {
+        setCategories(data.data);
+
+        console.log(data.data);
+      }
+    });
+  }, []);
 
   const [categories, setCategories] = useState<string[]>([
     "Arrays",
@@ -50,6 +63,15 @@ export default function CreateSessionPage() {
 
   const canSearch =
     selectedCategories.length > 0 && selectedDifficulties.length > 0;
+
+  // const data = useLoaderData() as ServerResponse<[string[]]>;
+
+  // useEffect(() => {
+  //   console.log("data from preload:", data);
+  //   if (data.data) {
+  //     setCategories(data.data[0]);
+  //   }
+  // }, [data]);
   return (
     <>
       <Flex className={classes.wrapper}>
