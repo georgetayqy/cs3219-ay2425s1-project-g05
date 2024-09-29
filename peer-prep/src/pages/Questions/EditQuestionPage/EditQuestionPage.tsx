@@ -7,6 +7,7 @@ import "react-quill/dist/quill.snow.css";
 import classes from "./EditQuestionPage.module.css";
 import { Question, QuestionOlsd, TestCase } from "../../../types/question";
 import useApi, { QuestionServerResponse } from "../../../hooks/useApi";
+import { notifications } from "@mantine/notifications";
 
 export default function EditQuestionPage() {
   const { id } = useParams<{ id: string }>();
@@ -49,6 +50,10 @@ export default function EditQuestionPage() {
 
     } catch (error) {
       console.error("Error fetching question details:", error);
+      notifications.show({
+        message: "Error getting question details, please try again later.",
+        color: "red",
+      })
     }
   };
 
@@ -64,6 +69,10 @@ export default function EditQuestionPage() {
       setFetchedCategories(transformedCategories);
     } catch (error) {
       console.error("Error fetching categories", error);
+      notifications.show({
+        message: "Error getting question categories, please try again later.",
+        color: "red",
+      })
     }
   }
 
@@ -75,27 +84,41 @@ export default function EditQuestionPage() {
       ...rest,
     }));
 
-    const response = await fetchData<QuestionServerResponse<Question>>(
-      `/question-service/id/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: name,
-          description: { testDescription: description },
-          categories,
-          difficulty,
-          testCases: updatedTestCases,
-        }),
+    try {
+      const response = await fetchData<QuestionServerResponse<Question>>(
+        `/question-service/id/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: name,
+            description: { testDescription: description },
+            categories,
+            difficulty,
+            testCases: updatedTestCases,
+          }),
+        }
+      );
+  
+      if (response.success) {
+        notifications.show({
+          message: "Question updated successfully!",
+          color: "green",
+        })
+      } else {
+        notifications.show({
+          message: "Error updating question, please try again later.",
+          color: "red",
+        })
       }
-    );
-
-    if (response.success) {
-      alert("Question updated successfully!");
-    } else {
-      alert("Failed to update question.");
+    } catch (error) {
+      console.error("Error updating question:", error);
+      notifications.show({
+        message: "Error updating question, please try again later.",
+        color: "red",
+      })
     }
   };
 
@@ -106,13 +129,23 @@ export default function EditQuestionPage() {
       });
 
       if (response.success) {
-        alert("Question deleted successfully!");
+        notifications.show({
+          message: "Question deleted successfully!",
+          color: "green",
+        })
         window.location.href = "/questions";
       } else {
-        alert("Failed to delete question.");
+        notifications.show({
+          message: "Error deleting question, please try again later.",
+          color: "red",
+        })
       }
     } catch (error) {
       console.error("Error deleting question:", error);
+      notifications.show({
+        message: "Error deleting question, please try again later.",
+        color: "red",
+      })
     }
   }
 

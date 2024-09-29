@@ -22,6 +22,7 @@ import "react-quill/dist/quill.snow.css";
 import classes from "./CreateQuestionPage.module.css";
 import { Question, QuestionOlsd, TestCase } from "../../../types/question";
 import useApi, { QuestionServerResponse } from "../../../hooks/useApi";
+import { notifications } from "@mantine/notifications";
 
 export default function CreateQuestionPage() {
   const [name, setName] = useState("");
@@ -57,7 +58,10 @@ export default function CreateQuestionPage() {
       setFetchedCategories(transformedCategories);
     } catch (error) {
       console.error("Error fetching categories", error);
-      alert(error);
+      notifications.show({
+        message: "Error getting question categories, please try again later.",
+        color: "red",
+      })
     }
   }
 
@@ -110,10 +114,12 @@ export default function CreateQuestionPage() {
       }
     } catch (error) {
       console.error("Error creating question:", error);
-      alert(error);
+      notifications.show({
+        message: "Error creating question, please ensure question is not a duplicate and all fields are filled out correctly.",
+        color: "red",
+      })
     }
   };
-
 
   const addTestCase = () => {
     setTestCases([...testCases, { testCode: "", isPublic: false, meta: {}, expectedOutput: "" }]);
