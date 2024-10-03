@@ -36,7 +36,7 @@ export async function loginUser(req, res) {
             res.cookie('accessToken', accessToken, { httpOnly: true }); // 60 minutes
         }
 
-        return res.status(200).json({ message: "Login successful", user: returnedUser })
+        return res.status(200).json({ message: "Login successful", data: { user: returnedUser } })
     } catch (error) {
         console.log(error)
         return res.status(500).json({ message: "Unknown server error" })
@@ -89,7 +89,7 @@ export async function createUser(req, res) {
         const returnedUser = { ...user }
         delete returnedUser.password
 
-        return res.status(201).json({ message: "New user created successfully", user: returnedUser })
+        return res.status(201).json({ message: "New user created successfully", data: { user: returnedUser } })
     } catch (error) {
         console.log(error)
         return res.status(500).json({ message: "Unknown server error" })
@@ -125,7 +125,7 @@ export async function deleteUser(req, res) {
         // Clear access token cookie
         res.clearCookie('accessToken');
 
-        return res.status(200).json({ message: "User deleted successfully", user: returnedUser })
+        return res.status(200).json({ message: "User deleted successfully", data: { user: returnedUser } })
     } catch (error) {
         console.log(error)
         return res.status(500).json({ message: "Unknown server error" })
@@ -174,7 +174,7 @@ export async function changePassword(req, res) {
         const returnedUser = { ...updatedUser }
         delete returnedUser.password
 
-        return res.status(200).json({ message: "User password updated successfully", user: returnedUser })
+        return res.status(200).json({ message: "User password updated successfully", data: { user: returnedUser } })
     } catch (error) {
         return res.status(500).json({ message: "Unknown server error" })
     }
@@ -206,7 +206,7 @@ export async function changeDisplayName(req, res) {
         const returnedUser = { ...updatedUser }
         delete returnedUser.password
 
-        return res.status(200).json({ message: "User display name updated successfully", user: returnedUser })
+        return res.status(200).json({ message: "User display name updated successfully", data: { user: returnedUser } })
     } catch (error) {
         return res.status(500).json({ message: "Unknown server error" })
     }
