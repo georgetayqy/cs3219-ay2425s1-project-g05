@@ -6,6 +6,7 @@ const errorHandler = (err, req, res, next) => {
   console.log(`Error ${errStatus}: ${errMsg}`);
 
   res.status(errStatus).json({
+    statusCode: errStatus,
     message: errMsg
   });
 };
