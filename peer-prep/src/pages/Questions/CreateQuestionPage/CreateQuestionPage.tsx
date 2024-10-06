@@ -164,7 +164,7 @@ export default function CreateQuestionPage() {
           />
           <Select
             label="Difficulty"
-            value="EASY"
+            value={difficulty}
             onChange={(value: string | null) => setDifficulty(value)}
             data={difficultyOptions}
             required
