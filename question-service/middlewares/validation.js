@@ -74,9 +74,11 @@ const joiQuestionSchema = Joi.object({
   }),
   templateCode: Joi.string().optional().trim().min(1).messages({
     "string.min": "Template code cannot be empty",
+    "string.empty": "Template code cannot be empty",
   }),
   solutionCode: Joi.string().required().trim().min(1).messages({
     "string.min": "Solution cannot be empty",
+    "string.empty": "Solution code cannot be empty",
     "any.required": "Solution code is required",
   }),
   isDeleted: Joi.boolean().default(false),
@@ -119,9 +121,11 @@ const joiPartialQuestionSchema = Joi.object({
   }),
   templateCode: Joi.string().optional().trim().min(1).messages({
     "string.min": "Template code cannot be empty",
+    "string.empty": "Solution code cannot be empty",
   }),
   solutionCode: Joi.string().optional().trim().min(1).messages({
     "string.min": "Solution cannot be empty",
+    "string.empty": "Solution code cannot be empty",
   }),
   isDeleted: Joi.boolean().optional(),
 });
