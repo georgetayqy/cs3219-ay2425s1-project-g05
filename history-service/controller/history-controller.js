@@ -55,7 +55,6 @@ const getAttempt = async (req, res, next) => {
     }
     return res.status(200).json({ statusCode: 200, data: { attempt } });
   } catch (err) {
-    console.log(err);
     next(
       err instanceof BaseError
         ? err
@@ -90,7 +89,6 @@ const updateAttempt = async (req, res, next) => {
       data: { attempt: updatedAttempt },
     });
   } catch (err) {
-    console.log(err);
     next(
       err instanceof BaseError
         ? err
@@ -121,7 +119,6 @@ const deleteAttempt = async (req, res, next) => {
       data: { attempt: deletedAttempt },
     });
   } catch (err) {
-    console.log(err);
     next(
       err instanceof BaseError
         ? err
@@ -146,7 +143,6 @@ const getUserAttempts = async (req, res, next) => {
     }
     return res.status(200).json({ statusCode: 200, data: { attempts } });
   } catch (error) {
-    console.log(error);
     next(
       error instanceof BaseError
         ? error
