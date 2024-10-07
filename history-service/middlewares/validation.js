@@ -2,15 +2,15 @@ import Joi from "joi";
 import BadRequestError from "../../question-service/errors/BadRequestError.js";
 
 const joiAttemptSchema = Joi.object({
-  userId: Joi.string().trim().min(1).required().messages({
-    "string.empty": "User ID cannot be empty",
-    "string.min": "User ID must be at least 1 character long",
-    "any.required": "User ID is required",
+  userEmail: Joi.string().trim().min(1).required().messages({
+    "string.empty": "User's email cannot be empty",
+    "string.min": "User's email must be at least 1 character long",
+    "any.required": "User's email is required",
   }),
-  otherUserId: Joi.string().trim().min(1).required().messages({
-    "string.empty": "User ID cannot be empty",
-    "string.min": "User ID must be at least 1 character long",
-    "any.required": "User ID is required",
+  otherUserEmail: Joi.string().trim().min(1).required().messages({
+    "string.empty": "Other User's email cannot be empty",
+    "string.min": "Other User's email must be at least 1 character long",
+    "any.required": "Other User's email is required",
   }),
   questionId: Joi.string().trim().min(1).required().messages({
     "string.empty": "Question ID cannot be empty",
@@ -57,8 +57,8 @@ const joiAttemptSchema = Joi.object({
     }),
 }).custom((value, helpers) => {
   // Check if userId and otherUserId are the same
-  if (value.userId === value.otherUserId) {
-    return helpers.message("UserId and otherUserId cannot be the same.");
+  if (value.userEmail === value.otherUserEmail) {
+    return helpers.message("UserEmail and otherUserEmail cannot be the same.");
   }
   return value;
 }, "Custom validation for userId and otherUserId");

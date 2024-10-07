@@ -1,6 +1,3 @@
-import BaseError from "../../question-service/errors/BaseError.js";
-import ConflictError from "../../question-service/errors/ConflictError.js";
-import NotFoundError from "../../question-service/errors/NotFoundError.js";
 import Attempt from "./model.js";
 
 const createAttempt = async (attempt) => {
@@ -9,42 +6,42 @@ const createAttempt = async (attempt) => {
   return savedAttempt;
 };
 
-const getAttempt = async (userId, roomId) => {
+const getAttempt = async (userEmail, roomId) => {
   return Attempt.find({
-    userId: { $eq: userId },
+    userEmail: { $eq: userEmail },
     roomId: { $eq: roomId },
     isDeleted: false,
   });
 };
 
-const updateAttempt = async (userId, roomId, attempt) => {
+const updateAttempt = async (userEmail, roomId, attempt) => {
   return Attempt.findOneAndUpdate(
-    { userId: { $eq: userId }, roomId: { $eq: roomId }, isDeleted: false },
+    { userEmail: { $eq: userEmail }, roomId: { $eq: roomId }, isDeleted: false },
     attempt,
     { new: true }
   );
 };
 
-const deleteAttempt = async (userId, roomId) => {
+const deleteAttempt = async (userEmail, roomId) => {
   // soft delete
   return Attempt.findOneAndUpdate(
-    { userId: { $eq: userId }, roomId: { $eq: roomId }, isDeleted: false },
+    { userEmail: { $eq: userEmail }, roomId: { $eq: roomId }, isDeleted: false },
     { isDeleted: true },
     { new: true }
   );
 };
 
-const getUserAttempts = async (userId) => {
+const getUserAttempts = async (userEmail) => {
   return Attempt.find({
-    userId: { $eq: userId },
+    userEmail: { $eq: userEmail },
     isDeleted: false,
   });
 };
 
-const isDuplicateAttempt = async (userId, otherUserId, questionId, roomId) => {
+const isDuplicateAttempt = async (userEmail, otherUserEmail, questionId, roomId) => {
   const attempt = await Attempt.findOne({
-    userId: { $eq: userId },
-    otherUserId: { $eq: otherUserId },
+    userEmail: { $eq: userEmail },
+    otherUserEmail: { $eq: otherUserEmail },
     questionId: { $eq: questionId },
     roomId: { $eq: roomId },
     isDeleted: false,

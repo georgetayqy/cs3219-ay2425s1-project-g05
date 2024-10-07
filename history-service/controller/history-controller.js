@@ -12,14 +12,15 @@ import {
 } from "../models/orm.js";
 
 const createAttempt = async (req, res, next) => {
+  const userEmail = req.userEmail;
   const attempt = req.body;
 
   try {
     // check for duplicate attempt
     if (
-      ormIsDuplicateAttempt(
-        attempt.userId,
-        attempt.otherUserId,
+      await ormIsDuplicateAttempt(
+        userEmail,
+        attempt.otherUserEmail,
         attempt.questionId,
         attempt.roomId
       )
@@ -40,15 +41,17 @@ const createAttempt = async (req, res, next) => {
 };
 
 const getAttempt = async (req, res, next) => {
-  const { userId, roomId } = req.query;
-  console.log(userId, roomId);
+  const userEmail = req.userEmail;
+  const { roomId } = req.query;
 
   try {
-    if (!userId || !roomId) {
-      throw new BadRequestError("userId and roomId are required");
+    if (!userEmail || !roomId) {
+      throw new BadRequestError("userEmail and roomId are required");
     }
 
-    const attempt = await ormGetAttempt(userId, roomId);
+    console.log(userEmail, roomId);
+
+    const attempt = await ormGetAttempt(userEmail, roomId);
     // NO EXISTING ATTEMPT TO GET
     if (!attempt) {
       throw new NotFoundError("Attempt not found");
@@ -64,25 +67,28 @@ const getAttempt = async (req, res, next) => {
 };
 
 const updateAttempt = async (req, res, next) => {
-  const { userId, roomId } = req.params;
+  const userEmail = req.userEmail;
+  const { roomId } = req.params;
   const attempt = req.body;
 
   try {
     // VALIDATE - ATTEMPT SHOULD ONLY HAVE NOTES
-    if (Object.keys(attempt).length !== 1 || !attempt.notes) {
+    // ALLOW EMPTY STRING AS NOTES
+    if (Object.keys(attempt).length !== 1 || !("notes" in attempt)) {
       throw new BadRequestError("Only notes can be updated");
     }
 
-    if (!userId || !roomId) {
-      throw new BadRequestError("userId and roomId are required");
+    console.log(userEmail, roomId);
+    if (!userEmail || !roomId) {
+      throw new BadRequestError("userEmail and roomId are required");
     }
 
     // NO EXISTING ATTEMPT TO UPDATE
-    const existingAttempt = await ormGetAttempt(userId, roomId);
+    const existingAttempt = await ormGetAttempt(userEmail, roomId);
     if (!existingAttempt) {
       throw new NotFoundError("Attempt not found");
     }
-    const updatedAttempt = await ormUpdateAttempt(userId, roomId, attempt);
+    const updatedAttempt = await ormUpdateAttempt(userEmail, roomId, attempt);
     return res.status(200).json({
       statusCode: 200,
       message: "Attempt updated successfully",
@@ -98,21 +104,21 @@ const updateAttempt = async (req, res, next) => {
 };
 
 const deleteAttempt = async (req, res, next) => {
-  const { userId, roomId } = req.params;
-  console.log(userId, roomId);
-
-  if (!userId || !roomId) {
-    throw new BadRequestError("userId and roomId are required");
-  }
+  const userEmail = req.userEmail;
+  const { roomId } = req.params;
 
   try {
+    if (!userEmail || !roomId) {
+      throw new BadRequestError("userId and roomId are required");
+    }
+    console.log(userEmail, roomId);
     // NO EXISTING ATTEMPT TO DELETE
-    const existingAttempt = await ormGetAttempt(userId, roomId);
+    const existingAttempt = await ormGetAttempt(userEmail, roomId);
     if (!existingAttempt) {
       throw new NotFoundError("Attempt not found");
     }
-
-    const deletedAttempt = await ormDeleteAttempt(userId, roomId);
+    const deletedAttempt = await ormDeleteAttempt(userEmail, roomId);
+    console.log(deletedAttempt);
     return res.status(200).json({
       statusCode: 200,
       message: "Attempt deleted successfully",
@@ -128,14 +134,14 @@ const deleteAttempt = async (req, res, next) => {
 };
 
 const getUserAttempts = async (req, res, next) => {
-  const { userId } = req.params;
+  const userEmail = req.userEmail;
 
   try {
-    if (!userId) {
-      throw new BadRequestError("userId is required");
+    if (!userEmail) {
+      throw new BadRequestError("userEmail is required");
     }
 
-    const attempts = await ormGetUserAttempts(userId);
+    const attempts = await ormGetUserAttempts(userEmail);
 
     // NO EXISTING ATTEMPT BY USER
     if (attempts.length === 0) {

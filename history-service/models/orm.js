@@ -11,29 +11,29 @@ const ormCreateAttempt = async (attempt) => {
   return createAttempt(attempt);
 };
 
-const ormGetAttempt = async (userId, roomId) => {
-  return getAttempt(userId, roomId);
+const ormGetAttempt = async (userEmail, roomId) => {
+  return getAttempt(userEmail, roomId);
 };
 
-const ormUpdateAttempt = async (userId, roomId, attemptNotes) => {
-  return updateAttempt(userId, roomId, attemptNotes);
+const ormUpdateAttempt = async (userEmail, roomId, attemptNotes) => {
+  return updateAttempt(userEmail, roomId, attemptNotes);
 };
 
-const ormDeleteAttempt = async (userId, roomId) => {
-  return deleteAttempt(userId, roomId);
+const ormDeleteAttempt = async (userEmail, roomId) => {
+  return deleteAttempt(userEmail, roomId);;
 };
 
-const ormGetUserAttempts = async (userId) => {
-  return getUserAttempts(userId);
+const ormGetUserAttempts = async (userEmail) => {
+  return getUserAttempts(userEmail);
 };
 
 const ormIsDuplicateAttempt = async (
-  userId,
-  otherUserId,
+  userEmail,
+  otherUserEmail,
   questionId,
   roomId
 ) => {
-  return isDuplicateAttempt(userId, otherUserId, questionId, roomId);
+  return isDuplicateAttempt(userEmail, otherUserEmail, questionId, roomId);
 };
 
 export {
