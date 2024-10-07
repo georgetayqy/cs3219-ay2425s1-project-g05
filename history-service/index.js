@@ -6,11 +6,13 @@ import cookieParser from "cookie-parser";
 import router from "./router/router.js";
 import loggingMiddleware from "./middlewares/logging.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import corsMiddleware from "./middlewares/cors.js";
 
 dotenv.config();
 const app = express();
 const port = process.env.DEV_PORT || 8005;
 
+app.use(corsMiddleware);
 app.use(cookieParser());
 app.use(loggingMiddleware);
 app.use(bodyParser.json());
