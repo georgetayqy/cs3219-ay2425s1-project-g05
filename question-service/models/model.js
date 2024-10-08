@@ -61,6 +61,9 @@ const questionSchema = new Schema({
     type: String,
     required: [true, "Solution code is required"]
   },
+  link: {
+    type: String
+  },
   isDeleted: {
     type: Boolean,
     default: false,

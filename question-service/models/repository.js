@@ -24,7 +24,7 @@ const deleteQuestionById = async (id) => {
 };
 
 const updateQuestionById = async (id, question) => {
-  const allowedFields = ['title', 'description', 'difficulty', 'categories', 'testCases', 'templateCode', 'solutionCode'];
+  const allowedFields = ['title', 'description', 'difficulty', 'categories', 'testCases', 'templateCode', 'solutionCode', 'link'];
   const sanitizedQuestion = {};
   for (const key of allowedFields) {
     if (question[key] !== undefined) {
