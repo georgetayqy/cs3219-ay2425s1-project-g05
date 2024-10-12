@@ -21,6 +21,7 @@ import "react-quill/dist/quill.snow.css";
 
 import classes from "./EditQuestionPage.module.css";
 import {
+  CategoryResponseData,
   Question,
   QuestionResponseData,
   TestCase,
@@ -86,7 +87,7 @@ export default function EditQuestionPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetchData<ServerResponse<QuestionResponseData>>(
+      const response = await fetchData<ServerResponse<CategoryResponseData>>(
         "/question-service/categories",
         SERVICE.QUESTION
       );

@@ -37,6 +37,10 @@ export interface QuestionResponseData {
   categories?: string[];
 }
 
+export interface CategoryResponseData {
+  categories: string[];
+}
+
 export const SAMPLE_QUESTIONS: any[] = [{
   id: 1,
   title: "Reverse a string",
