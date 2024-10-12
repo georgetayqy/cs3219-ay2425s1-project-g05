@@ -17,6 +17,7 @@ import {
   rem,
   useMantineTheme,
   Menu,
+  Flex,
 } from "@mantine/core";
 // import { MantineLogo } from "@mantinex/mantine-logo";
 import { useDisclosure } from "@mantine/hooks";
@@ -111,7 +112,12 @@ export function Navbar() {
           {/* <MantineLogo size={30} /> */}
           <Box className={classes.icon}> 🫂 PeerPrep</Box>
 
-          <Group h="100%" gap={0} visibleFrom="sm">
+          <Group
+            h="100%"
+            gap={0}
+            visibleFrom="sm"
+            className={classes.linkContainer}
+          >
             <Link to="/" className={classes.link}>
               Home
             </Link>
@@ -166,50 +172,48 @@ export function Navbar() {
                 </div>
               </HoverCard.Dropdown>
             </HoverCard> */}
-            <Link to="/learn" className={classes.link}>
-              Learn
-            </Link>
 
-            <a href="#" className={classes.link}>
-              Academy
-            </a>
-            <Link to="/questions" className={classes.link}>
-              Questions
-            </Link>
+            {user ? (
+              user.isAdmin ? (
+                <Link to="/questions" className={classes.link}>
+                  Questions
+                </Link>
+              ) : null
+            ) : null}
           </Group>
+          <Flex className={classes.authContainer}>
+            {user ? (
+              <Menu shadow="md" width={200}>
+                <Menu.Target>
+                  <AvatarWithDetailsButton
+                    image="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png"
+                    name={user.displayName}
+                    email={user.email}
+                  />
+                </Menu.Target>
 
-          {user ? (
-            <Menu shadow="md" width={200}>
-              <Menu.Target>
-                <AvatarWithDetailsButton
-                  image="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png"
-                  name={user.displayName}
-                  email={user.email}
-                />
-              </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>Application</Menu.Label>
+                  <Menu.Item
+                    leftSection={
+                      <IconHome style={{ width: rem(14), height: rem(14) }} />
+                    }
+                  >
+                    <Link style={{ textDecoration: "none" }} to="/dashboard">
+                      Dashboard
+                    </Link>
+                  </Menu.Item>
 
-              <Menu.Dropdown>
-                <Menu.Label>Application</Menu.Label>
-                <Menu.Item
-                  leftSection={
-                    <IconHome style={{ width: rem(14), height: rem(14) }} />
-                  }
-                >
-                  <Link style={{ textDecoration: "none" }} to="/dashboard">
-                    Dashboard
-                  </Link>
-                </Menu.Item>
-
-                <Menu.Item
-                  leftSection={
-                    <IconMessageCircle
-                      style={{ width: rem(14), height: rem(14) }}
-                    />
-                  }
-                >
-                  Messages
-                </Menu.Item>
-                {/* <Menu.Item
+                  <Menu.Item
+                    leftSection={
+                      <IconMessageCircle
+                        style={{ width: rem(14), height: rem(14) }}
+                      />
+                    }
+                  >
+                    Messages
+                  </Menu.Item>
+                  {/* <Menu.Item
                   leftSection={
                     <IconPhoto style={{ width: rem(14), height: rem(14) }} />
                   }
@@ -217,30 +221,32 @@ export function Navbar() {
                   Gallery
                 </Menu.Item> */}
 
-                <Menu.Item
-                  leftSection={
-                    <IconSearch style={{ width: rem(14), height: rem(14) }} />
-                  }
-                  rightSection={
-                    <Text size="xs" c="dimmed">
-                      ⌘K
-                    </Text>
-                  }
-                >
-                  Search
-                </Menu.Item>
+                  <Menu.Item
+                    leftSection={
+                      <IconSearch style={{ width: rem(14), height: rem(14) }} />
+                    }
+                    rightSection={
+                      <Text size="xs" c="dimmed">
+                        ⌘K
+                      </Text>
+                    }
+                  >
+                    Search
+                  </Menu.Item>
 
-                <Menu.Divider />
+                  <Menu.Divider />
 
-                <Menu.Item
-                  leftSection={
-                    <IconSettings style={{ width: rem(14), height: rem(14) }} />
-                  }
-                >
-                  Settings
-                </Menu.Item>
-                <Menu.Divider />
-                {/* <Menu.Label>Danger zone</Menu.Label>
+                  <Menu.Item
+                    leftSection={
+                      <IconSettings
+                        style={{ width: rem(14), height: rem(14) }}
+                      />
+                    }
+                  >
+                    Settings
+                  </Menu.Item>
+                  <Menu.Divider />
+                  {/* <Menu.Label>Danger zone</Menu.Label>
                 <Menu.Item
                   leftSection={
                     <IconArrowsLeftRight
@@ -250,7 +256,7 @@ export function Navbar() {
                 >
                   Transfer my data
                 </Menu.Item> */}
-                {/* <Menu.Item
+                  {/* <Menu.Item
                   color="red"
                   leftSection={
                     <IconTrash style={{ width: rem(14), height: rem(14) }} />
@@ -259,27 +265,28 @@ export function Navbar() {
                   Delete my account
                 </Menu.Item> */}
 
-                <Menu.Item
-                  color="red"
-                  leftSection={
-                    <IconLogout style={{ width: rem(14), height: rem(14) }} />
-                  }
-                  onClick={logout}
-                >
-                  Logout
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          ) : (
-            <Group visibleFrom="sm">
-              <Link to="/login">
-                <Button variant="default">Log in</Button>
-              </Link>
-              <Link to="/login?register=true">
-                <Button>Sign up</Button>
-              </Link>
-            </Group>
-          )}
+                  <Menu.Item
+                    color="red"
+                    leftSection={
+                      <IconLogout style={{ width: rem(14), height: rem(14) }} />
+                    }
+                    onClick={logout}
+                  >
+                    Logout
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            ) : (
+              <Group visibleFrom="sm">
+                <Link to="/login">
+                  <Button variant="default">Log in</Button>
+                </Link>
+                <Link to="/login?register=true">
+                  <Button>Sign up</Button>
+                </Link>
+              </Group>
+            )}
+          </Flex>
 
           <Burger
             opened={drawerOpened}
