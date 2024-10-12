@@ -35,6 +35,8 @@ export default function EditQuestionPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [solution, setSolution] = useState("");
+  const [link, setLink] = useState("");
 
   const [fetchedCategories, setFetchedCategories] = useState<
     { value: string; label: string }[]
@@ -71,6 +73,8 @@ export default function EditQuestionPage() {
       setCategories(question.categories);
       setDescription(question.description.testDescription);
       setTestCases(question.testCases);
+      setSolution(question.solutionCode);
+      setLink(question.link);
     } catch (error: any) {
       console.error("Error fetching question details:", error);
       notifications.show({
@@ -126,6 +130,8 @@ export default function EditQuestionPage() {
             categories,
             difficulty,
             testCases: updatedTestCases,
+            solutionCode: solution,
+            link,
           }),
         }
       );
@@ -226,7 +232,13 @@ export default function EditQuestionPage() {
           minRows={8}
           required
         />
-
+        <Textarea
+          label={"Solution"}
+          value={solution}
+          onChange={(event) => setSolution(event.currentTarget.value)}
+          minRows={8}
+          required
+        />
         {/* <Input.Wrapper label="Description" required>
           <ReactQuill
             theme="snow"
@@ -238,7 +250,12 @@ export default function EditQuestionPage() {
             <div className={classes.quillEditor} />
           </ReactQuill>
         </Input.Wrapper> */}
-
+        <TextInput
+          label="Link to question (e.g. Leetcode)"
+          value={link}
+          onChange={(event) => setLink(event.currentTarget.value)}
+          required
+        />
         <Flex style={{ alignItems: "baseline", gap: 4 }}>
           <Text className={classes.testCaseHeader}>Test Cases</Text>
           <Text style={{ color: "red" }}>*</Text>

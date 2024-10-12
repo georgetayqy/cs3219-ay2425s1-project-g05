@@ -23,6 +23,7 @@ import classes from "./CreateQuestionPage.module.css";
 import { QuestionResponseData, TestCase } from "../../../types/question";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
+import { useNavigate } from "react-router-dom";
 
 export default function CreateQuestionPage() {
   const [name, setName] = useState("");
@@ -30,6 +31,10 @@ export default function CreateQuestionPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [solution, setSolution] = useState("");
+  const [link, setLink] = useState("");
+
+  const navigate = useNavigate();
 
   const [fetchedCategories, setFetchedCategories] = useState<
     { value: string; label: string }[]
@@ -62,7 +67,6 @@ export default function CreateQuestionPage() {
           category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
       }));
       setFetchedCategories(transformedCategories);
-
     } catch (error: any) {
       console.error("Error fetching categories", error);
       notifications.show({
@@ -95,6 +99,8 @@ export default function CreateQuestionPage() {
             categories,
             difficulty,
             testCases: updatedTestCases,
+            solutionCode: solution,
+            link,
           }),
         }
       );
@@ -102,8 +108,10 @@ export default function CreateQuestionPage() {
         message: "Question created successfully!",
         color: "green",
       });
-      window.location.href = "/questions";
 
+      // Redirect to questions page
+      // todo: redirect to the specific qn page
+      navigate("/questions", { replace: true });
     } catch (error: any) {
       console.log("Error creating question:", error);
       notifications.show({
@@ -169,6 +177,14 @@ export default function CreateQuestionPage() {
             minRows={8}
             required
           />
+
+          <Textarea
+            label={"Solution"}
+            value={solution}
+            onChange={(event) => setSolution(event.currentTarget.value)}
+            minRows={8}
+            required
+          />
           {/* <Input.Wrapper label="Description" required>
             <ReactQuill
               theme="snow"
@@ -190,6 +206,13 @@ export default function CreateQuestionPage() {
               <div className={classes.quillEditor} />
             </ReactQuill>
           </Input.Wrapper> */}
+
+          <TextInput
+            label="Link to question (e.g. Leetcode)"
+            value={link}
+            onChange={(event) => setLink(event.currentTarget.value)}
+            required
+          />
 
           <Flex style={{ alignItems: "baseline", gap: 4 }}>
             <Text className={classes.testCaseHeader}>Test Cases</Text>
