@@ -20,8 +20,8 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 import classes from "./EditQuestionPage.module.css";
-import { Question, QuestionOlsd, TestCase } from "../../../types/question";
-import useApi, { QuestionServerResponse, SERVICE } from "../../../hooks/useApi";
+import { Question, QuestionResponseData, TestCase } from "../../../types/question";
+import useApi, { SERVICE, ServerResponse } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 
 export default function EditQuestionPage() {
@@ -54,26 +54,18 @@ export default function EditQuestionPage() {
 
   const fetchQuestionDetails = async (questionId: string) => {
     try {
-      const response = await fetchData<QuestionServerResponse<Question>>(
+      const response = await fetchData<ServerResponse<QuestionResponseData>>(
         `/question-service/id/${questionId}`,
         SERVICE.QUESTION
       );
 
-      if (response.success) {
-        const question = response.data;
-        setName(question.title);
-        setDifficulty(question.difficulty);
-        setCategories(question.categories);
-        setDescription(question.description.testDescription);
-        setTestCases(question.testCases);
-      } else {
-        notifications.show({
-          message:
-            response.message ||
-            "Error fetching question details, please try again later.",
-          color: "red",
-        });
-      }
+      const question = response.data.question;
+      setName(question.title);
+      setDifficulty(question.difficulty);
+      setCategories(question.categories);
+      setDescription(question.description.testDescription);
+      setTestCases(question.testCases);
+
     } catch (error: any) {
       console.error("Error fetching question details:", error);
       notifications.show({
@@ -85,27 +77,19 @@ export default function EditQuestionPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetchData<QuestionServerResponse<string[]>>(
+      const response = await fetchData<ServerResponse<QuestionResponseData>>(
         "/question-service/categories",
         SERVICE.QUESTION
       );
 
-      if (response.success) {
-        const categories = response.data;
-        const transformedCategories = categories.map((category: string) => ({
-          value: category.toUpperCase(),
-          label:
-            category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
-        }));
-        setFetchedCategories(transformedCategories);
-      } else {
-        notifications.show({
-          message:
-            response.message ||
-            "Error fetching categories, please try again later.",
-          color: "red",
-        });
-      }
+      const categories = response.data.categories;
+      const transformedCategories = categories.map((category: string) => ({
+        value: category.toUpperCase(),
+        label:
+          category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
+      }));
+      setFetchedCategories(transformedCategories);
+
     } catch (error: any) {
       console.error("Error fetching categories", error);
       notifications.show({
@@ -124,7 +108,7 @@ export default function EditQuestionPage() {
     }));
 
     try {
-      const response = await fetchData<QuestionServerResponse<Question>>(
+      const response = await fetchData<ServerResponse<QuestionResponseData>>(
         `/question-service/id/${id}`,
         SERVICE.QUESTION,
         {
@@ -142,19 +126,12 @@ export default function EditQuestionPage() {
         }
       );
 
-      if (response.success) {
-        notifications.show({
-          message: "Question updated successfully!",
-          color: "green",
-        });
-      } else {
-        notifications.show({
-          message:
-            response.message ||
-            "Error updating question, please try again later.",
-          color: "red",
-        });
-      }
+      const createdQuestion = response.data.question;
+
+      notifications.show({
+        message: "Question updated successfully!",
+        color: "green",
+      });
     } catch (error: any) {
       console.error("Error updating question:", error);
       notifications.show({
@@ -166,7 +143,7 @@ export default function EditQuestionPage() {
 
   const handleDelete = async () => {
     try {
-      const response = await fetchData<QuestionServerResponse<Question>>(
+      const response = await fetchData<ServerResponse<Question>>(
         `/question-service/id/${id}`,
         SERVICE.QUESTION,
         {
@@ -174,20 +151,12 @@ export default function EditQuestionPage() {
         }
       );
 
-      if (response.success) {
-        notifications.show({
-          message: "Question deleted successfully!",
-          color: "green",
-        });
-        window.location.href = "/questions";
-      } else {
-        notifications.show({
-          message:
-            response.message ||
-            "Error deleting question, please try again later.",
-          color: "red",
-        });
-      }
+      notifications.show({
+        message: "Question deleted successfully!",
+        color: "green",
+      });
+      window.location.href = "/questions";
+
     } catch (error: any) {
       console.error("Error deleting question:", error);
       notifications.show({

@@ -20,8 +20,8 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 import classes from "./CreateQuestionPage.module.css";
-import { Question, QuestionOlsd, TestCase } from "../../../types/question";
-import useApi, { QuestionServerResponse, SERVICE } from "../../../hooks/useApi";
+import { QuestionResponseData, TestCase } from "../../../types/question";
+import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 
 export default function CreateQuestionPage() {
@@ -50,27 +50,19 @@ export default function CreateQuestionPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetchData<QuestionServerResponse<string[]>>(
+      const response = await fetchData<ServerResponse<QuestionResponseData>>(
         "/question-service/categories",
         SERVICE.QUESTION
       );
 
-      if (response.success) {
-        const categories = response.data;
-        const transformedCategories = categories.map((category: string) => ({
-          value: category.toUpperCase(),
-          label:
-            category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
-        }));
-        setFetchedCategories(transformedCategories);
-      } else {
-        notifications.show({
-          message:
-            response.message ||
-            "Error fetching categories, please try again later.",
-          color: "red",
-        });
-      }
+      const categories = response.data.categories || [];
+      const transformedCategories = categories.map((category: string) => ({
+        value: category.toUpperCase(),
+        label:
+          category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
+      }));
+      setFetchedCategories(transformedCategories);
+
     } catch (error: any) {
       console.error("Error fetching categories", error);
       notifications.show({
@@ -89,7 +81,7 @@ export default function CreateQuestionPage() {
     }));
 
     try {
-      const response = await fetchData<QuestionServerResponse<Question>>(
+      const response = await fetchData<ServerResponse<QuestionResponseData>>(
         "/question-service",
         SERVICE.QUESTION,
         {
@@ -106,18 +98,12 @@ export default function CreateQuestionPage() {
           }),
         }
       );
+      notifications.show({
+        message: "Question created successfully!",
+        color: "green",
+      });
+      window.location.href = "/questions";
 
-      if (response.success) {
-        alert("Question created successfully!");
-        window.location.href = "/questions";
-      } else {
-        notifications.show({
-          message:
-            response.message ||
-            "Error creating question, please try again later.",
-          color: "red",
-        });
-      }
     } catch (error: any) {
       console.log("Error creating question:", error);
       notifications.show({

@@ -29,6 +29,12 @@ export type Question = {
   __v: number; 
 };
 
+export interface QuestionResponseData {
+  question?: Question;
+  questions?: Question[];
+  categories?: string[];
+}
+
 export const SAMPLE_QUESTIONS: any[] = [{
   id: 1,
   title: "Reverse a string",
