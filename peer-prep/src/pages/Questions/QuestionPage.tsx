@@ -14,7 +14,7 @@ import {
 import { IconSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Question, SAMPLE_QUESTIONS } from "../../types/question";
-import useApi, { QuestionServerResponse, ServerResponse } from "../../hooks/useApi";
+import useApi, { ServerResponse } from "../../hooks/useApi";
 import { Link, useLoaderData } from "react-router-dom";
 import QuestionCard from "../../components/Questions/QuestionCard/QuestionCard";
 
@@ -33,7 +33,7 @@ export default function QuestionPage() {
   console.log({ data });
 
   useEffect(() => {
-    setQuestions(data.data.questions);
+    if (data.data) setQuestions(data.data.questions);
   }, [data]);
 
   return (

@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   TextInput,
@@ -20,7 +20,11 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 import classes from "./EditQuestionPage.module.css";
-import { Question, QuestionResponseData, TestCase } from "../../../types/question";
+import {
+  Question,
+  QuestionResponseData,
+  TestCase,
+} from "../../../types/question";
 import useApi, { SERVICE, ServerResponse } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 
@@ -35,6 +39,8 @@ export default function EditQuestionPage() {
   const [fetchedCategories, setFetchedCategories] = useState<
     { value: string; label: string }[]
   >([]);
+
+  const navigate = useNavigate();
 
   // Mapping for difficulty display
   const difficultyOptions = [
@@ -65,7 +71,6 @@ export default function EditQuestionPage() {
       setCategories(question.categories);
       setDescription(question.description.testDescription);
       setTestCases(question.testCases);
-
     } catch (error: any) {
       console.error("Error fetching question details:", error);
       notifications.show({
@@ -89,7 +94,6 @@ export default function EditQuestionPage() {
           category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
       }));
       setFetchedCategories(transformedCategories);
-
     } catch (error: any) {
       console.error("Error fetching categories", error);
       notifications.show({
@@ -155,8 +159,10 @@ export default function EditQuestionPage() {
         message: "Question deleted successfully!",
         color: "green",
       });
-      window.location.href = "/questions";
 
+      navigate("/questions", {
+        replace: true,
+      });
     } catch (error: any) {
       console.error("Error deleting question:", error);
       notifications.show({
