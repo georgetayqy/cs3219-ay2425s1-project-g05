@@ -118,6 +118,7 @@ const theme = createTheme({
   fontFamily: "Montserrat, sans-serif",
   defaultRadius: "md",
   cursorType: "pointer",
+  primaryColor: "cyan",
 });
 
 createRoot(document.getElementById("root")!).render(
