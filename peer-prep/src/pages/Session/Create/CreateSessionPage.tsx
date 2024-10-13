@@ -210,9 +210,17 @@ export default function CreateSessionPage() {
 
     // reset timer
     setTimeElapsed(0);
+    if (timer) {
+      clearInterval(timer);
+    }
 
     // setSelectedCategories([]);
     // setSelectedDifficulties([]);
+  }
+
+  function changeCriteria() {
+    socket.emit("cancel-match");
+    goToStart();
   }
 
   function continueSearch() {
@@ -415,6 +423,9 @@ export default function CreateSessionPage() {
             </List>
           </Stack>
         </SimpleGrid>
+        <Center>
+          <Button onClick={() => changeCriteria()}>Change criteria</Button>
+        </Center>
       </Stack>
     </>
   );
