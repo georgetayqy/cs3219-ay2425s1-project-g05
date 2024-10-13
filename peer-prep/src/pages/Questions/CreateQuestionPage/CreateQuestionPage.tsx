@@ -32,6 +32,7 @@ export default function CreateQuestionPage() {
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [solution, setSolution] = useState("");
+  const [templateCode, setTemplateCode] = useState("");
   const [link, setLink] = useState("");
 
   const navigate = useNavigate();
@@ -185,6 +186,12 @@ export default function CreateQuestionPage() {
             minRows={8}
             required
           />
+          <Textarea
+            label={"Template code"}
+            value={templateCode}
+            onChange={(event) => setTemplateCode(event.currentTarget.value)}
+            minRows={8}
+          />
           {/* <Input.Wrapper label="Description" required>
             <ReactQuill
               theme="snow"
@@ -211,7 +218,6 @@ export default function CreateQuestionPage() {
             label="Link to question (e.g. Leetcode)"
             value={link}
             onChange={(event) => setLink(event.currentTarget.value)}
-            required
           />
 
           <Flex style={{ alignItems: "baseline", gap: 4 }}>

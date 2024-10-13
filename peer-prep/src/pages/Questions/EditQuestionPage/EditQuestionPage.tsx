@@ -37,6 +37,7 @@ export default function EditQuestionPage() {
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [solution, setSolution] = useState("");
+  const [templateCode, setTemplateCode] = useState("");
   const [link, setLink] = useState("");
 
   const [fetchedCategories, setFetchedCategories] = useState<
@@ -251,11 +252,16 @@ export default function EditQuestionPage() {
             <div className={classes.quillEditor} />
           </ReactQuill>
         </Input.Wrapper> */}
+        <Textarea
+          label={"Template code"}
+          value={templateCode}
+          onChange={(event) => setTemplateCode(event.currentTarget.value)}
+          minRows={8}
+        />
         <TextInput
           label="Link to question (e.g. Leetcode)"
           value={link}
           onChange={(event) => setLink(event.currentTarget.value)}
-          required
         />
         <Flex style={{ alignItems: "baseline", gap: 4 }}>
           <Text className={classes.testCaseHeader}>Test Cases</Text>
