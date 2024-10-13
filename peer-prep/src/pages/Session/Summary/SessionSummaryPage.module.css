@@ -1,0 +1,34 @@
+.wrapper {
+  min-height: calc(100vh - 60px - var(--mantine-spacing-md));
+  align-items: baseline;
+
+  padding: 20rem;
+  padding-top: 2rem;
+
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.rtm {
+  padding: 0.5rem;
+}
+
+.paper {
+  padding: 1rem;
+}
+
+pre, .codeBlock {
+  margin: 0;
+  padding: 0.5rem;
+  background-color: #f7f7f7;
+  border-radius: 0.25rem;
+}
+
+.notesTextarea {
+  width: 100%;
+  height: 6rem;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+}
+
