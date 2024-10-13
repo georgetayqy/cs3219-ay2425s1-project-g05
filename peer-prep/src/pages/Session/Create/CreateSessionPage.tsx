@@ -12,6 +12,11 @@ import {
   Stack,
   Stepper,
   Title,
+  Container,
+  Text,
+  List,
+  rem,
+  ThemeIcon,
 } from "@mantine/core";
 import classes from "./CreateSessionPage.module.css";
 import { useEffect, useState } from "react";
@@ -23,9 +28,17 @@ import { socket } from "../../../websockets/socket";
 import { useAuth } from "../../../hooks/useAuth";
 import { displayName } from "react-quill";
 import SearchingPage from "../Search/SearchingPage";
-import { IconCancel, IconCross } from "@tabler/icons-react";
+import {
+  IconCancel,
+  IconCircleCheck,
+  IconCircleDashed,
+  IconCross,
+} from "@tabler/icons-react";
 
 import NoMatchImage from "../../../assets/nomatchimage.svg";
+import SearchingImage from "../../../assets/searchimage.svg";
+
+import AlertBox from "../../../components/Alert/AlertBox";
 
 // Arrays
 // Algorithms
@@ -62,16 +75,7 @@ export default function CreateSessionPage() {
     });
   }, []);
 
-  const [categories, setCategories] = useState<string[]>([
-    "Arrays",
-    "Algorithms",
-    "Databases",
-    "Data Structures",
-    "Brainteaser",
-    "Strings",
-    "Bit Manipulation",
-    "Recursion",
-  ]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const [difficulties, setDifficulties] = useState<string[]>([
@@ -288,10 +292,134 @@ export default function CreateSessionPage() {
     </>
   );
 
-  console.log({ status });
-
-  return (
+  const SEARCH_COMPONENT = (
     <>
+      <Stack gap={"2rem"}>
+        <Center>
+          <Image className={classes.image} src={SearchingImage} />
+        </Center>
+        <Title style={{ textAlign: "center" }}>
+          {" "}
+          <span className={classes.hourglass}> ⏳ </span> Loading...{" "}
+        </Title>
+        <Text style={{ textAlign: "center" }}>
+          {" "}
+          You will be matched with a partner soon!{" "}
+        </Text>
+
+        <SimpleGrid cols={2} className={classes.criteria}>
+          <Stack>
+            <Text fw={600} size="lg">
+              {" "}
+              Categories
+            </Text>
+            <List
+              spacing="xs"
+              size="sm"
+              center
+              icon={
+                <ThemeIcon size={24} radius="xl">
+                  <IconCircleCheck
+                    style={{ width: rem(16), height: rem(16) }}
+                  />
+                </ThemeIcon>
+              }
+            >
+              {selectedCategories.map((categories, index) => (
+                <List.Item key={index}>{categories}</List.Item>
+              ))}
+            </List>
+          </Stack>
+          <Stack>
+            <Text fw={600} size="lg">
+              {" "}
+              Difficulties
+            </Text>
+            <List
+              spacing="xs"
+              size="sm"
+              center
+              icon={
+                <ThemeIcon size={24} radius="xl">
+                  <IconCircleCheck
+                    style={{ width: rem(16), height: rem(16) }}
+                  />
+                </ThemeIcon>
+              }
+            >
+              {selectedDifficulties.map((difficulties, index) => (
+                <List.Item key={index}>
+                  {capitalizeFirstLetter(difficulties)}
+                </List.Item>
+              ))}
+            </List>
+          </Stack>
+        </SimpleGrid>
+      </Stack>
+    </>
+  );
+
+  const FAIL_COMPONENT = (
+    <Stack gap={"2em"}>
+      <Center>
+        <Image className={classes.image} src={NoMatchImage} />
+      </Center>
+      <AlertBox type="error">
+        <Stack justify="center">
+          <Text fw={700} size="xl" style={{ textAlign: "center" }}>
+            {" "}
+            Couldn't find a match!{" "}
+          </Text>
+          <Text style={{ textAlign: "center" }}>
+            Try changing your criteria?
+          </Text>
+          <Center>
+            <Button
+              onClick={() => {
+                goToStart();
+              }}
+            >
+              {" "}
+              Try again{" "}
+            </Button>
+          </Center>
+        </Stack>
+      </AlertBox>
+    </Stack>
+  );
+
+  const SUCCESS_COMPONENT = (
+    <>
+      <Stack gap={"2em"}>
+        <Center>
+          <Image className={classes.image} src={NoMatchImage} />
+        </Center>
+        <AlertBox type="error">
+          <Stack justify="center">
+            <Text fw={700} size="xl" style={{ textAlign: "center" }}>
+              {" "}
+              Couldn't find a match!{" "}
+            </Text>
+            <Text style={{ textAlign: "center" }}>
+              Try changing your criteria?
+            </Text>
+            <Center>
+              <Button
+                onClick={() => {
+                  goToStart();
+                }}
+              >
+                {" "}
+                Try again{" "}
+              </Button>
+            </Center>
+          </Stack>
+        </AlertBox>
+      </Stack>
+    </>
+  );
+  return (
+    <Container>
       <Flex className={classes.wrapper}>
         <Box
           style={{
@@ -304,7 +432,7 @@ export default function CreateSessionPage() {
               description={active === 0 && "Specify criteria"}
               allowStepSelect={false}
             >
-              {CREATE_COMPONENT}
+              <Box className={classes.stepWrapper}>{CREATE_COMPONENT}</Box>
             </Stepper.Step>
             <Stepper.Step
               label="Search"
@@ -312,7 +440,7 @@ export default function CreateSessionPage() {
               allowStepSelect={false}
               loading={status === Status.SEARCHING}
             >
-              <SearchingPage />
+              <Box className={classes.stepWrapper}>{SEARCH_COMPONENT}</Box>
             </Stepper.Step>
             {status === Status.NO_MATCH ? (
               <Stepper.Step
@@ -322,26 +450,7 @@ export default function CreateSessionPage() {
                 icon={<IconCancel />}
                 color="red"
               >
-                <Stack mt={"2em"}>
-                  <Center>
-                    <Image
-                      className={classes.image}
-                      src={NoMatchImage}
-                      width={"320px"}
-                    />
-                  </Center>
-                  <Title order={2}>Couldn't find a match for you!</Title>
-                  <Box>
-                    <Button
-                      onClick={() => {
-                        goToStart();
-                      }}
-                    >
-                      {" "}
-                      Try again{" "}
-                    </Button>
-                  </Box>
-                </Stack>
+                <Box className={classes.stepWrapper}>{FAIL_COMPONENT}</Box>
               </Stepper.Step>
             ) : (
               <Stepper.Step
@@ -357,6 +466,6 @@ export default function CreateSessionPage() {
           </Stepper>
         </Box>
       </Flex>
-    </>
+    </Container>
   );
 }
