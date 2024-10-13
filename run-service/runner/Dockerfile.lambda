@@ -1,10 +1,16 @@
 FROM public.ecr.aws/lambda/python:3.12
 
+# set work directory
+WORKDIR /var/task
+
 # Install GCC for C++ support
 RUN dnf install -y gcc-c++
 
+# Install python library
+RUN pip install psutil -t .
+
 # Copy the python handler
-COPY handler.py /var/task
+COPY handler.py .
 
 # Entrypoint for Lambda
 CMD ["handler.handler"]
