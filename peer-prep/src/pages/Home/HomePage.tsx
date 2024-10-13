@@ -19,6 +19,9 @@ import {
   IconLock,
 } from "@tabler/icons-react";
 import classes from "./HomePage.module.css";
+import { useNavigate } from "react-router-dom";
+import { AUTH_STATUS, useAuth } from "../../hooks/useAuth";
+import { useEffect } from "react";
 
 export const MOCKDATA = [
   {
@@ -60,6 +63,17 @@ interface FeatureProps {
 }
 
 export default function Home() {
+  // redirect to /dashboard if user is logged in
+
+  const navigate = useNavigate();
+  const { user, authStatus } = useAuth();
+
+  useEffect(() => {
+    if (authStatus === AUTH_STATUS.LOGGED_IN) {
+      navigate("/dashboard");
+    }
+  }, [authStatus]);
+
   return (
     <>
       <section>
