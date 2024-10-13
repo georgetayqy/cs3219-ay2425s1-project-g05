@@ -48,8 +48,10 @@ const createQuestion = async (req, res, next) => {
       categoriesString,
     };
 
-    const question = await _createQuestion(newQuestion);
-    return res.status(201).json({ success: true, status: 201, data: question });
+    const createdQuestion = await _createQuestion(newQuestion);
+    return res
+      .status(201)
+      .json({ statusCode: 201, data: { question: createdQuestion } });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -61,15 +63,19 @@ const createQuestion = async (req, res, next) => {
 
 const getAllQuestions = async (req, res, next) => {
   try {
-    const questions = await _getAllQuestions(req.query);
+    const allQuestions = await _getAllQuestions(req.query);
 
-    if (questions.length === 0) {
+    if (allQuestions.length === 0) {
       throw new NotFoundError("No questions found");
     }
 
     return res
       .status(200)
-      .json({ success: true, status: 200, data: questions });
+      .json({
+        statusCode: 200,
+        message: "All questions found successfully.",
+        data: { questions: allQuestions },
+      });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -83,12 +89,18 @@ const getQuestionById = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    const question = await _getQuestionById(id);
+    const foundQuestion = await _getQuestionById(id);
 
-    if (!question) {
+    if (!foundQuestion) {
       throw new NotFoundError("Question not found");
     }
-    return res.status(200).json({ success: true, status: 200, data: question });
+    return res
+      .status(200)
+      .json({
+        statusCode: 200,
+        message: "Question found successfully",
+        data: { question: foundQuestion },
+      });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -114,7 +126,11 @@ const deleteQuestionById = async (req, res, next) => {
     }
     return res
       .status(200)
-      .json({ success: true, status: 200, message: "Question deleted!" });
+      .json({
+        statusCode: 200,
+        message: "Question deleted successfully",
+        data: { question: result },
+      });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -179,9 +195,7 @@ const updateQuestionById = async (req, res, next) => {
       throw new NotFoundError("Question not found");
     }
 
-    return res
-      .status(200)
-      .json({ success: true, status: 200, data: updatedQuestion });
+    return res.status(200).json({ success: true, status: 200, data: updatedQuestion });
   } catch (err) {
     console.log(err);
     next(
@@ -239,7 +253,11 @@ const getFilteredQuestions = async (req, res, next) => {
 
     return res
       .status(200)
-      .json({ success: true, status: 200, data: filteredQuestions });
+      .json({
+        statusCode: 200,
+        message: "Questions found successfully",
+        data: { questions: filteredQuestions },
+      });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -295,7 +313,7 @@ const findQuestion = async (req, res, next) => {
 
     return res
       .status(200)
-      .json({ success: true, status: 200, data: foundQuestion });
+      .json({ statusCode: 200, message: "Question found!", data: { question: foundQuestion } });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -315,7 +333,11 @@ const getDistinctCategories = async (req, res, next) => {
 
     return res
       .status(200)
-      .json({ success: true, status: 200, data: distinctCategories });
+      .json({
+        statusCode: 200,
+        message: "Categories obtained successfully",
+        data: { categories: distinctCategories },
+      });
   } catch (err) {
     next(
       err instanceof BaseError

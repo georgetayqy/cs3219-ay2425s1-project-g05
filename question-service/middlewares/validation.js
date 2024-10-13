@@ -3,57 +3,63 @@ import BadRequestError from "../errors/BadRequestError.js";
 
 // Schema for testcase
 const joiTestCaseSchema = Joi.object({
-  testCode: Joi.string().trim().min(1).messages({
-    "string.empty": "All testCode cannot be empty", 
-    "string.min": "All testCode must be at least 1 character long",
-  }).required().messages({
-    "string.empty": "Test code cannot be empty",
-    "any.required": "Test code is required", 
-  }),
+  testCode: Joi.string()
+    .trim()
+    .min(1)
+    .messages({
+      "string.empty": "All testCode cannot be empty",
+      "string.min": "All testCode must be at least 1 character long",
+    })
+    .required()
+    .messages({
+      "string.empty": "Test code cannot be empty",
+      "any.required": "Test code is required",
+    }),
   isPublic: Joi.boolean().required().messages({
     "boolean.base": "isPublic must be a boolean",
     "any.required": "isPublic is required",
   }),
   meta: Joi.any().optional(), // assuming optional for now
-  expectedOutput: Joi.string().trim().min(1).messages({
-    "string.empty": "All expectedOutput cannot be empty", 
-    "string.min": "All expectedOutput must be at least 1 character long",
-  }).required().messages({
-    "string.empty": "Expected output cannot be empty",
-    "any.required": "Expected output is required", 
-  }),
+  expectedOutput: Joi.string()
+    .trim()
+    .min(1)
+    .messages({
+      "string.empty": "All expectedOutput cannot be empty",
+      "string.min": "All expectedOutput must be at least 1 character long",
+    })
+    .required()
+    .messages({
+      "string.empty": "Expected output cannot be empty",
+      "any.required": "Expected output is required",
+    }),
 }).messages({
-  'object.base': 'Each test case should have testCode, isPublic, and expectedOutput',
+  "object.base":
+    "Each test case should have testCode, isPublic, and expectedOutput",
 });
 
 // Schema for question - for create
 const joiQuestionSchema = Joi.object({
-  title: Joi.string().required().messages({
+  title: Joi.string().trim().min(1).required().messages({
     "string.empty": "Title is required",
+    "string.min": "Title must be at least 1 character long",
     "any.required": "Title is required",
   }),
   description: Joi.object().required().messages({
     "object.base": "Description is required as an object",
     "any.required": "Description is required",
   }),
-  categoriesId: Joi.array()
-  .items(
-    Joi.number()
-      .min(0)
-      .max(7)
-      .messages({
-        "number.base": "Each category must be a number",
-        "number.min": "Category must be at least 0",
-        "number.max": "Category cannot be more than 7",
-      })
-  )
-  .min(1)
-  .required()
-  .messages({
-    "array.base": "Categories must be an array",
-    "array.min": "At least one category is required",
-  }),
-
+  categories: Joi.array()
+    .items(Joi.string().trim().min(1).messages({
+      "string.empty": "Each category cannot be empty", 
+      "string.min": "Each category must be at least 1 character long",
+    }))
+    .min(1)
+    .required()
+    .messages({
+      "array.base": "Categories must be an array",
+      "array.min": "At least one topic is required",
+      "any.required": "Categories are required",
+    }),
   difficulty: Joi.string()
     .valid("HARD", "MEDIUM", "EASY")
     .required()
@@ -75,12 +81,17 @@ const joiQuestionSchema = Joi.object({
 
 // Schema for question - for update
 const joiPartialQuestionSchema = Joi.object({
-  title: Joi.string().trim().min(1).messages({
-    "string.empty": "Title cannot be empty", 
-    "string.min": "Title must be at least 1 character long",
-  }).optional().messages({
-    "string.empty": "Title cannot be empty",
-  }),
+  title: Joi.string()
+    .trim()
+    .min(1)
+    .messages({
+      "string.empty": "Title cannot be empty",
+      "string.min": "Title must be at least 1 character long",
+    })
+    .optional()
+    .messages({
+      "string.empty": "Title cannot be empty",
+    }),
   description: Joi.object().optional().messages({
     "object.base": "Description must be an object",
   }),
@@ -108,6 +119,18 @@ const joiPartialQuestionSchema = Joi.object({
   testCases: Joi.array().items(joiTestCaseSchema).optional().messages({
     "array.base": "Test cases must be an array",
     "array.min": "At least one test case is required",
+  }),
+  templateCode: Joi.string().optional().trim().min(1).messages({
+    "string.min": "Template code cannot be empty",
+    "string.empty": "Solution code cannot be empty",
+  }),
+  solutionCode: Joi.string().optional().trim().min(1).messages({
+    "string.min": "Solution cannot be empty",
+    "string.empty": "Solution code cannot be empty",
+  }),
+  link: Joi.string().optional().trim().min(1).messages({
+    "string.min": "Link cannot be empty",
+    "string.empty": "Link cannot be empty",
   }),
   isDeleted: Joi.boolean().optional(),
 });
@@ -143,4 +166,4 @@ const validateUpdatedQuestion = (req, res, next) => {
   next();
 };
 
-export { validateNewQuestion, validateUpdatedQuestion } ;
+export { validateNewQuestion, validateUpdatedQuestion };
