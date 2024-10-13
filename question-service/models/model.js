@@ -29,9 +29,18 @@ const questionSchema = new Schema({
     type: Object,
     required: [true, "Description is required"]
   },
+  categoriesId: {
+    type: [Number],
+    required: [true, "Categories is required"],
+    validate: {
+      validator: (value) => {
+        return value.length > 0;
+      },
+    },
+  },
   categories: {
     type: [String],
-    required: [true, "Topic is required"],
+    required: [true, "Categories is required"],
     validate: {
       validator: (value) => {
         return value.length > 0;

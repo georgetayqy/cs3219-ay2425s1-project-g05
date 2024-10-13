@@ -1,3 +1,4 @@
+import {  categoriesIdToCategories } from "../constants/categories.js";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
 import ConflictError from "../errors/ConflictError.js";
@@ -41,7 +42,13 @@ const createQuestion = async (req, res, next) => {
       );
     }
 
-    const question = await _createQuestion(req.body);
+    const categoriesString = req.body.categoriesId.map((id) => categoriesIdToCategories[id]);
+    const newQuestion = {
+      ...req.body,
+      categoriesString,
+    };
+
+    const question = await _createQuestion(newQuestion);
     return res.status(201).json({ success: true, status: 201, data: question });
   } catch (err) {
     next(
@@ -130,13 +137,18 @@ const updateQuestionById = async (req, res, next) => {
 
     // CHECK FOR DUPLICATE DESCRIPTION IF PROVIDED
     if (description) {
-      const duplicateDescriptionQuestions = await _getQuestionsByDescription(description);
-      const otherQuestionsWithSameDescription = duplicateDescriptionQuestions.filter(
-        (question) => question._id.toString() !== id
+      const duplicateDescriptionQuestions = await _getQuestionsByDescription(
+        description
       );
+      const otherQuestionsWithSameDescription =
+        duplicateDescriptionQuestions.filter(
+          (question) => question._id.toString() !== id
+        );
 
       if (otherQuestionsWithSameDescription.length > 0) {
-        throw new ConflictError("A question with this description already exists");
+        throw new ConflictError(
+          "A question with this description already exists"
+        );
       }
     }
 
@@ -153,21 +165,29 @@ const updateQuestionById = async (req, res, next) => {
         );
 
       if (otherQuestionsWithSameTitleAndDifficulty.length > 0) {
-        throw new ConflictError("A question with such title and difficulty already exists");
+        throw new ConflictError(
+          "A question with such title and difficulty already exists"
+        );
       }
     }
 
     // UPDATE THE QUESTION
-    const updatedQuestion = await _updateQuestionById(id, req.body);
+    const categoriesString = req.body.categoriesId.map((id) => categoriesIdToCategories[id]);
+    const updatedQuestionDetails = { ...req.body, categoriesString };
+    const updatedQuestion = await _updateQuestionById(id, updatedQuestionDetails);
     if (!updatedQuestion) {
       throw new NotFoundError("Question not found");
     }
 
-    return res.status(200).json({ success: true, status: 200, data: updatedQuestion });
+    return res
+      .status(200)
+      .json({ success: true, status: 200, data: updatedQuestion });
   } catch (err) {
     console.log(err);
     next(
-      err instanceof BaseError ? err : new BaseError(500, "Error updating question")
+      err instanceof BaseError
+        ? err
+        : new BaseError(500, "Error updating question")
     );
   }
 };
@@ -175,14 +195,17 @@ const updateQuestionById = async (req, res, next) => {
 const getFilteredQuestions = async (req, res, next) => {
   try {
     const { categories, difficulty } = req.query;
+    let categoriesString = [];
     if (categories) {
       if (!Array.isArray(categories)) {
         throw new BadRequestError("Categories should be an array!");
       }
+      categoriesString = categories.map((id) => categoriesIdToCategories[id]);
       const distinctCategories = await _getDistinctCategories();
+      // check that all categories in categoriesString exist in current categories
       if (
-        categories.some(
-          (category) => !distinctCategories.includes(category.toUpperCase())
+        categoriesString.some(
+          (category) => !distinctCategories.includes(category)
         )
       ) {
         throw new BadRequestError("Category does not exist!");
@@ -204,12 +227,14 @@ const getFilteredQuestions = async (req, res, next) => {
     }
 
     const filteredQuestions = await _getFilteredQuestions({
-      categories,
+      categories: categoriesString,
       difficulty,
     });
 
     if (filteredQuestions.length === 0) {
-      throw new NotFoundError("No questions with matching categories and difficulty found");
+      throw new NotFoundError(
+        "No questions with matching categories and difficulty found"
+      );
     }
 
     return res
@@ -227,14 +252,16 @@ const getFilteredQuestions = async (req, res, next) => {
 const findQuestion = async (req, res, next) => {
   try {
     const { categories, difficulty } = req.query;
+    let categoriesString = [];
 
     if (categories) {
       if (!Array.isArray(categories)) {
         throw new BadRequestError("Categories should be an array!");
       }
+      categoriesString = categories.map((id) => categoriesIdToCategories[id]);
       const distinctCategories = await _getDistinctCategories();
       if (
-        categories.some(
+        categoriesString.some(
           (category) => !distinctCategories.includes(category.toUpperCase())
         )
       ) {
@@ -257,11 +284,13 @@ const findQuestion = async (req, res, next) => {
       }
     }
 
-    const foundQuestion = await _findQuestion({ categories, difficulty });
+    const foundQuestion = await _findQuestion({ categories: categoriesString, difficulty });
 
     if (!foundQuestion) {
       console.log("No questions found");
-      throw new NotFoundError("No question with matching categories and difficulty found");
+      throw new NotFoundError(
+        "No question with matching categories and difficulty found"
+      );
     }
 
     return res
@@ -279,7 +308,7 @@ const findQuestion = async (req, res, next) => {
 const getDistinctCategories = async (req, res, next) => {
   try {
     const distinctCategories = await _getDistinctCategories();
-    
+
     if (distinctCategories.length === 0) {
       throw new NotFoundError("No categories found");
     }
