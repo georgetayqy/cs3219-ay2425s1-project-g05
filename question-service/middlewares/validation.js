@@ -48,18 +48,23 @@ const joiQuestionSchema = Joi.object({
     "object.base": "Description is required as an object",
     "any.required": "Description is required",
   }),
-  categories: Joi.array()
-    .items(Joi.string().trim().min(1).messages({
-      "string.empty": "Each category cannot be empty", 
-      "string.min": "Each category must be at least 1 character long",
-    }))
-    .min(1)
-    .required()
-    .messages({
-      "array.base": "Categories must be an array",
-      "array.min": "At least one topic is required",
-      "any.required": "Categories are required",
-    }),
+  categoriesId: Joi.array()
+  .items(
+    Joi.number()
+      .min(0)
+      .max(7)
+      .messages({
+        "number.base": "Each category must be a number",
+        "number.min": "Category must be between 0 and 7",
+        "number.max": "Category must be between 0 and 7",
+      })
+  )
+  .required()
+  .min(1)
+  .messages({
+    "array.base": "Categories must be an array",
+    "array.min": "At least one category is required if specified",
+  }),
   difficulty: Joi.string()
     .valid("HARD", "MEDIUM", "EASY")
     .required()
@@ -101,18 +106,17 @@ const joiPartialQuestionSchema = Joi.object({
       .min(0)
       .max(7)
       .messages({
-        "number.base": "Each category Id must be a number",
-        "number.min": "Category Id must be a number between 0 and 7",
-        "number.max": "Category Id must be a number between 0 and 7",
+        "number.base": "Each category must be a number",
+        "number.min": "Category must be between 0 and 7",
+        "number.max": "Category must be between 0 and 7",
       })
-  )
-  .optional()
+    )
+    .optional()
   .min(1)
   .messages({
-    "array.base": "CategoriesId must be an array",
-    "array.min": "At least one category is required",
+    "array.base": "Categories must be an array",
+    "array.min": "At least one category is required if specified",
   }),
-
   difficulty: Joi.string().valid("EASY", "MEDIUM", "HARD").optional().messages({
     "any.only": "Difficulty must be either HARD, MEDIUM, or EASY",
   }),
