@@ -1,6 +1,7 @@
 import Question from "./model.js";
 
 const createQuestion = async (question) => {
+  console.log(question);
   const newQuestion = new Question(question);
   newQuestion.difficulty = question.difficulty.toUpperCase();
   newQuestion.categories = question.categories.map((category) =>
