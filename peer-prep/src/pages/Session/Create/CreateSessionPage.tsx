@@ -17,11 +17,12 @@ import {
   List,
   rem,
   ThemeIcon,
+  Progress,
 } from "@mantine/core";
 import classes from "./CreateSessionPage.module.css";
 import { useEffect, useState } from "react";
 import { capitalizeFirstLetter } from "../../../utils/utils";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { CategoryResponseData } from "../../../types/question";
 import { socket } from "../../../websockets/socket";
@@ -37,6 +38,7 @@ import {
 
 import NoMatchImage from "../../../assets/nomatchimage.svg";
 import SearchingImage from "../../../assets/searchimage.svg";
+import MatchImage from "../../../assets/matchimage.svg";
 
 import AlertBox from "../../../components/Alert/AlertBox";
 
@@ -59,6 +61,13 @@ enum Status {
 export default function CreateSessionPage() {
   // TODO: query the question service to get a list of categories and difficulties
   const { fetchData } = useApi();
+  const navigate = useNavigate();
+
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [intervalTimer, setIntervalTimer] = useState<NodeJS.Timeout | null>();
+  let timer: NodeJS.Timeout | null = null;
+  const [isTimerPaused, setIsTimerPaused] = useState(false);
+
   useEffect(() => {
     fetchData<ServerResponse<CategoryResponseData>>(
       `/question-service/categories`,
@@ -114,13 +123,35 @@ export default function CreateSessionPage() {
 
       setStatus(Status.SEARCHING);
       setActive(1);
+
+      // clear old timer
+      if (timer) {
+        clearInterval(timer);
+      }
+      // setup a timer
+      timer = setInterval(() => {
+        setTimeElapsed((prev) => prev + 1);
+      }, 1000);
     }
 
-    function onFoundMatch() {
+    function onFoundMatch(data) {
       console.log("found a match");
+
+      // 10 seconds to redirect to the room
+      setTimeout(() => {
+        // temporary redirect to dashboard
+        navigate("/dashboard");
+      }, 10 * 1000);
+
+      console.log({ data });
 
       setStatus(Status.MATCH_FOUND);
       setActive(2);
+
+      // stop the timer
+      if (timer) {
+        clearInterval(timer);
+      }
     }
 
     function onNoMatch() {
@@ -128,6 +159,11 @@ export default function CreateSessionPage() {
 
       setStatus(Status.NO_MATCH);
       setActive(2);
+
+      // stop the timer
+      if (timer) {
+        clearInterval(timer);
+      }
     }
 
     socket.on("connect", onConnect);
@@ -171,8 +207,23 @@ export default function CreateSessionPage() {
   function goToStart() {
     setActive(0);
     setStatus(Status.IDLE);
+
+    // reset timer
+    setTimeElapsed(0);
+
     // setSelectedCategories([]);
     // setSelectedDifficulties([]);
+  }
+
+  function continueSearch() {
+    setActive(1);
+    setStatus(Status.SEARCHING);
+
+    search();
+  }
+
+  function goToRoom() {
+    // stub
   }
 
   const CREATE_COMPONENT = (
@@ -302,10 +353,19 @@ export default function CreateSessionPage() {
           {" "}
           <span className={classes.hourglass}> ⏳ </span> Loading...{" "}
         </Title>
-        <Text style={{ textAlign: "center" }}>
-          {" "}
-          You will be matched with a partner soon!{" "}
-        </Text>
+        <Progress color="cyan" value={100} striped animated />
+
+        <Stack gap={0}>
+          <Text style={{ textAlign: "center" }}>
+            {" "}
+            You will be matched with a partner soon!{" "}
+          </Text>
+          <Text style={{ textAlign: "center" }}>
+            {" "}
+            Time elapsed:{" "}
+            <span className={classes.time}> {timeElapsed} seconds </span>{" "}
+          </Text>
+        </Stack>
 
         <SimpleGrid cols={2} className={classes.criteria}>
           <Stack>
@@ -374,14 +434,26 @@ export default function CreateSessionPage() {
             Try changing your criteria?
           </Text>
           <Center>
-            <Button
-              onClick={() => {
-                goToStart();
-              }}
-            >
-              {" "}
-              Try again{" "}
-            </Button>
+            <Group>
+              <Button
+                variant="light"
+                onClick={() => {
+                  goToStart();
+                }}
+                color="orange"
+              >
+                {" "}
+                Change criteria{" "}
+              </Button>
+              <Button
+                onClick={() => {
+                  continueSearch();
+                }}
+              >
+                {" "}
+                Continue searching{" "}
+              </Button>
+            </Group>
           </Center>
         </Stack>
       </AlertBox>
@@ -392,25 +464,25 @@ export default function CreateSessionPage() {
     <>
       <Stack gap={"2em"}>
         <Center>
-          <Image className={classes.image} src={NoMatchImage} />
+          <Image className={classes.image} src={MatchImage} />
         </Center>
-        <AlertBox type="error">
+        <AlertBox type="success">
           <Stack justify="center">
             <Text fw={700} size="xl" style={{ textAlign: "center" }}>
               {" "}
-              Couldn't find a match!{" "}
+              Found a match for you!
             </Text>
             <Text style={{ textAlign: "center" }}>
-              Try changing your criteria?
+              You'll be redirected to the room shortly.
             </Text>
             <Center>
               <Button
                 onClick={() => {
-                  goToStart();
+                  goToRoom();
                 }}
               >
                 {" "}
-                Try again{" "}
+                Go to room{" "}
               </Button>
             </Center>
           </Stack>
@@ -460,7 +532,7 @@ export default function CreateSessionPage() {
                 }
                 allowStepSelect={false}
               >
-                Step 3 content: Get full access
+                <Box className={classes.stepWrapper}>{SUCCESS_COMPONENT}</Box>
               </Stepper.Step>
             )}
           </Stepper>
