@@ -59,5 +59,13 @@ sudo chmod +x /usr/local/bin/docker-compose;
 wget https://github.com/judge0/judge0/releases/download/v1.13.1/judge0-v1.13.1.zip;
 unzip judge0-v1.13.1.zip;
 
-# restart to apply changes
+# update the config file, assuming that your environment variables are set
+cd judge0-v1.13.1;
+echo "AUTHN_TOKEN=$AUTHN_TOKEN
+AUTHZ_TOKEN=$AUTHZ_TOKEN
+REDIS_PASSWORD=$REDIS_PASSWORD
+POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+" >> judge0.conf;
+
+# restart to apply changes, NECESSARY TO ENSURE THAT GRUB2 IS UPDATED
 sudo reboot;
