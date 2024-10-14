@@ -121,7 +121,7 @@ const QuestionCard = memo(function QuestionCard({
                   <CategoryDisplay key={index} category={category} />
                 ))}
               </Group>
-              <Button component={Link} to={`${question._id}`}>
+              <Button component={Link} to={`${question._id}`} variant="light">
                 View
               </Button>
             </Flex>
