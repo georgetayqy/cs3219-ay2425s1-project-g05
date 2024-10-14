@@ -20,7 +20,6 @@
         "expectedOutput": "[\"AAAAAAAAAA\"]"
       }
     ],
-    "testCode": "class Solution(object):\\n    def findRepeatedDnaSequences(self, s):\\n        \\\"\\\"\\\"\\n        :type s: str\\n        :rtype: List[str]\\n        \\\"\\\"\\\"\\n\\nsolution = Solution()\\nresult = solution.findRepeatedDnaSequences(\\\"AAAAACCCCCAAAAACCCCCCAAAAAGGGTTT\\\")\\nprint(result)\\n",
     "solutionCode": "class Solution:\n    def findRepeatedDnaSequences(self, s: str) -> List[str]:\n        seen,res=set(),set()\n        for l in range(len(s)-9) :\n            cur=s[l:l+10]\n            if cur in seen :\n                res.add(cur)\n            seen.add(cur)\n        return list(res)",
     "link": "https://leetcode.com/problems/repeated-dna-sequences/description/"
   },
@@ -580,5 +579,81 @@
     "templateCode": "class Solution(object):\n    def isMatch(self, s, p):\n        \"\"\"\n        :type s: str\n        :type p: str\n        :rtype: bool\n        \"\"\"",
     "solutionCode": "class Solution:\n    def isMatch(self, s: str, p: str) -> bool:\n        i, j = len(s) - 1, len(p) - 1\n        return self.backtrack({}, s, p, i, j)\n\n    def backtrack(self, cache, s, p, i, j):\n        key = (i, j)\n        if key in cache:\n            return cache[key]\n\n        if i == -1 and j == -1:\n            cache[key] = True\n            return True\n\n        if i != -1 and j == -1:\n            cache[key] = False\n            return cache[key]\n\n        if i == -1 and p[j] == '*':\n            k = j\n            while k != -1 and p[k] == '*':\n                k -= 2\n            if k == -1:\n                cache[key] = True\n                return cache[key]\n            cache[key] = False\n            return cache[key]\n        \n        if i == -1 and p[j] != '*':\n            cache[key] = False\n            return cache[key]\n\n        if p[j] == '*':\n            if self.backtrack(cache, s, p, i, j - 2):\n                cache[key] = True\n                return cache[key]\n            if p[j - 1] == s[i] or p[j - 1] == '.':\n                if self.backtrack(cache, s, p, i - 1, j):\n                    cache[key] = True\n                    return cache[key]\n        \n        if p[j] == '.' or s[i] == p[j]:\n            if self.backtrack(cache, s, p, i - 1, j - 1):\n                cache[key] = True\n                return cache[key]\n\n        cache[key] = False\n        return cache[key]",
     "link": "https://leetcode.com/problems/regular-expression-matching/description/"
+  },
+  {
+    "title": "Combine Two Tables",
+    "description": {
+      "description": "Given table Person with the following columns: 1. personId (int) 2. lastName (varchar) 3. firstName (varchar) personId is the primary key. And table Address with the following columns: 1. addressId (int) 2. personId (int) 3. city (varchar) 4. state (varchar) addressId is the primary key. Write a solution to report the first name, last name, city, and state of each person in the Person table. If the address of a personId is not present in the Address table, report null instead. Return the result table in any order."
+    },
+    "categoriesId": [2], // Assuming 2 corresponds to SQL related categories like ALGORITHMS
+    "difficulty": "EASY",
+    "testCases": [
+      {
+        "testCode": "person = [(1, 'Wang', 'Allen'), (2, 'Alice', 'Bob')]; address = [(1, 2, 'New York City', 'New York'), (2, 3, 'Leetcode', 'California')]",
+        "isPublic": true,
+        "meta": "example",
+        "expectedOutput": "[('Allen', 'Wang', None, None), ('Bob', 'Alice', 'New York City', 'New York')]"
+      }
+    ],
+    "templateCode": "# Python code to run SQL query in MySQL \nimport mysql.connector \n\n# Fill up the query here\nquery = '''\n# Write your MySQL query statement below\n''' \n\n# Assuming you have the database connection setup already:\nconn = mysql.connector.connect(\n    host='localhost',\n    user='root',\n    password='yourpassword',\n    database='yourdatabase'\n)\ncursor = conn.cursor()\ncursor.execute(query)\nrows = cursor.fetchall()\nfor row in rows:\n    print(row)\nconn.close()",
+    "solutionCode": "SELECT Person.firstName, Person.lastName, Address.city, Address.state FROM Person LEFT JOIN Address ON Person.personId = Address.personId;",
+    "link": "https://leetcode.com/problems/combine-two-tables/"
+  },
+  {
+    "title": "Combine Two Tables",
+    "description": {
+      "description": "Given table Person with the following columns: 1. personId (int) 2. lastName (varchar) 3. firstName (varchar) personId is the primary key. And table Address with the following columns: 1. addressId (int) 2. personId (int) 3. city (varchar) 4. state (varchar) addressId is the primary key. Write a solution to report the first name, last name, city, and state of each person in the Person table. If the address of a personId is not present in the Address table, report null instead. Return the result table in any order."
+    },
+    "categoriesId": [2],
+    "difficulty": "EASY",
+    "testCases": [
+      {
+        "testCode": "person = [(1, 'Wang', 'Allen'), (2, 'Alice', 'Bob')]; address = [(1, 2, 'New York City', 'New York'), (2, 3, 'Leetcode', 'California')]",
+        "isPublic": true,
+        "meta": "example",
+        "expectedOutput": "[('Allen', 'Wang', None, None), ('Bob', 'Alice', 'New York City', 'New York')]"
+      }
+    ],
+    "templateCode": "# Python code to run SQL query in MySQL \nimport mysql.connector \n\n# Fill up the query here\nquery = '''\n# Write your MySQL query statement below\n''' \n\n# Assuming you have the database connection setup already:\nconn = mysql.connector.connect(\n    host='localhost',\n    user='root',\n    password='yourpassword',\n    database='yourdatabase'\n)\ncursor = conn.cursor()\ncursor.execute(query)\nrows = cursor.fetchall()\nfor row in rows:\n    print(row)\nconn.close()",
+    "solutionCode": "SELECT Person.firstName, Person.lastName, Address.city, Address.state FROM Person LEFT JOIN Address ON Person.personId = Address.personId;",
+    "link": "https://leetcode.com/problems/combine-two-tables/"
+  },
+  {
+    "title": "Trips and Users",
+    "description": {
+      "description": "Given table Trips:\n1. id (int)\n2. client_id (int)\n3. driver_id (int)\n4. city_id (int)\n5. status (enum)\n6. request_at (date)\nid is the primary key. The table holds all taxi trips. Each trip has a unique id, while client_id and driver_id are foreign keys to the users_id at the Users table. Status is an ENUM (category) type of ('completed', 'cancelled_by_driver', 'cancelled_by_client').\n\nAnd table Users:\n1. users_id (int)\n2. banned (enum)\n3. role (enum)\nusers_id is the primary key (column with unique values) for this table. The table holds all users. Each user has a unique users_id, and role is an ENUM type of ('client', 'driver', 'partner'). Banned is an ENUM (category) type of ('Yes', 'No').\n\nThe cancellation rate is computed by dividing the number of canceled (by client or driver) requests with unbanned users by the total number of requests with unbanned users on that day.\nWrite a solution to find the cancellation rate of requests with unbanned users (both client and driver must not be banned) each day between '2013-10-01' and '2013-10-03'. Round Cancellation Rate to two decimal points.\nReturn the result table in any order."
+    },
+    "categoriesId": [2],
+    "difficulty": "HARD",
+    "testCases": [
+      {
+        "testCode": "YET TO CREATE",
+        "isPublic": true,
+        "meta": "example",
+        "expectedOutput": "[('Allen', 'Wang', None, None), ('Bob', 'Alice', 'New York City', 'New York')]"
+      }
+    ],
+    "templateCode": "# Python code to run SQL query in MySQL \nimport mysql.connector \n\n# Fill up the query here\nquery = '''\n# Write your MySQL query statement below\n''' \n\n# Assuming you have the database connection setup already:\nconn = mysql.connector.connect(\n    host='localhost',\n    user='root',\n    password='yourpassword',\n    database='yourdatabase'\n)\ncursor = conn.cursor()\ncursor.execute(query)\nrows = cursor.fetchall()\nfor row in rows:\n    print(row)\nconn.close()",
+    "solutionCode": "SELECT Person.firstName, Person.lastName, Address.city, Address.state FROM Person LEFT JOIN Address ON Person.personId = Address.personId;",
+    "link": "https://leetcode.com/problems/trips-and-users"
+  },
+  {
+    "title": "Nth Highest Salary",
+    "description": {
+      "description": "Table: Employee id is the primary key (column with unique values) for this table. Each row of this table contains information about the salary of an employee."
+    },
+    "categoriesId": [2],
+    "difficulty": "MEDIUM",
+    "testCases": [
+      {
+        "testCode": "YET TO CREATE",
+        "isPublic": true,
+        "meta": "idk",
+        "expectedOutput": "YET TO CREATE"
+      }
+    ],
+    "templateCode": "#Insert your SQL query here",
+    "solutionCode": "CREATE OR REPLACE FUNCTION NthHighestSalary(N INT) RETURNS TABLE (Salary INT) AS $\nBEGIN\n  RETURN QUERY (\n\n    WITH RankedEmployeeSalaries AS (\n        SELECT e1.*,\n            DENSE_RANK() OVER (ORDER BY e1.salary DESC) as drk_sal\n        FROM Employee e1\n    )\n\n    SELECT res.salary \n    FROM RankedEmployeeSalaries res\n    WHERE res.drk_sal = N\n    GROUP BY res.salary\n\n  );\nEND;\n$ LANGUAGE plpgsql;",
+    "link": "https://leetcode.com/problems/nth-highest-salary/description/"
   }
 ]

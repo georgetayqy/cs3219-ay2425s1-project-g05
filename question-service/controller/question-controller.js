@@ -78,6 +78,7 @@ const getAllQuestions = async (req, res, next) => {
       data: { questions: allQuestions },
     });
   } catch (err) {
+    console.log(err);
     next(
       err instanceof BaseError
         ? err
@@ -101,6 +102,7 @@ const getQuestionById = async (req, res, next) => {
       data: { question: foundQuestion },
     });
   } catch (err) {
+    console.log(err);
     next(
       err instanceof BaseError
         ? err
@@ -129,6 +131,7 @@ const deleteQuestionById = async (req, res, next) => {
       data: { question: result },
     });
   } catch (err) {
+    console.log(err);
     next(
       err instanceof BaseError
         ? err
@@ -142,10 +145,11 @@ const updateQuestionById = async (req, res, next) => {
   const { description, title, difficulty, categoriesId } = req.body;
 
   try {
-    // CHECK WHETHER QUESTION TO UPDATE EXISTS
+    // CHECK WHETHER QUESTION TO UPDATE EXISTS (AND NOT DELETED)
     const questionToUpdate = await _getQuestionById(id);
-    if (!questionToUpdate) {
-      throw new NotFoundError("Question not found");
+    console.log(questionToUpdate);
+    if (questionToUpdate.length === 0) {
+      throw new NotFoundError("Question to update cannot be found");
     }
 
     // CHECK FOR DUPLICATE DESCRIPTION IF PROVIDED
@@ -219,22 +223,48 @@ const updateQuestionById = async (req, res, next) => {
 const getFilteredQuestions = async (req, res, next) => {
   try {
     const { categories, categoriesId, difficulty } = req.query;
+
+    // CHECK THAT BOTH CATEGORIES AND CATEGORIESID ARE NOT PROVIDED
+
+    if (categories && categoriesId) {
+      throw new BadRequestError(
+        "Only categories or categoriesId should be provided, not both!"
+      );
+    }
+
     let categoriesString = [];
     if (categoriesId) {
       if (!Array.isArray(categoriesId)) {
+        throw new BadRequestError("CategoriesId should be an array!");
+      }
+      categoriesString = categoriesId.map((id) => {
+        const category = categoriesIdToCategories[id];
+        if (!category) {
+          throw new BadRequestError(`Category with id ${id} does not exist!`);
+        }
+        return category;
+      });
+    }
+
+    // leaving it here for now - might remove it later (to not break anything from matching service)
+    if (categories) {
+      if (!Array.isArray(categories)) {
         throw new BadRequestError("Categories should be an array!");
       }
-      categoriesString = categoriesId.map((id) => categoriesIdToCategories[id]);
+      categoriesString = categories;
+      // check whether categories exist
       const distinctCategories = await _getDistinctCategories();
-      // check that all categories in categoriesString exist in current categories
-      if (
-        categoriesString.some(
-          (category) => !distinctCategories.includes(category)
-        )
-      ) {
-        throw new BadRequestError("Category does not exist!");
+      const invalidCategories = categoriesString.filter(
+        (category) => !distinctCategories.includes(category.toUpperCase())
+      );
+
+      if (invalidCategories.length > 0) {
+        throw new BadRequestError(
+          `Categories specified do not exist: ${invalidCategories.join(", ")}`
+        );
       }
     }
+
     if (difficulty) {
       if (!Array.isArray(difficulty)) {
         throw new BadRequestError("Difficulty should be an array!");
@@ -249,29 +279,13 @@ const getFilteredQuestions = async (req, res, next) => {
         );
       }
     }
-    // leaving it here for now - will remove it later (to not break anything from matching service)
-    if (categories) {
-      console.log(categories);
-      if (!Array.isArray(categories)) {
-        throw new BadRequestError("Categories should be an array!");
-      }
-      categoriesString = categories.map((id) => categoriesIdToCategories[id]);
-      const distinctCategories = await _getDistinctCategories();
-      if (
-        categoriesString.some(
-          (category) => !distinctCategories.includes(category.toUpperCase())
-        )
-      ) {
-        throw new BadRequestError("Category does not exist!");
-      }
-      categoriesString = categories;
-    }
 
     const filteredQuestions = await _getFilteredQuestions({
       categories: categoriesString,
       difficulty,
     });
 
+    // No questions found that match both categories and difficulty
     if (filteredQuestions.length === 0) {
       throw new NotFoundError(
         "No questions with matching categories and difficulty found"
@@ -295,39 +309,45 @@ const getFilteredQuestions = async (req, res, next) => {
 const findQuestion = async (req, res, next) => {
   try {
     const { categoriesId, difficulty, categories } = req.query;
-    let categoriesString = [];
 
-    if (categoriesId) {
-      if (!Array.isArray(categoriesId)) {
-        throw new BadRequestError("Categories should be an array!");
-      }
-      categoriesString = categoriesId.map((id) => categoriesIdToCategories[id]);
-      const distinctCategories = await _getDistinctCategories();
-      if (
-        categoriesString.some(
-          (category) => !distinctCategories.includes(category.toUpperCase())
-        )
-      ) {
-        throw new BadRequestError("Category does not exist!");
-      }
+    // CHECK THAT BOTH CATEGORIES AND CATEGORIESID ARE NOT PROVIDED
+    if (categories && categoriesId) {
+      throw new BadRequestError(
+        "Only categories or categoriesId should be provided, not both!"
+      );
     }
 
-    // keeping the code below for now - will remove it later (to not break anything from matching service)
+    let categoriesString = [];
+    if (categoriesId) {
+      if (!Array.isArray(categoriesId)) {
+        throw new BadRequestError("CategoriesId should be an array!");
+      }
+      categoriesString = categoriesId.map((id) => {
+        const category = categoriesIdToCategories[id];
+        if (!category) {
+          throw new BadRequestError(`Category with id ${id} does not exist!`);
+        }
+        return category;
+      });
+    }
+
+    // leaving it here for now - might remove it later (to not break anything from matching service)
     if (categories) {
-      console.log(categories);
       if (!Array.isArray(categories)) {
         throw new BadRequestError("Categories should be an array!");
       }
-      categoriesString = categories.map((id) => categoriesIdToCategories[id]);
-      const distinctCategories = await _getDistinctCategories();
-      if (
-        categoriesString.some(
-          (category) => !distinctCategories.includes(category.toUpperCase())
-        )
-      ) {
-        throw new BadRequestError("Category does not exist!");
-      }
       categoriesString = categories;
+      // check whether categories exist
+      const distinctCategories = await _getDistinctCategories();
+      const invalidCategories = categoriesString.filter(
+        (category) => !distinctCategories.includes(category.toUpperCase())
+      );
+
+      if (invalidCategories.length > 0) {
+        throw new BadRequestError(
+          `Categories specified do not exist: ${invalidCategories.join(", ")}`
+        );
+      }
     }
 
     if (difficulty) {
@@ -357,13 +377,11 @@ const findQuestion = async (req, res, next) => {
       );
     }
 
-    return res
-      .status(200)
-      .json({
-        statusCode: 200,
-        message: "Question found!",
-        data: { question: foundQuestion },
-      });
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Question found!",
+      data: { question: foundQuestion },
+    });
   } catch (err) {
     next(
       err instanceof BaseError

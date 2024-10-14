@@ -12,7 +12,7 @@ function verifyAccessToken(token) {
 
 const checkAdmin = (req, res, next) => {
   // TODO: Remove after isAdmin is stored in cookies 
-  console.log(req.cookies);
+  // console.log(req.cookies);
   if (!req.cookies.accessToken) {
     throw new ForbiddenError("Access Token not found");
   }

@@ -16,7 +16,7 @@ const getAllQuestions = async () => {
 };
 
 const getQuestionById = async (id) => {
-  return Question.findById(id);
+  return Question.find({ _id: id, isDeleted: false });
 };
 
 const deleteQuestionById = async (id) => {
@@ -25,7 +25,7 @@ const deleteQuestionById = async (id) => {
 };
 
 const updateQuestionById = async (id, question) => {
-  const allowedFields = ['title', 'description', 'difficulty', 'categories', 'testCases', 'templateCode', 'solutionCode', 'link'];
+  const allowedFields = ['title', 'description', 'difficulty', 'categories', 'categoriesId', 'testCases', 'templateCode', 'solutionCode', 'link'];
   const sanitizedQuestion = {};
   for (const key of allowedFields) {
     if (question[key] !== undefined) {
