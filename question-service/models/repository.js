@@ -55,6 +55,7 @@ const getQuestionsByDescription = async (description) => {
   return Question.find({ description: { $eq: description }, isDeleted: false });};
 
 const getQuestionsByTitleAndDifficulty = async (title, difficulty) => {
+  console.log(title, difficulty);
   return Question.find({
     title: { $eq: title },
     difficulty: { $eq: difficulty.toUpperCase() },

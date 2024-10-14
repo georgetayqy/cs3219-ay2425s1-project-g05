@@ -585,7 +585,7 @@
     "description": {
       "description": "Given table Person with the following columns: 1. personId (int) 2. lastName (varchar) 3. firstName (varchar) personId is the primary key. And table Address with the following columns: 1. addressId (int) 2. personId (int) 3. city (varchar) 4. state (varchar) addressId is the primary key. Write a solution to report the first name, last name, city, and state of each person in the Person table. If the address of a personId is not present in the Address table, report null instead. Return the result table in any order."
     },
-    "categoriesId": [2], // Assuming 2 corresponds to SQL related categories like ALGORITHMS
+    "categoriesId": [2], 
     "difficulty": "EASY",
     "testCases": [
       {

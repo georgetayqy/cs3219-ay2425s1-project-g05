@@ -1,7 +1,9 @@
+import test from "node:test";
 import { categoriesIdToCategories } from "../constants/categories.js";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
 import ConflictError from "../errors/ConflictError.js";
+import ForbiddenError from "../errors/ForbiddenError.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import {
   ormCreateQuestion as _createQuestion,
@@ -66,7 +68,7 @@ const createQuestion = async (req, res, next) => {
 
 const getAllQuestions = async (req, res, next) => {
   try {
-    const allQuestions = await _getAllQuestions(req.query);
+    let allQuestions = await _getAllQuestions(req.query);
 
     if (allQuestions.length === 0) {
       throw new NotFoundError("No questions found");
@@ -91,11 +93,27 @@ const getQuestionById = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    const foundQuestion = await _getQuestionById(id);
+    let foundQuestion = await _getQuestionById(id);
 
-    if (!foundQuestion) {
+    if (foundQuestion.length === 0) {
       throw new NotFoundError("Question not found");
     }
+    if (!req.user) {
+      throw new ForbiddenError("Please login to perform this action");
+    }
+    // remove solution code and private test cases if user is not admin
+    if (!req.user.isAdmin) {
+        const { solutionCode, testCases, ...rest } = foundQuestion[0].toObject();
+        const publicTestCases = testCases.filter(
+          (testCase) => testCase.isPublic
+        );
+        foundQuestion = {
+          ...rest,
+          testCases: publicTestCases, 
+        };
+      
+    }
+
     return res.status(200).json({
       statusCode: 200,
       message: "Question found successfully",
@@ -116,7 +134,7 @@ const deleteQuestionById = async (req, res, next) => {
 
   try {
     const questionToDelete = await _getQuestionById(id);
-    if (!questionToDelete) {
+    if (questionToDelete.length === 0) {
       throw new NotFoundError("Question not found");
     }
 
@@ -147,6 +165,7 @@ const updateQuestionById = async (req, res, next) => {
   try {
     // CHECK WHETHER QUESTION TO UPDATE EXISTS (AND NOT DELETED)
     const questionToUpdate = await _getQuestionById(id);
+
     if (questionToUpdate.length === 0) {
       throw new NotFoundError("Question to update cannot be found");
     }
@@ -170,8 +189,8 @@ const updateQuestionById = async (req, res, next) => {
 
     // CHECK FOR DUPLICATE TITLE AND DIFFICULTY IF PROVIDED
     if (title || difficulty) {
-      const titleToCheck = title || questionToUpdate.title;
-      const difficultyToCheck = difficulty || questionToUpdate.difficulty;
+      const titleToCheck = title || questionToUpdate[0].title;
+      const difficultyToCheck = difficulty || questionToUpdate[0].difficulty;
 
       const duplicateTitleAndDifficultyQuestions =
         await _getQuestionByTitleAndDifficulty(titleToCheck, difficultyToCheck);
@@ -202,6 +221,7 @@ const updateQuestionById = async (req, res, next) => {
       id,
       updatedQuestionDetails
     );
+    console.log(updatedQuestion)
     if (!updatedQuestion) {
       throw new NotFoundError("Question not found");
     }
