@@ -24,6 +24,7 @@ import { QuestionResponseData, TestCase } from "../../../types/question";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
+import CodeEditorWithLanguageSelector from "../../../components/Questions/LanguageSelector/LanguageSelector";
 
 export default function CreateQuestionPage() {
   const [name, setName] = useState("");
@@ -31,8 +32,10 @@ export default function CreateQuestionPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [solution, setSolution] = useState("");
-  const [templateCode, setTemplateCode] = useState("");
+  const [solution, setSolution] = useState("// Please provide your solution code here \n");
+  const [solutionLanguage, setSolutionLanguage] = useState("Javascript");
+  const [templateCode, setTemplateCode] = useState("// Please provide your template code here \n");
+  const [templateLanguage, setTemplateLanguage] = useState("Javascript");
   const [link, setLink] = useState("");
 
   const navigate = useNavigate();
@@ -101,6 +104,7 @@ export default function CreateQuestionPage() {
             difficulty,
             testCases: updatedTestCases,
             solutionCode: solution,
+            templateCode,
             link,
           }),
         }
@@ -179,19 +183,24 @@ export default function CreateQuestionPage() {
             required
           />
 
-          <Textarea
-            label={"Solution"}
-            value={solution}
-            onChange={(event) => setSolution(event.currentTarget.value)}
-            minRows={8}
-            required
+          <CodeEditorWithLanguageSelector 
+            label="Solution Code"
+            language={solutionLanguage} 
+            code={solution} 
+            onCodeChange={setSolution} 
+            onLanguageChange={setSolutionLanguage} 
+            required={true}
           />
-          <Textarea
-            label={"Template code"}
-            value={templateCode}
-            onChange={(event) => setTemplateCode(event.currentTarget.value)}
-            minRows={8}
+
+          <CodeEditorWithLanguageSelector 
+            label="Template Code"
+            language={templateLanguage} 
+            code={templateCode} 
+            onCodeChange={setTemplateCode} 
+            onLanguageChange={setTemplateLanguage} 
+            required={false}
           />
+
           {/* <Input.Wrapper label="Description" required>
             <ReactQuill
               theme="snow"
