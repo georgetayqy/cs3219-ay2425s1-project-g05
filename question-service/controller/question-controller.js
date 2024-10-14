@@ -147,7 +147,6 @@ const updateQuestionById = async (req, res, next) => {
   try {
     // CHECK WHETHER QUESTION TO UPDATE EXISTS (AND NOT DELETED)
     const questionToUpdate = await _getQuestionById(id);
-    console.log(questionToUpdate);
     if (questionToUpdate.length === 0) {
       throw new NotFoundError("Question to update cannot be found");
     }

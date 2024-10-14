@@ -74,7 +74,7 @@ const joiQuestionSchema = Joi.object({
   }),
   templateCode: Joi.string().optional().trim().min(1).messages({
     "string.min": "Template code cannot be empty",
-    "string.empty": "Solution code cannot be empty",
+    "string.empty": "Template code cannot be empty",
   }),
   solutionCode: Joi.string().optional().trim().min(1).messages({
     "string.min": "Solution cannot be empty",
@@ -126,7 +126,7 @@ const joiPartialQuestionSchema = Joi.object({
   }),
   templateCode: Joi.string().optional().trim().min(1).messages({
     "string.min": "Template code cannot be empty",
-    "string.empty": "Solution code cannot be empty",
+    "string.empty": "Template code cannot be empty",
   }),
   solutionCode: Joi.string().optional().trim().min(1).messages({
     "string.min": "Solution cannot be empty",
@@ -142,12 +142,10 @@ const joiPartialQuestionSchema = Joi.object({
 // VALIDATION MIDDLEWARE - CREATE QUESTION
 const validateNewQuestion = (req, res, next) => {
   const questionToCreate = req.body;
-  //console.log(questionToCreate);
   questionToCreate.difficulty = questionToCreate.difficulty.toUpperCase();
   const { error } = joiQuestionSchema.validate(req.body);
 
   if (error) {
-    console.log(error);
     throw new BadRequestError(error.details[0].message);
   }
 
@@ -157,7 +155,6 @@ const validateNewQuestion = (req, res, next) => {
 // VALIDATION MIDDLEWARE - UPDATE QUESTION
 const validateUpdatedQuestion = (req, res, next) => {
   const questionToUpdate = req.body;
-  console.log(questionToUpdate);
   if (questionToUpdate.difficulty) {
     questionToUpdate.difficulty = questionToUpdate.difficulty.toUpperCase();
   }
