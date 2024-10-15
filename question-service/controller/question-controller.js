@@ -47,9 +47,18 @@ const createQuestion = async (req, res, next) => {
     const categoriesString = req.body.categoriesId.map(
       (id) => categoriesIdToCategories[id]
     );
+
+    // count number of isPublic test cases, !isPublic test cases, and total test cases  
+    const metaData = {
+      publicTestCaseCount: req.body.testCases.filter(testCase => testCase.isPublic).length,
+      privateTestCaseCount: req.body.testCases.filter(testCase => !testCase.isPublic).length,
+      totalTestCaseCount: req.body.testCases.length
+    }
+
     const newQuestion = {
       ...req.body,
       categories: categoriesString,
+      meta: metaData
     };
 
     const createdQuestion = await _createQuestion(newQuestion);
@@ -98,10 +107,10 @@ const getQuestionById = async (req, res, next) => {
     if (foundQuestion.length === 0) {
       throw new NotFoundError("Question not found");
     }
-    if (!req.user) {
-      throw new ForbiddenError("Please login to perform this action");
-    }
-    // remove private test cases if not run service 
+    // if (!req.user) {
+    //   throw new ForbiddenError("Please login to perform this action");
+    // }
+    // TODO: remove private test cases if not run service 
     // if (true) {
     //     const { testCases, ...rest } = foundQuestion[0].toObject();
     //     const publicTestCases = testCases.filter(
@@ -160,7 +169,7 @@ const deleteQuestionById = async (req, res, next) => {
 
 const updateQuestionById = async (req, res, next) => {
   const { id } = req.params;
-  const { description, title, difficulty, categoriesId } = req.body;
+  const { description, title, difficulty, categoriesId, testCases } = req.body;
 
   try {
     // CHECK WHETHER QUESTION TO UPDATE EXISTS (AND NOT DELETED)
@@ -217,11 +226,25 @@ const updateQuestionById = async (req, res, next) => {
         categories: categoriesString,
       };
     }
+
+    if (testCases) {
+      const metaData = {
+        publicTestCaseCount: testCases.filter(testCase => testCase.isPublic).length,
+        privateTestCaseCount: testCases.filter(testCase => !testCase.isPublic).length,
+        totalTestCaseCount: testCases.length
+      }
+      updatedQuestionDetails = {
+        ...updatedQuestionDetails,
+        meta: metaData
+      }
+    }
+
+    console.log(updatedQuestionDetails)
     const updatedQuestion = await _updateQuestionById(
       id,
       updatedQuestionDetails
     );
-    console.log(updatedQuestion)
+
     if (!updatedQuestion) {
       throw new NotFoundError("Question not found");
     }

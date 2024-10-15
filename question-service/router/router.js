@@ -9,7 +9,7 @@ import {
   findQuestion,
   getDistinctCategories,
 } from "../controller/question-controller.js";
-import { checkAdmin, getUser } from "../middlewares/access-control.js";
+import { checkAdmin } from "../middlewares/access-control.js";
 import {
   validateNewQuestion,
   validateUpdatedQuestion,
