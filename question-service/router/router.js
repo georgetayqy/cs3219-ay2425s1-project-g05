@@ -21,10 +21,10 @@ const router = express.Router();
 router.post("/", checkAdmin, validateNewQuestion, createQuestion);
 
 // GET ALL QUESTIONS
-router.route("/").get(checkAdmin, getAllQuestions);
+router.route("/").get(getAllQuestions);
 
 // GET QUESTION BY ID
-router.route("/id/:id").get(getUser, getQuestionById);
+router.route("/id/:id").get(getQuestionById);
 
 // DELETE QUESTION BY ID
 router.route("/id/:id").delete(checkAdmin, deleteQuestionById);

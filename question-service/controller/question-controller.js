@@ -101,18 +101,18 @@ const getQuestionById = async (req, res, next) => {
     if (!req.user) {
       throw new ForbiddenError("Please login to perform this action");
     }
-    // remove solution code and private test cases if user is not admin
-    if (!req.user.isAdmin) {
-        const { solutionCode, testCases, ...rest } = foundQuestion[0].toObject();
-        const publicTestCases = testCases.filter(
-          (testCase) => testCase.isPublic
-        );
-        foundQuestion = {
-          ...rest,
-          testCases: publicTestCases, 
-        };
+    // remove private test cases if not run service 
+    // if (true) {
+    //     const { testCases, ...rest } = foundQuestion[0].toObject();
+    //     const publicTestCases = testCases.filter(
+    //       (testCase) => testCase.isPublic
+    //     );
+    //     foundQuestion = {
+    //       ...rest,
+    //       testCases: publicTestCases, 
+    //     };
       
-    }
+    // }
 
     return res.status(200).json({
       statusCode: 200,

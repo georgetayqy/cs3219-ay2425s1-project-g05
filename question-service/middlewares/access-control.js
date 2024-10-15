@@ -31,15 +31,7 @@ export function checkAdmin(req, res, next) {
   }
 };
 
-export function getUser(req, res, next) {
-  if (!req.cookies.accessToken) {
-    throw new ForbiddenError("Access Token not found");
-  }
-  const user = verifyAccessToken(req.cookies.accessToken);
-  if (!user) {
-    throw new ForbiddenError("Access Token verification failed");
-  }
-  req.user = user;
-  next();
-}
+// TODO: Add middleware to check if API Call is made by run service 
+// Only run service can get all (private and public) testCases 
+
 
