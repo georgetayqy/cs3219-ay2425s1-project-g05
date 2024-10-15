@@ -56,7 +56,9 @@ export default function QuestionCard({
             color="black"
             size="compact-md"
             onClick={() => {
-              window.open(question.link, "_blank", "noopener,noreferrer");
+              if (question.link) {
+                window.open(question.link, "_blank", "noopener,noreferrer");
+              }
             }}
           >
             <IconBrandLeetcode style={{ width: rem(16), height: rem(16) }} />
