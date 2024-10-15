@@ -8,7 +8,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 
 interface RichTextEditorProps {
   content: string;
-  onContentChange: (value: string, htmlvalue: string) => void;
+  onContentChange: (textValue: string, htmlvalue: string) => void;
 }
 
 function RichTextEditor({ content, onContentChange }: RichTextEditorProps) {

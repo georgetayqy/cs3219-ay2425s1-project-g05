@@ -28,7 +28,7 @@ export default function CreateQuestionPage() {
   const [name, setName] = useState("");
   const [difficulty, setDifficulty] = useState<string | null>("EASY");
   const [categories, setCategories] = useState<string[]>([]);
-  const [description, setDescription] = useState("");
+  const [descriptionText, setDescriptionText] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [solution, setSolution] = useState("// Please provide your solution code here \n");
@@ -96,7 +96,7 @@ export default function CreateQuestionPage() {
           },
           body: JSON.stringify({
             title: name,
-            description: { testDescription: description, testDescriptionHtml: descriptionHtml },
+            description: { descriptionText, descriptionHtml },
             categories,
             difficulty,
             testCases: updatedTestCases,
@@ -175,7 +175,7 @@ export default function CreateQuestionPage() {
           />
 
           <Space h="8" />
-          <RichTextEditor content={descriptionHtml} onContentChange={(value: string, htmlvalue: string) => { setDescription(value); setDescriptionHtml(htmlvalue); }} />
+          <RichTextEditor content={descriptionHtml} onContentChange={(textValue: string, htmlvalue: string) => { setDescriptionText(textValue); setDescriptionHtml(htmlvalue); }} />
 
           <Space h="12" />
           <CodeEditorWithLanguageSelector 

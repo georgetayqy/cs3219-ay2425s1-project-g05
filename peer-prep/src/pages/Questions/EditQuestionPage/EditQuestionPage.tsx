@@ -34,7 +34,7 @@ export default function EditQuestionPage() {
   const [name, setName] = useState("");
   const [difficulty, setDifficulty] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
-  const [description, setDescription] = useState<string>("");
+  const [descriptionText, setDescriptionText] = useState<string>("");
   const [descriptionHtml, setDescriptionHtml] = useState<string>("");
   const [solution, setSolution] = useState("");
   const [templateCode, setTemplateCode] = useState("");
@@ -74,8 +74,8 @@ export default function EditQuestionPage() {
       setName(question.title);
       setDifficulty(question.difficulty);
       setCategories(question.categories);
-      setDescription(question.description.testDescription);
-      setDescriptionHtml(question.description.testDescriptionHtml);
+      setDescriptionText(question.description.descriptionText);
+      setDescriptionHtml(question.description.descriptionHtml);
       setTemplateCode(question.templateCode);
       setSolution(question.solutionCode);
       setLink(question.link);
@@ -131,7 +131,7 @@ export default function EditQuestionPage() {
           },
           body: JSON.stringify({
             title: name,
-            description: { testDescription: description, testDescriptionHtml: descriptionHtml },
+            description: { descriptionText, descriptionHtml },
             categories,
             difficulty,
             solutionCode: solution,
@@ -238,7 +238,7 @@ export default function EditQuestionPage() {
         <Space h="8" />
         <RichTextEditor 
           content={descriptionHtml} 
-          onContentChange={(value: string, htmlvalue: string) => { setDescription(value); setDescriptionHtml(htmlvalue); }} 
+          onContentChange={(textValue: string, htmlvalue: string) => { setDescriptionText(textValue); setDescriptionHtml(htmlvalue); }} 
         />
         
         <Space h="12" />
