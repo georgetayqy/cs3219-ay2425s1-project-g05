@@ -46,6 +46,13 @@ jobs:
       - name: Checkout Codebase
         uses: actions/checkout@v4
 
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        continue-on-error: true
+
   build:
     # build container for both x86 and arm platforms
     needs: test
