@@ -1,12 +1,16 @@
-import { Box, Select } from "@mantine/core";
+import { Box } from "@mantine/core";
 import { Editor } from "@monaco-editor/react";
 
-const languages = ['Python', 'Javascript', 'C++'];
+// const languages = ['Python', 'Javascript', 'C++'];
 
-function CodeEditorWithLanguageSelector({ language, code, onCodeChange, onLanguageChange, label, required }) {
+function CodeEditorWithLanguageSelector({ code, onCodeChange, label, required }) {
   return (
     <Box>
-      <Select
+      <label style={{ fontSize:"14px" }}>
+        {label}
+        { required && <span style={{ color:"red", fontSize:"14px", paddingLeft: "4px" }}>*</span> }
+      </label>
+      {/* <Select
         label={`${label}`}
         placeholder="Select a language"
         data={languages}
@@ -14,10 +18,10 @@ function CodeEditorWithLanguageSelector({ language, code, onCodeChange, onLangua
         onChange={onLanguageChange}
         mb={8}
         required={required}
-      />
+      /> */}
       <Editor
         height="300px"
-        language={language.toLowerCase()}
+        language={'python'}
         value={code}
         theme="vs-dark"
         onChange={(value) => onCodeChange(value || '')}
