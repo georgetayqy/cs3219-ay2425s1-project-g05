@@ -76,7 +76,6 @@ export default function EditQuestionPage() {
       setCategories(question.categories);
       setDescription(question.description.testDescription);
       setDescriptionHtml(question.description.testDescriptionHtml);
-      console.log(question.description.testDescriptionHtml, 1231432);
       setTemplateCode(question.templateCode);
       setSolution(question.solutionCode);
       setLink(question.link);

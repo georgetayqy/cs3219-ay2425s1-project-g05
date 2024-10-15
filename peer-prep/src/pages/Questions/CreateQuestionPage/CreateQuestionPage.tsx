@@ -96,7 +96,7 @@ export default function CreateQuestionPage() {
           },
           body: JSON.stringify({
             title: name,
-            description: { testDescription: description },
+            description: { testDescription: description, testDescriptionHtml: descriptionHtml },
             categories,
             difficulty,
             testCases: updatedTestCases,
