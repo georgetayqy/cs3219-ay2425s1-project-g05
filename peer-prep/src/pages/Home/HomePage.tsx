@@ -3,10 +3,13 @@ import {
   Button,
   Center,
   Container,
+  Flex,
   Group,
+  Image,
   rem,
   SimpleGrid,
   Stack,
+  Stepper,
   Text,
   ThemeIcon,
   Title,
@@ -17,49 +20,62 @@ import {
   IconUser,
   IconMessage2,
   IconLock,
+  IconCircleCheck,
+  IconNumber1,
+  IconNumber2,
+  IconNumber3,
+  IconEdit,
 } from "@tabler/icons-react";
 import classes from "./HomePage.module.css";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AUTH_STATUS, useAuth } from "../../hooks/useAuth";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 
-export const MOCKDATA = [
+import MatchImage from "../../assets/matchimage.svg";
+
+const MOCKDATA = [
   {
     icon: IconGauge,
-    title: "Extreme performance",
+    title: "Collaboration",
     description:
-      "This dust is actually a powerful poison that will even make a pro wrestler sick, Regice cloaks itself with frigid air of -328 degrees Fahrenheit",
+      "Our live code editor synchronizes all your changes in real-time, so you can see what your partner is typing as they type it",
   },
   {
     icon: IconUser,
-    title: "Privacy focused",
+    title: "Communication",
     description:
-      "People say it can run at the same speed as lightning striking, Its icy body is so cold, it will not melt even if it is immersed in magma",
+      "We offer various ways to talk to your partner, including video chat, audio chat, and text chat",
   },
   {
     icon: IconCookie,
-    title: "No third parties",
+    title: "Choose your own adventure",
     description:
-      "They’re popular, but they’re rare. Trainers who show them off recklessly may be targeted by thieves",
+      "With a large variety of questions and topics, you're able to work on those topics that have been giving you trouble",
   },
   {
-    icon: IconLock,
-    title: "Secure by default",
+    icon: IconEdit,
+    title: "Practice makes perfect",
     description:
-      "Although it still can’t fly, its jumping power is outstanding, in Alola the mushrooms on Paras don’t grow up quite right",
+      "Keep track of the topics that you're struggling in, and maybe even attempt the questions again.",
   },
-  {
-    icon: IconMessage2,
-    title: "24/7 Support",
-    description:
-      "Rapidash usually can be seen casually cantering in the fields and plains, Skitty is known to chase around after its own tail",
-  },
+  // {
+  //   icon: IconMessage2,
+  //   title: "24/7 Support",
+  //   description:
+  //     "Rapidash usually can be seen casually cantering in the fields and plains, Skitty is known to chase around after its own tail",
+  // },
 ];
 
 interface FeatureProps {
   icon: React.FC<any>;
   title: React.ReactNode;
   description: React.ReactNode;
+}
+
+interface StepProps {
+  number: any;
+  children: React.ReactNode | React.ReactNode[];
+  last?: boolean;
 }
 
 export default function Home() {
@@ -74,43 +90,72 @@ export default function Home() {
     }
   }, [authStatus]);
 
+  const steps: StepProps[] = [
+    {
+      number: 1,
+      children: "Choose topics and difficulty",
+    },
+    {
+      number: 2,
+      children: "Get matched with a partner",
+    },
+    {
+      number: 3,
+      children: "Begin coding!",
+    },
+    {
+      number: "",
+      children: (
+        <Button
+          variant="gradient"
+          size="lg"
+          gradient={{ from: "cyan", to: "red", deg: 90 }}
+          component={Link}
+          to="/login"
+        >
+          {" "}
+          Get started{" "}
+        </Button>
+      ),
+      last: true,
+    },
+  ];
+
   return (
     <>
       <section>
-        <Container>
-          <Center className={classes.header}>
-            <Stack>
-              <Title size="3rem" className={classes.title}>
-                Welcome to PeerPrep!
-              </Title>
-              <Text className={classes.description}>
-                {" "}
-                At PeerPrep, we want you to ace your coding interviews. But,
-                doing it alone is boring. Find someone to collaborate with on a
-                coding problem, with test cases, timed submission, and more!{" "}
-              </Text>
-
-              <Center mt="lg">
-                <Button size="lg" radius="xl">
-                  Get started ➜
-                </Button>
-              </Center>
-            </Stack>
-          </Center>
+        <Container size="xl" mt="1.5rem" className={classes.header}>
+          <Title className={classes.headerText}>
+            {" "}
+            <span className={classes.highlight}> PeerPrep </span> is your best
+            friend when it comes to acing the coding interview.
+          </Title>
+          <Text className={classes.subtitleText} c="dimmed">
+            Doing LeetCode by yourself is boring. Why not do it with someone?{" "}
+          </Text>
         </Container>
       </section>
+      <section>
+        <Container size="xl" mt="2rem" className={classes.subHeader}>
+          <Box className={classes.steps}>{steps.map(StepComponent)}</Box>
+
+          <Image className={classes.image} src={MatchImage} />
+        </Container>
+      </section>
+
       <section className={`${classes["header-content"]} ${classes.shaded}`}>
         <Box>
           <Container className={classes.wrapper}>
             <Title className={classes.title}>
-              Integrate effortlessly with any technology stack
+              Reduce the boredom and frustration of coding alone
             </Title>
 
             <Container size={560} p={0}>
               <Text size="sm" className={classes.description}>
-                Every once in a while, you’ll see a Golbat that’s missing some
-                fangs. This happens when hunger drives it to try biting a
-                Steel-type Pokémon.
+                Two heads are better than one. With our collaborative features,
+                think about and solve problems with a friend. As the saying
+                goes, if you can explain it to someone else, you have mastered
+                the topic.{" "}
               </Text>
             </Container>
 
@@ -175,5 +220,20 @@ export function FeaturesGrid() {
         {features}
       </SimpleGrid>
     </Container>
+  );
+}
+
+function StepComponent({ number, children, last }: StepProps, key: number) {
+  return (
+    <Flex className={classes.step} key={number}>
+      <Flex>
+        <Flex className={classes.stepIcon}>
+          <span className={classes.stepRing}></span>
+          {number}
+        </Flex>
+        <span className={classes.stepText}>{children}</span>
+      </Flex>
+      {!last && <Box className={classes.stepDivider}></Box>}
+    </Flex>
   );
 }

@@ -126,7 +126,7 @@ const router = createBrowserRouter([
 ]);
 
 const theme = createTheme({
-  fontFamily: "Montserrat, sans-serif",
+  fontFamily: "Inter",
   defaultRadius: "md",
   cursorType: "pointer",
   primaryColor: "cyan",
