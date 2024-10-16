@@ -10,7 +10,6 @@ export default function ProtectedRouteWrapper() {
   }
 
   if (authStatus === AUTH_STATUS.LOGGED_OUT) {
-    console.log("not auth bro");
     // user is not authenticated
     return <Navigate to="/login" />;
   }

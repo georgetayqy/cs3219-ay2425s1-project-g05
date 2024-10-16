@@ -44,7 +44,6 @@ export default function QuestionsPage() {
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
-    console.log("useeffect");
     if (debounced.length > 0) {
       const filteredQuestions = questions.filter((question) =>
         question.title.toLowerCase().includes(debounced.toLowerCase())
