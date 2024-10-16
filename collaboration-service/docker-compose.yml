@@ -1,0 +1,21 @@
+services:
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis:/data
+    network_mode: bridge
+  # collaboration-service:
+  #   build:
+  #     context: ./collaboration-service
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - '8004:8004'
+  #   network_mode: bridge
+
+volumes:
+  redis:
+    driver: local
