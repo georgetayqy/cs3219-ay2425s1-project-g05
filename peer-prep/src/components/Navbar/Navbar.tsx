@@ -1,14 +1,10 @@
 import {
-  HoverCard,
   Group,
   Button,
   UnstyledButton,
   Text,
-  SimpleGrid,
   ThemeIcon,
-  Anchor,
   Divider,
-  Center,
   Box,
   Burger,
   Drawer,
@@ -18,7 +14,6 @@ import {
   useMantineTheme,
   Menu,
   Flex,
-  SegmentedControl,
   ActionIcon,
   useMantineColorScheme,
 } from "@mantine/core";
@@ -44,9 +39,10 @@ import {
   IconMoon,
 } from "@tabler/icons-react";
 import classes from "./Navbar.module.css";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AUTH_STATUS, useAuth } from "../../hooks/useAuth";
 import AvatarWithDetailsButton from "../AvatarIcon/AvatarWithDetailsButton";
+import { useId } from "react";
 
 const mockdata = [
   {
@@ -316,13 +312,33 @@ export function Navbar() {
                 </Menu>{" "}
               </Group>
             ) : (
-              <Group visibleFrom="sm">
-                <Link to="/login">
-                  <Button variant="default">Log in</Button>
-                </Link>
-                <Link to="/login?register=true">
-                  <Button>Sign up</Button>
-                </Link>
+              <Group visibleFrom="sm" gap="1.5rem">
+                <ActionIcon
+                  variant="transparent"
+                  aria-label="Settings"
+                  color="grey"
+                  onClick={toggleColorScheme}
+                >
+                  {colorScheme === "dark" ? (
+                    <IconSun
+                      // style={{ width: "70%", height: "70%" }}
+                      stroke={1.5}
+                    />
+                  ) : (
+                    <IconMoon
+                      // style={{ width: "70%", height: "70%" }}
+                      stroke={1.5}
+                    />
+                  )}
+                </ActionIcon>
+                <Group>
+                  <Link to="/login">
+                    <Button variant="default">Log in</Button>
+                  </Link>
+                  <Link to="/login?register=true">
+                    <Button>Sign up</Button>
+                  </Link>
+                </Group>
               </Group>
             )}
           </Flex>
