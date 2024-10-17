@@ -9,6 +9,7 @@
 FROM node:20
 
 # expose 5173 port for access to the container
+ENV PORT=5173
 EXPOSE 5173
 
 # set workdir to prevent the container from restarting

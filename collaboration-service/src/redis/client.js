@@ -29,7 +29,7 @@ class RedisClient {
 
     // If absent, create it and store it in the static variable
     RedisClient.client = await createClient({
-      url: process.env.REDIS_HOST || 'redis://redis:6379',
+      url: 'redis://redis:6379',
     })
       .on('error', (err) => {
         if (err instanceof AggregateError) {
@@ -227,7 +227,7 @@ class RedisClient {
       throw new RoomNotFoundError('Invalid room ID provided');
     }
 
-    if (users.length != 0) {
+    if (userResults.length != 0) {
       throw new RoomNotEmptyError('Room is not empty and cannot be deleted');
     }
 
@@ -239,7 +239,10 @@ class RedisClient {
   }
 
   /**
+   * Registers a user to the room
    *
+   * @param {string} roomId Room ID to add user to
+   * @oaram {string} userId User ID of the user to add to the room
    */
   async registerUser(roomId, userId) {
     const users = (await this.findUsersFromRoom(roomId)) ?? [];
@@ -255,7 +258,10 @@ class RedisClient {
   }
 
   /**
+   * Deregisters a user from a room
    *
+   * @param {string} roomId Room ID to remove user from
+   * @param {string} userId User ID of user to remove from room
    */
   async deregisterUser(roomId, userId) {
     const users = (await this.findUsersFromRoom(roomId)) ?? [];

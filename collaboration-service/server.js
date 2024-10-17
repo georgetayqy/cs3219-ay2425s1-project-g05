@@ -60,5 +60,5 @@ httpServer.on('upgrade', (req, sock, head) => {
 
 // Start the HTTP server
 httpServer.listen(port, host, () => {
-  console.log('Collaboration Service lcistening at port', port);
+  console.log('Collaboration Service listening at port', port);
 });
