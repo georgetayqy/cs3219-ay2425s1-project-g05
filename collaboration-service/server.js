@@ -2,11 +2,15 @@
  * Adapted from https://github.com/yjs/y-websocket/blob/master/bin/server.cjs
  */
 import express from 'express';
+import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
 import corsMiddleware from './src/middlewares/cors.js';
+
 import { createServer } from 'node:http';
 import { config } from 'dotenv';
 import { setupWSConnection } from './src/server/utils.cjs';
 import { parseInt } from 'lib0/number';
+import { router } from './src/router/router.js';
 
 import pkg from 'ws';
 const { Server } = pkg;
@@ -14,11 +18,13 @@ const { Server } = pkg;
 // Set up env variables
 config();
 
+// Set up host and port
 const host = process.env.HOST || '0.0.0.0';
 const port = parseInt(process.env.HOST) || 8004;
 
 // Create express app and websocket server
 const app = express();
+
 const websocketServer = new Server({
   noServer: true,
   cors: {
@@ -29,8 +35,10 @@ const httpServer = createServer(app);
 
 // Init middlewares
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(corsMiddleware);
+app.use('/api/collaboration-service', router);
 
 // Test Route for Health Checks
 app.get('/healthz', (request, response) => {
