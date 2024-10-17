@@ -1,17 +1,15 @@
 import BaseError from '../errors/BaseError.js';
+import InvalidQueryParamError from '../errors/InvalidQueryParamError.js';
+import RoomNotFoundError from '../errors/RoomNotFoundError.js';
+import UserNotFoundError from '../errors/UserNotFoundError.js';
 import RedisClient from './client.js';
 
 const client = new RedisClient();
-await client.createIfAbsent();
+client.createIfAbsent();
 
 const createRoom = async (request, response, next) => {
   try {
-    const users = [];
-
-    // If users do not specify
-    if ('users' in request.body) {
-      users = request.body.users; // list of email addresses
-    }
+    const users = request.body.users ?? [];
 
     const roomId = await client.createRoom(users);
 
@@ -25,7 +23,7 @@ const createRoom = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, 'Unable to query Redis')
+        : new BaseError(500, `Unable to query Redis: ${err}`)
     );
   }
 };
@@ -38,7 +36,7 @@ const deleteRoom = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, 'Unable to query Redis')
+        : new BaseError(500, `Unable to query Redis: ${err}`)
     );
   }
 };
@@ -47,6 +45,10 @@ const getRoomDetails = async (request, response, next) => {
   try {
     const { roomId } = request.query;
     const users = await client.findUsersFromRoom(roomId);
+
+    if (users === null) {
+      throw new RoomNotFoundError('Room cannot be found');
+    }
 
     return response.status(200).json({
       statusCode: 200,
@@ -59,7 +61,7 @@ const getRoomDetails = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, 'Unable to query Redis')
+        : new BaseError(500, `Unable to query Redis: ${err}`)
     );
   }
 };
@@ -68,6 +70,10 @@ const getUserDetails = async (request, response, next) => {
   try {
     const { userId } = request.query;
     const roomId = await client.findRoomByUser(userId);
+
+    if (roomId === null) {
+      throw new UserNotFoundError('User ID is invalid');
+    }
 
     return response.status(200).json({
       statusCode: 200,
@@ -80,7 +86,7 @@ const getUserDetails = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, 'Unable to query Redis')
+        : new BaseError(500, `Unable to query Redis: ${err}`)
     );
   }
 };
@@ -93,7 +99,7 @@ const registerUser = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, 'Unable to query Redis')
+        : new BaseError(500, `Unable to query Redis: ${err}`)
     );
   }
 };
@@ -106,7 +112,7 @@ const deregisterUser = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, 'Unable to query Redis')
+        : new BaseError(500, `Unable to query Redis: ${err}`)
     );
   }
 };

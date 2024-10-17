@@ -1,20 +1,23 @@
 services:
   redis:
-    image: redis:latest
+    container_name: redis
+    image: 'redis:latest'
     restart: always
-    ports:
-      - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning
+    command: redis-server --save 1 1 --loglevel warning
     volumes:
       - redis:/data
-    network_mode: bridge
-  # collaboration-service:
-  #   build:
-  #     context: ./collaboration-service
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - '8004:8004'
-  #   network_mode: bridge
+    ports:
+      - '6379:6379'
+
+  collaboration-service:
+    container_name: collaboration-service
+    build:
+      context: .
+      dockerfile: Dockerfile.public
+    ports:
+      - '8004:8004'
+    depends_on:
+      - redis
 
 volumes:
   redis:

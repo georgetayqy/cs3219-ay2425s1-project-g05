@@ -5,6 +5,7 @@ import RoomNotEmptyError from '../errors/RoomNotEmptyError.js';
 import UserNotFoundInRoom from '../errors/UserNotFoundInRoom.js';
 import UserAlreadyFoundInRoom from '../errors/UserAlreadyFoundInRoom.js';
 import ConnectionError from '../errors/ConnectionError.js';
+import { config } from 'dotenv';
 
 /**
  * Interface to connect to Redis
@@ -20,12 +21,16 @@ class RedisClient {
    * @returns Redis client
    */
   async createIfAbsent() {
+    config();
+
     if (RedisClient.client !== null) {
       return RedisClient.client;
     }
 
     // If absent, create it and store it in the static variable
-    RedisClient.client = await createClient()
+    RedisClient.client = await createClient({
+      url: process.env.REDIS_HOST || 'redis://redis:6379',
+    })
       .on('error', (err) => {
         if (err instanceof AggregateError) {
           console.log(
