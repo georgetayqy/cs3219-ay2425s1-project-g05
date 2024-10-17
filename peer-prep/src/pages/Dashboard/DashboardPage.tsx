@@ -43,7 +43,7 @@ export default function DashboardPage() {
         <Box px={"xl"} mt="4rem">
           <Flex className={classes["question-list"]}>
             {SAMPLE_QUESTIONS.map((question, key) => (
-              <QuestionCard key={key} question={question} />
+              <QuestionCard key={key} question={question} difficulty="EASY" />
             ))}
           </Flex>
         </Box>

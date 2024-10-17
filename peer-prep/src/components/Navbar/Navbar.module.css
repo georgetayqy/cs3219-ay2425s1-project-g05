@@ -75,3 +75,9 @@
   flex-basis: 0;
   justify-content: flex-end;
 }
+
+:global {
+  #aside {
+    color: var(--mantine-color-text);
+  }
+}
