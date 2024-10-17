@@ -1,4 +1,4 @@
-import { Box, Text } from "@mantine/core";
+import { Box, Kbd, Text } from "@mantine/core";
 
 import classes from "./Category.module.css";
 
@@ -7,8 +7,9 @@ export default function CategoryDisplay({ category }: { category: string }) {
   // of the category
 
   return (
-    <Box className={classes.category}>
-      <Text className={classes["category-text"]}> {category} </Text>
-    </Box>
+    // <Box className={classes.category}>
+    //   <Text className={classes["category-text"]}> {category} </Text>
+    // </Box>
+    <Kbd>{category}</Kbd>
   );
 }

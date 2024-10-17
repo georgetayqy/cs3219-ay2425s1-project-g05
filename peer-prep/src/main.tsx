@@ -20,11 +20,12 @@ import { AuthProvider } from "./hooks/useAuth.tsx";
 import DashboardPage from "./pages/Dashboard/DashboardPage.tsx";
 import SearchingPage from "./pages/Session/Search/SearchingPage.tsx";
 import CreateSessionPage from "./pages/Session/Create/CreateSessionPage.tsx";
-import QuestionPage from "./pages/Questions/QuestionPage.tsx";
+import QuestionsPage from "./pages/Questions/QuestionsPage.tsx";
 import CreateQuestionPage from "./pages/Questions/CreateQuestionPage/CreateQuestionPage.tsx";
 import EditQuestionPage from "./pages/Questions/EditQuestionPage/EditQuestionPage.tsx";
 import { Notifications } from "@mantine/notifications";
 import AdminRouteWrapper from "./pages/AdminRouteWrapper.tsx";
+import ReadQuestionPage from "./pages/Questions/ReadQuestionPage/ReadQuestionPage.tsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -54,7 +55,7 @@ const router = createBrowserRouter([
                 children: [
                   {
                     path: "/questions",
-                    element: <QuestionPage />,
+                    element: <QuestionsPage />,
                     loader: async () =>
                       fetch(
                         `${
@@ -72,6 +73,16 @@ const router = createBrowserRouter([
                   {
                     path: "/questions/edit/:id",
                     element: <EditQuestionPage />,
+                  },
+                  {
+                    path: ":id",
+                    element: <ReadQuestionPage />,
+                    loader: async ({ params }) =>
+                      fetch(
+                        `${
+                          import.meta.env.VITE_API_URL_QUESTION
+                        }/question-service/id/${params.id}`
+                      ),
                   },
                 ],
               },
@@ -116,9 +127,10 @@ const router = createBrowserRouter([
 ]);
 
 const theme = createTheme({
-  fontFamily: "Montserrat, sans-serif",
+  fontFamily: "Inter",
   defaultRadius: "md",
   cursorType: "pointer",
+  primaryColor: "cyan",
 });
 
 createRoot(document.getElementById("root")!).render(

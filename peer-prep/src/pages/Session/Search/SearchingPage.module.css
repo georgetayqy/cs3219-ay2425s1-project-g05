@@ -2,7 +2,7 @@
   min-height: calc(100vh - 60px - var(--mantine-spacing-md));
   align-items: center;
 
-  padding: 8rem;
+  /* padding: 8rem; */
 
   flex-direction: column;
   gap: 2rem;
@@ -26,5 +26,17 @@
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+.hourglass {
+  animation: spin-hourglass 5s linear infinite;
+}
+@keyframes spin-hourglass {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(180deg);
   }
 }
