@@ -5,6 +5,7 @@ import UserNotFoundError from '../errors/UserNotFoundError.js';
 import RedisClient from './client.js';
 
 const client = new RedisClient();
+client.deleteIfPresent();
 client.createIfAbsent();
 
 const createRoom = async (request, response, next) => {

@@ -13,6 +13,7 @@ import { config } from 'dotenv';
 class RedisClient {
   /** Static client instance; reusing connection */
   static client = null;
+  static autoincrementingId = '_id';
 
   /**
    * Creates an instance of the redis client if it is not already created, otherwise
@@ -29,7 +30,9 @@ class RedisClient {
 
     // If absent, create it and store it in the static variable
     RedisClient.client = await createClient({
-      url: 'redis://redis:6379',
+      url:
+        process.env.REDIS_HOST ||
+        'redis://redis.mrdqdr.ng.0001.apse1.cache.amazonaws.com:6379',
     })
       .on('error', (err) => {
         if (err instanceof AggregateError) {
@@ -49,8 +52,15 @@ class RedisClient {
     // Connect to it
     RedisClient.client.connect();
 
-    // Create the autoincrementing ID
-    await RedisClient.client.incr('_id');
+    // Create the _id key
+    if (
+      (await RedisClient.client.exists(RedisClient.autoincrementingId)) == 0
+    ) {
+      await RedisClient.client.incr(RedisClient.autoincrementingId);
+      console.log('Establishing Autoincrementing Variable...');
+    } else {
+      console.log('Autoincrementing Variable established');
+    }
 
     // return client
     return RedisClient.client;
@@ -73,14 +83,16 @@ class RedisClient {
    * Increments the autoincrementing ID used for rooming.
    */
   async #autoincrementId() {
-    await (await this.createIfAbsent()).incr('_id');
+    await (await this.createIfAbsent()).incr(RedisClient.autoincrementingId);
   }
 
   /**
    * Retrieves the autoincrementing ID used for rooming.
    */
   async #getAutoincrementId() {
-    return await (await this.createIfAbsent()).get('_id');
+    return await (
+      await this.createIfAbsent()
+    ).get(RedisClient.autoincrementingId);
   }
 
   /**
@@ -221,6 +233,7 @@ class RedisClient {
    * @param {string} room Room ID to delete
    */
   async deleteRoom(room) {
+    const client = this.createIfAbsent();
     const userResults = this.findUsersFromRoom(room);
 
     if (userResults === null) {
@@ -245,6 +258,7 @@ class RedisClient {
    * @oaram {string} userId User ID of the user to add to the room
    */
   async registerUser(roomId, userId) {
+    const client = this.createIfAbsent();
     const users = (await this.findUsersFromRoom(roomId)) ?? [];
 
     if (users.includes(userId)) {
@@ -264,6 +278,7 @@ class RedisClient {
    * @param {string} userId User ID of user to remove from room
    */
   async deregisterUser(roomId, userId) {
+    const client = this.createIfAbsent();
     const users = (await this.findUsersFromRoom(roomId)) ?? [];
 
     if (!users.includes(userId)) {
