@@ -39,24 +39,10 @@ jobs:
         working-directory: peer-prep
         run: npm run build
 
-  scans:
-    name: Code Scanning
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Codebase
-        uses: actions/checkout@v4
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        continue-on-error: true
-
   build:
     # build container for both x86 and arm platforms
     needs: test
-    name: Build
+    name: Build Staging Containers and Push to Docker Hub
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -78,7 +64,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./user-service
-          file: ./user-service/Dockerfile.public
+          file: ./user-service/Dockerfile
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
@@ -89,7 +75,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./question-service
-          file: ./question-service/Dockerfile.public
+          file: ./question-service/Dockerfile
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
@@ -100,7 +86,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./matching-service
-          file: ./matching-service/Dockerfile.public
+          file: ./matching-service/Dockerfile
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
