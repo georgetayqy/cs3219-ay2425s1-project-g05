@@ -21,7 +21,7 @@ export type QuestionOlsd = {
 export type Question = {
   _id: string;
   title: string;
-  description: { testDescription: string };
+  description: { descriptionText: string, descriptionHtml: string };
   categories: string[];
   difficulty: Complexity;
   isDeleted: boolean;

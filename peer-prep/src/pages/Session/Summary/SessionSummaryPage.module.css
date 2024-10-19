@@ -17,11 +17,40 @@
   padding: 1rem;
 }
 
-pre, .codeBlock {
+pre, .codeBlock, .testCases {
   margin: 0;
   padding: 0.5rem;
-  background-color: #f7f7f7;
   border-radius: 0.25rem;
+}
+
+.codeBlock {
+  background-color: light-dark(
+    var(--mantine-color-gray-0),
+    var(--mantine-color-dark-7)
+  );
+}
+
+.testCases {
+  width: 100%;
+}
+
+.privateTestCases {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.ptcPassed {
+  background-color: light-dark(
+    var(--mantine-color-green-1),
+    var(--mantine-color-green-3)
+  );
+}
+
+.ptcFailed {
+  background-color: light-dark(
+    var(--mantine-color-red-2),
+    var(--mantine-color-red-3)
+  );
 }
 
 .notesTextarea {
