@@ -17,7 +17,7 @@ import {
   Space,
 } from "@mantine/core";
 import RichTextEditor from "../../../components/Questions/RichTextEditor/RichTextEditor";
-import CodeEditorWithLanguageSelector from "../../../components/Questions/LanguageSelector/LanguageSelector";
+import CodeEditorWithLanguageSelector from "../../../components/Questions/CodeEditor/CodeEditor";
 
 import classes from "./EditQuestionPage.module.css";
 import {
