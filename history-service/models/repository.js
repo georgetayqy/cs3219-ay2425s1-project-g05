@@ -39,7 +39,7 @@ const getUserAttempts = async (userEmail) => {
 };
 
 const isDuplicateAttempt = async (userEmail, otherUserEmail, questionId, roomId) => {
-  const attempt = await Attempt.findOne({
+  const attempt = Attempt.findOne({
     userEmail: { $eq: userEmail },
     otherUserEmail: { $eq: otherUserEmail },
     questionId: { $eq: questionId },
