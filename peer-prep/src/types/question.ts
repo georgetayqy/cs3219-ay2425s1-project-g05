@@ -25,9 +25,10 @@ export type Question = {
   categories: string[];
   difficulty: Complexity;
   isDeleted: boolean;
-  testCases: TestCase[];
   solutionCode: string;
+  templateCode: string;
   link: string;
+  testCases: TestCase[];
   __v: number;
 };
 

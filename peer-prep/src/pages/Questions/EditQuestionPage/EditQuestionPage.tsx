@@ -8,16 +8,16 @@ import {
   Button,
   Container,
   MultiSelect,
-  Input,
   Stack,
   Flex,
   Switch,
   Card,
   Center,
   Divider,
+  Space,
 } from "@mantine/core";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import RichTextEditor from "../../../components/Questions/RichTextEditor/RichTextEditor";
+import CodeEditorWithLanguageSelector from "../../../components/Questions/LanguageSelector/LanguageSelector";
 
 import classes from "./EditQuestionPage.module.css";
 import {
@@ -34,14 +34,27 @@ export default function EditQuestionPage() {
   const [name, setName] = useState("");
   const [difficulty, setDifficulty] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
-  const [description, setDescription] = useState("");
-  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [descriptionText, setDescriptionText] = useState<string>("");
+  const [descriptionHtml, setDescriptionHtml] = useState<string>("");
   const [solution, setSolution] = useState("");
+  const [templateCode, setTemplateCode] = useState("");
   const [link, setLink] = useState("");
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
 
+  // For now, to be changed once backend sends over fixed categories
+  const dummyCategories = [
+    { value: "ARRAYS", label: "Arrays" },
+    { value: "ALGORITHMS", label: "Algorithms" },
+    { value: "DATABASES", label: "Databases" },
+    { value: "DATA STRUCTURES", label: "Data Structures" },
+    { value: "BRAINTEASER", label: "Brainteaser" },
+    { value: "STRINGS", label: "Strings" },
+    { value: "BIT MANIPULATION", label: "Bit Manipulation" },
+    { value: "RECURSION", label: "Recursion" },
+  ];
   const [fetchedCategories, setFetchedCategories] = useState<
     { value: string; label: string }[]
-  >([]);
+  >(dummyCategories);
 
   const navigate = useNavigate();
 
@@ -72,10 +85,12 @@ export default function EditQuestionPage() {
       setName(question.title);
       setDifficulty(question.difficulty);
       setCategories(question.categories);
-      setDescription(question.description.testDescription);
-      setTestCases(question.testCases);
+      setDescriptionText(question.description.descriptionText);
+      setDescriptionHtml(question.description.descriptionHtml);
+      setTemplateCode(question.templateCode);
       setSolution(question.solutionCode);
       setLink(question.link);
+      setTestCases(question.testCases);
     } catch (error: any) {
       console.error("Error fetching question details:", error);
       notifications.show({
@@ -127,12 +142,13 @@ export default function EditQuestionPage() {
           },
           body: JSON.stringify({
             title: name,
-            description: { testDescription: description },
+            description: { descriptionText, descriptionHtml },
             categories,
             difficulty,
-            testCases: updatedTestCases,
             solutionCode: solution,
+            templateCode,
             link,
+            testCases: updatedTestCases,
           }),
         }
       );
@@ -206,12 +222,14 @@ export default function EditQuestionPage() {
       <h1>Edit Question</h1>
       <form onSubmit={handleSubmit}>
         <TextInput
+          mt={8}
           label="Name"
           value={name}
           onChange={(event) => setName(event.currentTarget.value)}
           required
         />
         <Select
+          mt={8}
           label="Difficulty"
           value={difficulty}
           onChange={(value: string | null) => setDifficulty(value)}
@@ -219,6 +237,7 @@ export default function EditQuestionPage() {
           required
         />
         <MultiSelect
+          mt={8}
           label="Categories"
           value={categories}
           onChange={(value: string[]) => setCategories(value)}
@@ -226,38 +245,37 @@ export default function EditQuestionPage() {
           multiple
           required
         />
-        <Textarea
-          label={"Description"}
-          value={description}
-          onChange={(event) => setDescription(event.currentTarget.value)}
-          minRows={8}
-          required
+        
+        <Space h="8" />
+        <RichTextEditor 
+          content={descriptionHtml} 
+          onContentChange={(textValue: string, htmlvalue: string) => { setDescriptionText(textValue); setDescriptionHtml(htmlvalue); }} 
         />
-        <Textarea
-          label={"Solution"}
-          value={solution}
-          onChange={(event) => setSolution(event.currentTarget.value)}
-          minRows={8}
-          required
+        
+        <Space h="12" />
+        <CodeEditorWithLanguageSelector 
+          label="Solution Code"
+          code={solution} 
+          onCodeChange={setSolution} 
+          required={true}
         />
-        {/* <Input.Wrapper label="Description" required>
-          <ReactQuill
-            theme="snow"
-            value={description}
-            onChange={newDescription => setDescription(newDescription)}
-            style={{ height: "576px", marginTop: "12px" }}
-            modules={ modules }
-          >
-            <div className={classes.quillEditor} />
-          </ReactQuill>
-        </Input.Wrapper> */}
+
+        <Space h="12" />
+        <CodeEditorWithLanguageSelector 
+          label="Template Code"
+          code={templateCode} 
+          onCodeChange={setTemplateCode} 
+          required={false}
+        />
+
         <TextInput
+          mt={12}
           label="Link to question (e.g. Leetcode)"
           value={link}
           onChange={(event) => setLink(event.currentTarget.value)}
-          required
         />
-        <Flex style={{ alignItems: "baseline", gap: 4 }}>
+
+        <Flex style={{ alignItems: "baseline", gap: 4 }} mt={8}>
           <Text className={classes.testCaseHeader}>Test Cases</Text>
           <Text style={{ color: "red" }}>*</Text>
         </Flex>
