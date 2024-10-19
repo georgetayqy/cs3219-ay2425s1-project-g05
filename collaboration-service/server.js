@@ -3,7 +3,6 @@
  */
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import bodyParser from 'body-parser';
 import corsMiddleware from './src/middlewares/cors.js';
 
 import { createServer } from 'node:http';

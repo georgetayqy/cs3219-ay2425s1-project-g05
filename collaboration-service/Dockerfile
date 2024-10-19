@@ -12,7 +12,7 @@ FROM node:20
 EXPOSE 8004
 
 # Set work dir to prevent retarts
-WORKDIR /matching-service
+WORKDIR /collaboration-service
 
 # copy all files into the Docker container
 COPY . .

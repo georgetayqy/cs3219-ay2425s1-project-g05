@@ -114,16 +114,19 @@ class WSSharedDoc extends Y.Doc {
   constructor(name) {
     super({ gc: gcEnabled });
     this.name = name;
+
     /**
      * Maps from conn to set of controlled user ids. Delete all user ids from awareness when this conn is closed
      * @type {Map<Object, Set<number>>}
      */
     this.conns = new Map();
+
     /**
      * @type {awarenessProtocol.Awareness}
      */
     this.awareness = new awarenessProtocol.Awareness(this);
     this.awareness.setLocalState(null);
+
     /**
      * @param {{ added: Array<number>, updated: Array<number>, removed: Array<number> }} changes
      * @param {Object | null} conn Origin is the connection that made the change
@@ -143,6 +146,7 @@ class WSSharedDoc extends Y.Doc {
           });
         }
       }
+
       // broadcast awareness update
       const encoder = encoding.createEncoder();
       encoding.writeVarUint(encoder, messageAwareness);
@@ -150,13 +154,16 @@ class WSSharedDoc extends Y.Doc {
         encoder,
         awarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients)
       );
+
       const buff = encoding.toUint8Array(encoder);
       this.conns.forEach((_, c) => {
         send(this, c, buff);
       });
     };
+
     this.awareness.on('update', awarenessChangeHandler);
     this.on('update', /** @type {any} */ (updateHandler));
+
     if (isCallbackSet) {
       this.on(
         'update',
@@ -167,6 +174,7 @@ class WSSharedDoc extends Y.Doc {
         )
       );
     }
+
     this.whenInitialized = contentInitializor(this);
   }
 }
@@ -183,10 +191,13 @@ exports.WSSharedDoc = WSSharedDoc;
 const getYDoc = (docname, gc = true) =>
   map.setIfUndefined(docs, docname, () => {
     const doc = new WSSharedDoc(docname);
+
     doc.gc = gc;
+
     if (persistence !== null) {
       persistence.bindState(docname, doc);
     }
+
     docs.set(docname, doc);
     return doc;
   });
@@ -199,7 +210,6 @@ exports.getYDoc = getYDoc;
  * @param {Uint8Array} message
  */
 const messageListener = (conn, doc, message) => {
-  console.log('Message received: ', message);
   try {
     const encoder = encoding.createEncoder();
     const decoder = decoding.createDecoder(message);
@@ -249,14 +259,22 @@ const closeConn = (doc, conn) => {
       Array.from(controlledIds),
       null
     );
+
     if (doc.conns.size === 0 && persistence !== null) {
       // if persisted, we store state and destroy ydocument
       persistence.writeState(doc.name, doc).then(() => {
         doc.destroy();
       });
+
+      docs.delete(doc.name);
+    } else if (doc.conns.size === 0 && persistence === null) {
+      // if the doc is in memory, delete it, do not persist it at all
+      const currentDoc = docs.get(doc.name);
+      currentDoc.destroy();
       docs.delete(doc.name);
     }
   }
+
   conn.close();
 };
 
@@ -302,7 +320,6 @@ exports.setupWSConnection = (
   conn.on(
     'message',
     /** @param {ArrayBuffer} message */ (message) => {
-      console.log('msg:', message);
       return messageListener(conn, doc, new Uint8Array(message));
     }
   );
