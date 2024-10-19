@@ -41,9 +41,20 @@ export default function EditQuestionPage() {
   const [link, setLink] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
 
+  // For now, to be changed once backend sends over fixed categories
+  const dummyCategories = [
+    { value: "ARRAYS", label: "Arrays" },
+    { value: "ALGORITHMS", label: "Algorithms" },
+    { value: "DATABASES", label: "Databases" },
+    { value: "DATA STRUCTURES", label: "Data Structures" },
+    { value: "BRAINTEASER", label: "Brainteaser" },
+    { value: "STRINGS", label: "Strings" },
+    { value: "BIT MANIPULATION", label: "Bit Manipulation" },
+    { value: "RECURSION", label: "Recursion" },
+  ];
   const [fetchedCategories, setFetchedCategories] = useState<
     { value: string; label: string }[]
-  >([]);
+  >(dummyCategories);
 
   const navigate = useNavigate();
 
