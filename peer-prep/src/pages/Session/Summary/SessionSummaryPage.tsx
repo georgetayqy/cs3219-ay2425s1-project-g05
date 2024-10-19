@@ -19,31 +19,7 @@ import { Question } from "../../../types/question";
 import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import CodeEditorWithLanguageSelector from "../../../components/Questions/CodeEditor/CodeEditor";
-
-interface TestCaseResult {
-  isPassed: boolean;
-  output: string;
-  _id: string;
-}
-
-interface UserAttempt {
-  _id: string;
-  userEmail: string;
-  otherUserEmail: string;
-  question: Question;
-  roomId: string;
-  notes: string;
-  attemptCode: string;
-  testCasesResults: TestCaseResult[];
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
-interface AttemptData {
-  attempt: UserAttempt[];
-}
+import { AttemptData, TestCaseResult, UserAttempt } from "../../../types/attempts";
 
 const dummyRecommendedSolution = `class Solution(object):
   def reverseString(self, s):
@@ -107,7 +83,7 @@ export default function SessionSummaryPage() {
         "/history-service/?roomId=TESTROOM2",
         SERVICE.HISTORY
       );
-      const attempt = response.data.attempt[0];
+      const attempt = response.data.attempts[0];
       const runtime = "100"; // TO replace with actual runtime once sent over by backend
       const memory = "54.2"; // TO replace with actual memory once sent over by backend
       const questionTitle = attempt.question.title;
