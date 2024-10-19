@@ -27,9 +27,7 @@ export async function _deletePendingUserBySocketId(socketId) {
 }
 
 export async function _findAllPendingUsers() {
-    return PendingUserModel
-        .find({})
-        .sort({ createdAt: 1 });
+    return PendingUserModel.find({}).sort({ createdAt: 1 });
 }
 
 export async function _deletePendingUserByDocId(docId) {
