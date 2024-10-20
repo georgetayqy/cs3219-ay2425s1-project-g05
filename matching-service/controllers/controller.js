@@ -113,7 +113,7 @@ export async function onCreateMatch(socket, data, io) {
                 socket.emit('no-match');
                 return;
 
-            }, 60000); // 60 seconds
+            }, 50000); // 50 seconds (frontend has timer of 60secs, hence a 10 sec buffer fallback in case this service dies)
 
             // Emit finding-match event
             socket.emit('finding-match');

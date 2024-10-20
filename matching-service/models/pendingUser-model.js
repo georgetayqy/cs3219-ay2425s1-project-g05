@@ -44,6 +44,6 @@ const pendingUserSchema = mongoose.Schema(
         timestamps: true
     }
 );
-
+pendingUserSchema.index({ "createdAt": 1 }, { expireAfterSeconds: 60 });
 const PendingUserModel = mongoose.model("PendingUser", pendingUserSchema)
 export default PendingUserModel;
