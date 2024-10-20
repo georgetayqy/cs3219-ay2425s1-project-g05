@@ -31,8 +31,8 @@ export default function CreateQuestionPage() {
   const [descriptionText, setDescriptionText] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [solution, setSolution] = useState("// Please provide your solution code here \n");
-  const [templateCode, setTemplateCode] = useState("// Please provide your template code here \n");
+  const [solution, setSolution] = useState("# Please provide your solution code here \n");
+  const [templateCode, setTemplateCode] = useState("# Please provide your template code here \n");
   const [link, setLink] = useState("");
 
   const navigate = useNavigate();
@@ -61,7 +61,9 @@ export default function CreateQuestionPage() {
   ];
 
   useEffect(() => {
-    fetchCategories();
+    // to be uncommented once backend sends over fixed categories
+    // fetchCategories();
+    addTestCase();
   }, []);
 
   const { fetchData, isLoading, error } = useApi();
@@ -210,6 +212,7 @@ export default function CreateQuestionPage() {
             label="Link to question (e.g. Leetcode)"
             value={link}
             onChange={(event) => setLink(event.currentTarget.value)}
+            required
           />
 
           <Flex style={{ alignItems: "baseline", gap: 4 }} mt={8}>
@@ -220,20 +223,21 @@ export default function CreateQuestionPage() {
           <Stack>
             {testCases.map((testCase, index) => (
               <Card key={index} shadow="sm" padding="lg" radius="md">
-                <Textarea
+                <CodeEditorWithLanguageSelector 
                   label={`Test Code ${index + 1}`}
-                  value={testCase.testCode}
-                  onChange={(event) =>
+                  code={testCase.testCode}
+                  onCodeChange={(value) =>
                     handleTestCaseChange(
                       index,
                       "testCode",
-                      event.currentTarget.value
+                      value
                     )
-                  }
-                  minRows={8}
-                  required
+                  } 
+                  required={false}
+                  height="130px"
                 />
                 <Textarea
+                  mt={8}
                   label={`Expected Output ${index + 1}`}
                   value={testCase.expectedOutput}
                   onChange={(event) =>

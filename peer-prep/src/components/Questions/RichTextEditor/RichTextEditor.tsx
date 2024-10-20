@@ -19,16 +19,27 @@ function RichTextEditor({ content, onContentChange }: RichTextEditorProps) {
       Underline,
       Placeholder.configure({ placeholder: 'Type in your question description...' }),
     ],
-    content,
-    onUpdate: ({ editor }) => {
+    content: content,
+    onUpdate({ editor }) {
       onContentChange(editor.getText(), editor.getHTML());
     },
   });
 
-  // Update editor content when prop changes
+  // Update editor content when content changes
   useEffect(() => {
     if (editor) {
-      editor.commands.setContent(content);
+      const currentContent = editor.getHTML();
+      if (currentContent === content) {
+        return;
+      }
+
+      const { from, to } = editor.state.selection; // Get current cursor position
+
+      editor.commands.setContent(content, false, {
+        preserveWhitespace: 'full',
+      });
+      
+      editor.commands.setTextSelection({ from, to }); // Restore the cursor position
     }
   }, [content, editor]);
 
