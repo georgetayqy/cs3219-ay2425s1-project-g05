@@ -68,7 +68,8 @@ export default function EditQuestionPage() {
   useEffect(() => {
     if (typeof id === "string") {
       fetchQuestionDetails(id);
-      fetchCategories();
+      // to be uncommented once backend sends over fixed categories
+      // fetchCategories();
     }
   }, [id]);
 
@@ -283,20 +284,21 @@ export default function EditQuestionPage() {
         <Stack>
           {testCases.map((testCase, index) => (
             <Card key={index} shadow="sm" padding="lg" radius="md">
-              <Textarea
+              <CodeEditorWithLanguageSelector 
                 label={`Test Code ${index + 1}`}
-                value={testCase.testCode}
-                onChange={(event) =>
+                code={testCase.testCode}
+                onCodeChange={(value) =>
                   handleTestCaseChange(
                     index,
                     "testCode",
-                    event.currentTarget.value
+                    value
                   )
-                }
-                minRows={8}
-                required
+                } 
+                required={false}
+                height="130px"
               />
               <Textarea
+                mt={8}
                 label={`Expected Output ${index + 1}`}
                 value={testCase.expectedOutput}
                 onChange={(event) =>
