@@ -3,7 +3,7 @@ import { Editor } from "@monaco-editor/react";
 
 // const languages = ['Python', 'Javascript', 'C++'];
 
-function CodeEditorWithLanguageSelector({ code, onCodeChange, label, required }) {
+function CodeEditorWithLanguageSelector({ code, onCodeChange, label, required, height="300px" }) {
   return (
     <Box>
       <label style={{ fontSize:"14px" }}>
@@ -20,12 +20,12 @@ function CodeEditorWithLanguageSelector({ code, onCodeChange, label, required })
         required={required}
       /> */}
       <Editor
-        height="300px"
+        height={height}
         language={'python'}
         value={code}
         theme="vs-dark"
         onChange={(value) => onCodeChange(value || '')}
-        options={{padding: {top: 12}}}
+        options={{padding: {top: 12}, scrollBeyondLastLine: false, minimap: {enabled: false}}}
       />
     </Box>
   );
