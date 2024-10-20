@@ -38,6 +38,10 @@ const pendingUserSchema = mongoose.Schema(
                 },
                 message: props => `${props.value} contains invalid difficulty level`
             }
+        },
+        priority: {
+            type: Number,
+            required: true
         }
     },
     {

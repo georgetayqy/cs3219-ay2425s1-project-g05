@@ -7,7 +7,7 @@ export async function _findPendingUserByCriteria({ difficulties, categories, ema
             categories: { $in: categories },
             email: { $ne: email }
         })
-        .sort({ createdAt: 1 });
+        .sort({ priority: -1 });
 }
 
 export async function _deletePendingUserByEmail(email) {
@@ -27,7 +27,7 @@ export async function _deletePendingUserBySocketId(socketId) {
 }
 
 export async function _findAllPendingUsers() {
-    return PendingUserModel.find({}).sort({ createdAt: 1 });
+    return PendingUserModel.find({}).sort({ priority: -1 });
 }
 
 export async function _deletePendingUserByDocId(docId) {

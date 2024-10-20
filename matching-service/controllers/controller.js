@@ -51,6 +51,7 @@ export async function onCreateMatch(socket, data, io) {
     try {
         const { difficulties, categories, email, displayName } = data;
         const socketId = socket.id;
+        const priority = categories.length; // Priority based on number of categories selected
 
         console.log(`Initiate create match by ${socket.id} (${displayName}), with data:`);
         console.log(data);
@@ -80,7 +81,8 @@ export async function onCreateMatch(socket, data, io) {
             console.log(`No matching users with the criteria, create new match`);
 
             // Create pending user entry
-            const pendingUser = await ormCreatePendingUser({ email, displayName, socketId, difficulties, categories });
+            console.log({ email, displayName, socketId, difficulties, categories, priority })
+            const pendingUser = await ormCreatePendingUser({ email, displayName, socketId, difficulties, categories, priority });
             if (!pendingUser) {
                 throw new Error(`Could not create pending user entry for new match`);
             } else {
