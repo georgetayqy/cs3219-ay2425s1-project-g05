@@ -212,6 +212,7 @@ export default function CreateQuestionPage() {
             label="Link to question (e.g. Leetcode)"
             value={link}
             onChange={(event) => setLink(event.currentTarget.value)}
+            required
           />
 
           <Flex style={{ alignItems: "baseline", gap: 4 }} mt={8}>
