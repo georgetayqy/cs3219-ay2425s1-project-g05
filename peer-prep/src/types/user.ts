@@ -3,5 +3,9 @@ export type User = {
   password?: string,
   displayName: string,
   isAdmin: boolean,
-  id: string,
+  _id: string,
+}
+
+export interface UserResponseData {
+  user: User;
 }

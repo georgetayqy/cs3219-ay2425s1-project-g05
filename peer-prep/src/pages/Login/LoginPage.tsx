@@ -103,7 +103,6 @@ export default function LoginOrRegisterPage() {
 
     // call
     setIsLoading(true);
-    console.log({ email, password, displayName });
     register({
       email,
       password,
