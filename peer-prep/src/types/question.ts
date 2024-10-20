@@ -21,13 +21,14 @@ export type QuestionOlsd = {
 export type Question = {
   _id: string;
   title: string;
-  description: { [key: string]: any };
+  description: { descriptionText: string, descriptionHtml: string };
   categories: string[];
   difficulty: Complexity;
   isDeleted: boolean;
-  testCases: TestCase[];
   solutionCode: string;
+  templateCode: string;
   link: string;
+  testCases: TestCase[];
   __v: number;
 };
 

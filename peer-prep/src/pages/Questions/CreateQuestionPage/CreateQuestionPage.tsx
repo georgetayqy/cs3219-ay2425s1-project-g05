@@ -7,38 +7,51 @@ import {
   Container,
   Stack,
   Center,
-  Input,
-  Stepper,
   Text,
   MultiSelect,
   Card,
   Switch,
   Flex,
   Divider,
+  Space,
 } from "@mantine/core";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
 
 import classes from "./CreateQuestionPage.module.css";
 import { QuestionResponseData, TestCase } from "../../../types/question";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
+import CodeEditorWithLanguageSelector from "../../../components/Questions/LanguageSelector/LanguageSelector";
+import RichTextEditor from "../../../components/Questions/RichTextEditor/RichTextEditor";
 
 export default function CreateQuestionPage() {
   const [name, setName] = useState("");
   const [difficulty, setDifficulty] = useState<string | null>("EASY");
   const [categories, setCategories] = useState<string[]>([]);
-  const [description, setDescription] = useState("");
+  const [descriptionText, setDescriptionText] = useState("");
+  const [descriptionHtml, setDescriptionHtml] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [solution, setSolution] = useState("");
+  const [solution, setSolution] = useState("# Please provide your solution code here \n");
+  const [templateCode, setTemplateCode] = useState("# Please provide your template code here \n");
   const [link, setLink] = useState("");
 
   const navigate = useNavigate();
 
+  // For now, to be changed once backend sends over fixed categories
+  const dummyCategories = [
+    { value: "ARRAYS", label: "Arrays" },
+    { value: "ALGORITHMS", label: "Algorithms" },
+    { value: "DATABASES", label: "Databases" },
+    { value: "DATA STRUCTURES", label: "Data Structures" },
+    { value: "BRAINTEASER", label: "Brainteaser" },
+    { value: "STRINGS", label: "Strings" },
+    { value: "BIT MANIPULATION", label: "Bit Manipulation" },
+    { value: "RECURSION", label: "Recursion" },
+  ];
+
   const [fetchedCategories, setFetchedCategories] = useState<
     { value: string; label: string }[]
-  >([]);
+  >(dummyCategories);
 
   // Mapping for difficulty display
   const difficultyOptions = [
@@ -48,7 +61,9 @@ export default function CreateQuestionPage() {
   ];
 
   useEffect(() => {
-    fetchCategories();
+    // to be uncommented once backend sends over fixed categories
+    // fetchCategories();
+    addTestCase();
   }, []);
 
   const { fetchData, isLoading, error } = useApi();
@@ -95,11 +110,12 @@ export default function CreateQuestionPage() {
           },
           body: JSON.stringify({
             title: name,
-            description: { testDescription: description },
+            description: { descriptionText, descriptionHtml },
             categories,
             difficulty,
             testCases: updatedTestCases,
             solutionCode: solution,
+            templateCode,
             link,
           }),
         }
@@ -149,7 +165,6 @@ export default function CreateQuestionPage() {
     <Container mt={48}>
       <h1>Add New Question</h1>
       <form onSubmit={handleSubmit}>
-        <Stack>
           <TextInput
             label="Name"
             value={name}
@@ -157,6 +172,7 @@ export default function CreateQuestionPage() {
             required
           />
           <Select
+            mt={8}
             label="Difficulty"
             value={difficulty}
             onChange={(value: string | null) => setDifficulty(value)}
@@ -164,57 +180,42 @@ export default function CreateQuestionPage() {
             required
           />
           <MultiSelect
+            mt={8} 
             label="Categories"
             value={categories}
             onChange={(value: string[]) => setCategories(value)}
             data={fetchedCategories}
             required
           />
-          <Textarea
-            label={"Description"}
-            value={description}
-            onChange={(event) => setDescription(event.currentTarget.value)}
-            minRows={8}
-            required
+
+          <Space h="8" />
+          <RichTextEditor content={descriptionHtml} onContentChange={(textValue: string, htmlvalue: string) => { setDescriptionText(textValue); setDescriptionHtml(htmlvalue); }} />
+
+          <Space h="12" />
+          <CodeEditorWithLanguageSelector 
+            label="Solution Code"
+            code={solution} 
+            onCodeChange={setSolution} 
+            required={true}
           />
 
-          <Textarea
-            label={"Solution"}
-            value={solution}
-            onChange={(event) => setSolution(event.currentTarget.value)}
-            minRows={8}
-            required
+          <Space h="12" />
+          <CodeEditorWithLanguageSelector 
+            label="Template Code"
+            code={templateCode} 
+            onCodeChange={setTemplateCode} 
+            required={false}
           />
-          {/* <Input.Wrapper label="Description" required>
-            <ReactQuill
-              theme="snow"
-              value={description}
-              onChange={setDescription}
-              style={{ height: "576px", marginTop: "12px" }}
-              modules={{
-                toolbar: [
-                  "bold",
-                  "underline",
-                  "italic",
-                  "link",
-                  "blockquote",
-                  "code-block",
-                  "image",
-                ],
-              }}
-            >
-              <div className={classes.quillEditor} />
-            </ReactQuill>
-          </Input.Wrapper> */}
 
           <TextInput
+            mt={12}
             label="Link to question (e.g. Leetcode)"
             value={link}
             onChange={(event) => setLink(event.currentTarget.value)}
             required
           />
 
-          <Flex style={{ alignItems: "baseline", gap: 4 }}>
+          <Flex style={{ alignItems: "baseline", gap: 4 }} mt={8}>
             <Text className={classes.testCaseHeader}>Test Cases</Text>
             <Text style={{ color: "red" }}>*</Text>
           </Flex>
@@ -222,20 +223,21 @@ export default function CreateQuestionPage() {
           <Stack>
             {testCases.map((testCase, index) => (
               <Card key={index} shadow="sm" padding="lg" radius="md">
-                <Textarea
+                <CodeEditorWithLanguageSelector 
                   label={`Test Code ${index + 1}`}
-                  value={testCase.testCode}
-                  onChange={(event) =>
+                  code={testCase.testCode}
+                  onCodeChange={(value) =>
                     handleTestCaseChange(
                       index,
                       "testCode",
-                      event.currentTarget.value
+                      value
                     )
-                  }
-                  minRows={8}
-                  required
+                  } 
+                  required={false}
+                  height="130px"
                 />
                 <Textarea
+                  mt={8}
                   label={`Expected Output ${index + 1}`}
                   value={testCase.expectedOutput}
                   onChange={(event) =>
@@ -280,7 +282,6 @@ export default function CreateQuestionPage() {
           <Center>
             <Button type="submit">Submit</Button>
           </Center>
-        </Stack>
       </form>
     </Container>
   );
