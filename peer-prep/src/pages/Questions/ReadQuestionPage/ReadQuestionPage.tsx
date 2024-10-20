@@ -173,7 +173,7 @@ export default function ReadQuestionPage() {
           </SimpleGrid>
 
           <Text className={classes.description}>
-            {question.description.testDescription}
+            {question.description.descriptionText}
           </Text>
         </Stack>
       </Container>
