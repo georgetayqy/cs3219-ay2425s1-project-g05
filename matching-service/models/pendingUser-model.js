@@ -38,12 +38,16 @@ const pendingUserSchema = mongoose.Schema(
                 },
                 message: props => `${props.value} contains invalid difficulty level`
             }
+        },
+        priority: {
+            type: Number,
+            required: true
         }
     },
     {
         timestamps: true
     }
 );
-
+pendingUserSchema.index({ "createdAt": 1 }, { expireAfterSeconds: 60 });
 const PendingUserModel = mongoose.model("PendingUser", pendingUserSchema)
 export default PendingUserModel;
