@@ -270,8 +270,12 @@ const closeConn = (doc, conn) => {
     } else if (doc.conns.size === 0 && persistence === null) {
       // if the doc is in memory, delete it, do not persist it at all
       const currentDoc = docs.get(doc.name);
-      currentDoc.destroy();
-      docs.delete(doc.name);
+      try {
+        currentDoc.destroy();
+        docs.delete(doc.name);
+      } catch (err) {
+        console.error('Cannot delete document');
+      }
     }
   }
 
