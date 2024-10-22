@@ -21,11 +21,7 @@ export type QuestionOlsd = {
 export type Question = {
   _id: string;
   title: string;
-<<<<<<< HEAD
-  description: { [key: string]: any };
-=======
   description: { descriptionText: string, descriptionHtml: string };
->>>>>>> upstream/main
   categories: string[];
   difficulty: Complexity;
   isDeleted: boolean;
@@ -33,11 +29,6 @@ export type Question = {
   templateCode: string;
   link: string;
   testCases: TestCase[];
-<<<<<<< HEAD
-  solutionCode: string;
-  link: string;
-=======
->>>>>>> upstream/main
   __v: number;
 };
 

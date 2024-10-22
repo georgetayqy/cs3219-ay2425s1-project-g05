@@ -21,11 +21,8 @@ import { QuestionResponseData, TestCase } from "../../../types/question";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
-<<<<<<< HEAD
-=======
 import CodeEditorWithLanguageSelector from "../../../components/Questions/LanguageSelector/LanguageSelector";
 import RichTextEditor from "../../../components/Questions/RichTextEditor/RichTextEditor";
->>>>>>> upstream/main
 
 export default function CreateQuestionPage() {
   const [name, setName] = useState("");
@@ -34,12 +31,6 @@ export default function CreateQuestionPage() {
   const [descriptionText, setDescriptionText] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
-<<<<<<< HEAD
-  const [solution, setSolution] = useState("");
-  const [link, setLink] = useState("");
-
-  const navigate = useNavigate();
-=======
   const [solution, setSolution] = useState("# Please provide your solution code here \n");
   const [templateCode, setTemplateCode] = useState("# Please provide your template code here \n");
   const [link, setLink] = useState("");
@@ -57,7 +48,6 @@ export default function CreateQuestionPage() {
     { value: "BIT MANIPULATION", label: "Bit Manipulation" },
     { value: "RECURSION", label: "Recursion" },
   ];
->>>>>>> upstream/main
 
   const [fetchedCategories, setFetchedCategories] = useState<
     { value: string; label: string }[]
@@ -125,10 +115,7 @@ export default function CreateQuestionPage() {
             difficulty,
             testCases: updatedTestCases,
             solutionCode: solution,
-<<<<<<< HEAD
-=======
             templateCode,
->>>>>>> upstream/main
             link,
           }),
         }
@@ -227,49 +214,8 @@ export default function CreateQuestionPage() {
             onChange={(event) => setLink(event.currentTarget.value)}
             required
           />
-<<<<<<< HEAD
-
-          <Textarea
-            label={"Solution"}
-            value={solution}
-            onChange={(event) => setSolution(event.currentTarget.value)}
-            minRows={8}
-            required
-          />
-          {/* <Input.Wrapper label="Description" required>
-            <ReactQuill
-              theme="snow"
-              value={description}
-              onChange={setDescription}
-              style={{ height: "576px", marginTop: "12px" }}
-              modules={{
-                toolbar: [
-                  "bold",
-                  "underline",
-                  "italic",
-                  "link",
-                  "blockquote",
-                  "code-block",
-                  "image",
-                ],
-              }}
-            >
-              <div className={classes.quillEditor} />
-            </ReactQuill>
-          </Input.Wrapper> */}
-
-          <TextInput
-            label="Link to question (e.g. Leetcode)"
-            value={link}
-            onChange={(event) => setLink(event.currentTarget.value)}
-            required
-          />
-
-          <Flex style={{ alignItems: "baseline", gap: 4 }}>
-=======
 
           <Flex style={{ alignItems: "baseline", gap: 4 }} mt={8}>
->>>>>>> upstream/main
             <Text className={classes.testCaseHeader}>Test Cases</Text>
             <Text style={{ color: "red" }}>*</Text>
           </Flex>

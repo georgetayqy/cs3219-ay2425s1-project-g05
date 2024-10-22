@@ -22,11 +22,6 @@ import {
 import classes from "./CreateSessionPage.module.css";
 import { useEffect, useState } from "react";
 import { capitalizeFirstLetter } from "../../../utils/utils";
-<<<<<<< HEAD
-import { Link, useLoaderData } from "react-router-dom";
-import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
-import { CategoryResponseData } from "../../../types/question";
-=======
 import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { CategoryResponseData } from "../../../types/question";
@@ -46,7 +41,6 @@ import SearchingImage from "../../../assets/searchimage.svg";
 import MatchImage from "../../../assets/matchimage.svg";
 
 import AlertBox from "../../../components/Alert/AlertBox";
->>>>>>> upstream/main
 
 // Arrays
 // Algorithms

@@ -40,8 +40,6 @@ export default function EditQuestionPage() {
   const [templateCode, setTemplateCode] = useState("");
   const [link, setLink] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [solution, setSolution] = useState("");
-  const [link, setLink] = useState("");
 
   // For now, to be changed once backend sends over fixed categories
   const dummyCategories = [
@@ -57,8 +55,6 @@ export default function EditQuestionPage() {
   const [fetchedCategories, setFetchedCategories] = useState<
     { value: string; label: string }[]
   >(dummyCategories);
-
-  const navigate = useNavigate();
 
   const navigate = useNavigate();
 
@@ -90,19 +86,12 @@ export default function EditQuestionPage() {
       setName(question.title);
       setDifficulty(question.difficulty);
       setCategories(question.categories);
-<<<<<<< HEAD
-      setDescription(question.description.testDescription);
-      setTestCases(question.testCases);
-      setSolution(question.solutionCode);
-      setLink(question.link);
-=======
       setDescriptionText(question.description.descriptionText);
       setDescriptionHtml(question.description.descriptionHtml);
       setTemplateCode(question.templateCode);
       setSolution(question.solutionCode);
       setLink(question.link);
       setTestCases(question.testCases);
->>>>>>> upstream/main
     } catch (error: any) {
       console.error("Error fetching question details:", error);
       notifications.show({
@@ -161,8 +150,6 @@ export default function EditQuestionPage() {
             templateCode,
             link,
             testCases: updatedTestCases,
-            solutionCode: solution,
-            link,
           }),
         }
       );
@@ -289,36 +276,8 @@ export default function EditQuestionPage() {
           onChange={(event) => setLink(event.currentTarget.value)}
           required
         />
-<<<<<<< HEAD
-        <Textarea
-          label={"Solution"}
-          value={solution}
-          onChange={(event) => setSolution(event.currentTarget.value)}
-          minRows={8}
-          required
-        />
-        {/* <Input.Wrapper label="Description" required>
-          <ReactQuill
-            theme="snow"
-            value={description}
-            onChange={newDescription => setDescription(newDescription)}
-            style={{ height: "576px", marginTop: "12px" }}
-            modules={ modules }
-          >
-            <div className={classes.quillEditor} />
-          </ReactQuill>
-        </Input.Wrapper> */}
-        <TextInput
-          label="Link to question (e.g. Leetcode)"
-          value={link}
-          onChange={(event) => setLink(event.currentTarget.value)}
-          required
-        />
-        <Flex style={{ alignItems: "baseline", gap: 4 }}>
-=======
 
         <Flex style={{ alignItems: "baseline", gap: 4 }} mt={8}>
->>>>>>> upstream/main
           <Text className={classes.testCaseHeader}>Test Cases</Text>
           <Text style={{ color: "red" }}>*</Text>
         </Flex>
