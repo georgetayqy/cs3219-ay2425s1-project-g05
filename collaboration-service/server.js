@@ -3,7 +3,7 @@
  */
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import corsMiddleware from './src/middlewares/cors.js';
+import { corsMiddleware, checkCors } from './src/middlewares/cors.js';
 
 import { createServer } from 'node:http';
 import { config } from 'dotenv';
@@ -51,6 +51,13 @@ websocketServer.on('connection', setupWSConnection);
 
 // Upgrade requests to Websockets
 httpServer.on('upgrade', (req, sock, head) => {
+  // check cors here
+  if (!checkCors(req)) {
+    console.log('Disallowed origin');
+
+    sock.destroy();
+  }
+
   websocketServer.handleUpgrade(req, sock, head, (soc) => {
     console.log('User Connected');
     websocketServer.emit('connection', soc, req);

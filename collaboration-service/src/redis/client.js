@@ -1,65 +1,63 @@
 import { createClient } from 'redis';
-import UsersAlreadyFoundError from '../errors/UsersAlreadyFoundError.js';
 import RoomNotFoundError from '../errors/RoomNotFoundError.js';
 import RoomNotEmptyError from '../errors/RoomNotEmptyError.js';
-import UserNotFoundInRoom from '../errors/UserNotFoundInRoom.js';
-import UserAlreadyFoundInRoom from '../errors/UserAlreadyFoundInRoom.js';
-import ConnectionError from '../errors/ConnectionError.js';
+import UserNotFoundInRoomError from '../errors/UserNotFoundInRoomError.js';
+import UserAlreadyFoundInRoomError from '../errors/UserAlreadyFoundInRoomError.js';
+import JsonParseError from '../errors/JsonParseError.js';
+import RoomDeletionError from '../errors/RoomDeletionError.js';
 import { config } from 'dotenv';
 
 /**
- * Interface to connect to Redis
+ * Interface to connect to Redis and interact with Redis API
  */
 class RedisClient {
   /** Static client instance; reusing connection */
   static client = null;
   static autoincrementingId = '_id';
+  static roomIdPrefix = 'id-';
 
   /**
-   * Creates an instance of the redis client if it is not already created, otherwise
-   * return the already created redis client.
+   * Starts up the client if it is missing, else return the created Redis client instance
    *
    * @returns Redis client
    */
-  async createIfAbsent() {
-    config();
-
+  static async createIfAbsent() {
+    // if Redis client is already present just return it
     if (RedisClient.client !== null) {
       return RedisClient.client;
     }
 
-    // If absent, create it and store it in the static variable
+    // retrieve configs
+    config();
+
+    // Redis URL default to Elasticache endpoint
     RedisClient.client = await createClient({
       url:
         process.env.REDIS_HOST ||
         'redis://redis.mrdqdr.ng.0001.apse1.cache.amazonaws.com:6379',
     })
       .on('error', (err) => {
-        if (err instanceof AggregateError) {
-          console.log(
-            'Cannot connect to Redis database. Is the Redis database up?'
-          );
-          throw new ConnectionError('Cannot connect to Redis instance');
-        }
-
         console.log(`Error encountered: ${err}`);
+
+        // must be able to connect to the redis instance, else the app will fail
         throw err;
       })
       .on('connect', (conn) => {
-        console.log('Connected to Redis');
+        console.log('Connected to Redis!');
       });
 
-    // Connect to it
+    // Connect to the Redis endpoint
     RedisClient.client.connect();
 
-    // Create the _id key
+    // Create the _id key if absent
     if (
       (await RedisClient.client.exists(RedisClient.autoincrementingId)) == 0
     ) {
+      console.log('Creating Autoincrementing Variable...');
       await RedisClient.client.incr(RedisClient.autoincrementingId);
-      console.log('Establishing Autoincrementing Variable...');
+      console.log('Autoincrementing Variable created!');
     } else {
-      console.log('Autoincrementing Variable established');
+      console.log('Autoincrementing Variable exists, continuing...');
     }
 
     // return client
@@ -67,12 +65,18 @@ class RedisClient {
   }
 
   /**
-   * Closes the connection to the redis client and delete the instance if present, otherwise
-   * do nothing.
+   * Stops and deletes the client if it is present, else do nothing
+   *
+   * @param flush Determines whether to flush the DB or not after closing the connection
    */
-  async deleteIfPresent() {
+  static async deleteIfPresent(flush = false) {
     if (RedisClient.client === null) {
       return;
+    }
+
+    if (flush) {
+      await RedisClient.client.flushDb();
+      console.log('Database flushed!');
     }
 
     await RedisClient.client.quit();
@@ -80,241 +84,328 @@ class RedisClient {
   }
 
   /**
-   * Increments the autoincrementing ID used for rooming.
-   */
-  async #autoincrementId() {
-    await (await this.createIfAbsent()).incr(RedisClient.autoincrementingId);
-  }
-
-  /**
-   * Retrieves the autoincrementing ID used for rooming.
-   */
-  async #getAutoincrementId() {
-    return await (
-      await this.createIfAbsent()
-    ).get(RedisClient.autoincrementingId);
-  }
-
-  /**
-   * Performs both the retrieval of autoincrementing ID and the incrementing of
-   * the autoincrementing ID in the same step.
+   * Converts a JS object into a JSON string.
    *
-   * This is used mainly to assign a room, and then to find the next possible room
-   * where users can be assigned to (precomputing first to minimise likelihood for
-   * createRoom function to iterate through and find the next available room)
+   * @param {Map} users Map type
+   * @returns string object representing the JSON object
    */
-  async #getAndSetAutoincrementId() {
-    const id = await this.#getAutoincrementId();
-    await this.#autoincrementId();
+  static toJson(users) {
+    if (users === null || users === undefined) {
+      throw new JsonParseError('Unable to parse JS object into JSON string');
+    }
 
-    return id;
+    return JSON.stringify(users);
   }
 
   /**
-   * Creates a room given a roomId and Array of users to add to the room
+   * Converts the JSON string back into its corresponding JS type
    *
-   * @param {Array<String>} users Array of user emails used for rooming
-   * @returns roomId used to identify the room
+   * @param {string} results JSON string
+   * @returns Map object
    */
-  async createRoom(users) {
-    const client = await this.createIfAbsent();
+  static fromJson(results) {
+    // if results are undefined, nothing happens since we cannot parse an undefined object
+    if (results === undefined) {
+      return;
+    }
 
-    // check to make sure users are not already in a room
-    const userRooms = await this.findRoomByUsers(users);
-
-    if (userRooms.length > 0) {
-      console.error(
-        'Error: Users are already found in another room!',
-        userRooms
+    // if null, then throw a parsing error since we cannot parse null
+    if (results === null) {
+      throw new JsonParseError(
+        'Unable to parse JSON string back into JS object'
       );
-
-      throw new UsersAlreadyFoundError();
     }
 
-    // autoincrement the room ID while a room is found
-    // find a valid room ID to slot the room into
-    // autoincrementing like this is safe as redis runs in a single thread, no race conditions
-    // no worries that incrementing like this would break the DB
-    while (
-      (await this.findUsersFromRoom(await this.#getAutoincrementId())) !== null
-    ) {
-      await this.#autoincrementId();
-    }
-
-    // get and set the autoincrementing ID
-    const roomId = await this.#getAndSetAutoincrementId();
-
-    // create the room
-    await client.hSet(`id-${roomId}`, 'users', this.toJson(users));
-
-    // return the room id for the frontend
-    return roomId;
+    return JSON.parse(results);
   }
 
   /**
-   * Finds the users that are part of a room based on a given room Id.
-   *
-   * @param {number} room Room ID
-   * @returns Array of user emails if found, else null
+   * Retrieves the next available room ID. This is guaranteed to be safe since Redis
+   * runs in one thread and hence it is unlikely for concurrent edits to be made to the _id
+   * variable.
    */
-  async findUsersFromRoom(room) {
-    const client = await this.createIfAbsent();
+  async #getNextAvailableRoomId() {
+    // increment the autoincrementing variable until we find a roomId that is not used
+    // max number of keys in redis is 2^31 - 1, this is something we can never hit given the scale
+    // of our application, so this is safe, it will always find an valid integer value
+
+    const client = await RedisClient.createIfAbsent();
+
+    while (
+      (await client.get(
+        `${RedisClient.roomIdPrefix}${await this.#retrieveAutoIncrVar()}`
+      )) !== null
+    ) {
+      await this.#incrementAutoIncrVar();
+    }
+
+    const nextId = `${
+      RedisClient.roomIdPrefix
+    }${await this.#retrieveAutoIncrVar()}`;
+
+    // increment the auto incrementor as this room id is already used
+    await this.#incrementAutoIncrVar();
+
+    return nextId;
+  }
+
+  /**
+   * Returns the list of users associated with the room (Room's View)
+   *
+   * @param {String} room Room ID to query
+   * @returns {Array<String>} List of users in a room or null if the room does not exist
+   */
+  async getUser(room) {
+    const client = await RedisClient.createIfAbsent();
 
     try {
-      // try to find the room that corresponds to the room ID
-      const results = await client.hGetAll(room);
-      const jsonifed = this.fromJson(results);
+      const results = (await client.hGetAll(room))['users'];
+      const jsonified = RedisClient.fromJson(results);
 
-      return jsonifed.users;
-    } catch (e) {
-      // syntax error happens when the json object is not parsable (e.g. undefined)
-      if (e instanceof SyntaxError) {
-        console.error(
-          `Error: Room provided is either not found or is invalid!`
-        );
-      } else {
-        console.error(`Error: Cannot retrieve room due to ${e}`);
-      }
-
+      return jsonified === undefined ? null : jsonified;
+    } catch (err) {
+      console.error(`Error: Cannot retrieve room due to ${err}`);
       return null;
     }
   }
 
   /**
-   * Asserts that a room has 2 users within it
+   * Checks if a user is found in the database
    *
-   * @param {number} room Room ID
-   * @returns
+   * @param {String} user User ID to find
+   * @returns true if the database contains the user id else false
    */
-  async assertRoomHasTwoUsers(room) {
-    const results = await this.findUsersFromRoom(room);
-
-    return results !== null && results.length === 2;
-  }
-
-  /**
-   * Finds a single user and their corresponding room.
-   *
-   * @param {string} user User to find
-   */
-  async findRoomByUser(user) {
-    return await this.findRoomByUsers([user]);
-  }
-
-  /**
-   * Find the users and their corresponding rooms
-   *
-   * @param {Array<String>} users Array or set of users to find
-   * @returns Array of Array containing the roomId and corresponding user
-   */
-  async findRoomByUsers(users) {
-    // https://stackoverflow.com/questions/37642762/using-redis-scan-in-node
-
-    const client = await this.createIfAbsent();
+  async isUserInRedis(user) {
+    const client = await RedisClient.createIfAbsent();
     const iterator_params = {
-      MATCH: 'id-*',
+      MATCH: `${RedisClient.roomIdPrefix}*`,
     };
-    const results = [];
 
+    // scan through all keys (roomIds)
     for await (const key of client.scanIterator(iterator_params)) {
-      for (const user of await this.findUsersFromRoom(key)) {
-        if (users.includes(user)) {
-          results.push([key, user]);
+      // get the users associated with the roomId
+      const roomUsers = RedisClient.fromJson(
+        (await client.hGetAll(key))['users']
+      );
+
+      // for each user in the room, check if there is a match with the user of interest
+      for (const roomUser of roomUsers) {
+        if (user === roomUser) {
+          return true;
         }
       }
     }
 
-    return results;
+    return false;
+  }
+
+  /**
+   * Checks if a room is found in the database
+   *
+   * @param {String} room Room ID to find
+   * @returns true if the database contains the room ID else false
+   */
+  async isRoomInRedis(room) {
+    return (await (await RedisClient.createIfAbsent()).exists(room)) === 1;
+  }
+
+  /**
+   * Returns the room's details from the perspective of the user (User's View)
+   *
+   * Adapted logic from https://stackoverflow.com/questions/37642762/using-redis-scan-in-node
+   *
+   * @param {String} user User ID to query
+   * @returns {Map<String, Map<String, Array<String>>>} User's view of the room it is associated with
+   *                                                    or null if it is not associated with any rooms
+   */
+  async getRoom(user) {
+    const client = await RedisClient.createIfAbsent();
+    const iterator_params = {
+      MATCH: `${RedisClient.roomIdPrefix}*`,
+    };
+
+    // scan through all keys (roomIds)
+    for await (const key of client.scanIterator(iterator_params)) {
+      // get the users associated with the roomId
+      const roomUsers = (await client.hGetAll(key))?.users ?? [];
+
+      // for each user in the room, check if there is a match with the user of interest
+      if (roomUsers.includes(user)) {
+        return {
+          [key]: {
+            users: RedisClient.fromJson(roomUsers),
+          },
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Creates a room with the default users associated with it.
+   *
+   * @param {Array<String>} users List of user IDs to associate to the created room
+   * @param {String} roomId optional roomId to register users into
+   * @returns Room ID created
+   */
+  async createRoom(users, roomId = null) {
+    // check if the room is available
+    if (roomId !== null && (await this.getUser(roomId)) !== null) {
+      throw new RoomNotEmptyError('Room already occupied');
+    }
+
+    // make sure that none of the users are in the room
+    for (const user of users) {
+      const findRoom = await this.getRoom(user);
+
+      if (findRoom !== null) {
+        throw new UserAlreadyFoundInRoomError(
+          `User ${user} found in existing room!`
+        );
+      }
+    }
+
+    // prioritise the input room ID first
+    const newRoomId = roomId ?? (await this.#getNextAvailableRoomId());
+
+    // create the room
+    await (
+      await RedisClient.createIfAbsent()
+    ).hSet(newRoomId, 'users', RedisClient.toJson(users));
+
+    return newRoomId;
   }
 
   /**
    * Deletes a room.
    *
-   * @param {string} room Room ID to delete
+   * @param {String} room Room ID of room to delete
    */
   async deleteRoom(room) {
-    const client = this.createIfAbsent();
-    const userResults = this.findUsersFromRoom(room);
+    const client = await RedisClient.createIfAbsent();
+    const results = await this.getUser(room);
 
-    if (userResults === null) {
-      throw new RoomNotFoundError('Invalid room ID provided');
+    if (results === null) {
+      throw new RoomNotFoundError('Invalid Room ID provided');
     }
 
-    if (userResults.length != 0) {
+    if (results.length > 0) {
       throw new RoomNotEmptyError('Room is not empty and cannot be deleted');
     }
 
-    await client.del(room, (error, response) => {
+    await client.del(room, (err, resp) => {
       if (error) {
-        throw error;
+        console.error('Unable to delete room!');
+        throw new RoomDeletionError(`Unable to delete room: ${err}`);
       }
     });
   }
 
   /**
-   * Registers a user to the room
-   *
-   * @param {string} roomId Room ID to add user to
-   * @oaram {string} userId User ID of the user to add to the room
+   * Retrieves the autoincrementing variable
    */
-  async registerUser(roomId, userId) {
-    const client = this.createIfAbsent();
-    const users = (await this.findUsersFromRoom(roomId)) ?? [];
+  async #retrieveAutoIncrVar() {
+    return await (
+      await RedisClient.createIfAbsent()
+    ).get(RedisClient.autoincrementingId);
+  }
 
-    if (users.includes(userId)) {
-      throw new UserAlreadyFoundInRoom();
+  /**
+   * Increment the autoincrementing variable
+   */
+  async #incrementAutoIncrVar() {
+    await (
+      await RedisClient.createIfAbsent()
+    ).incr(RedisClient.autoincrementingId);
+  }
+
+  /**
+   * Registers a user to a room
+   *
+   * @param {String} user User ID of user to register
+   * @param {String} room Room ID of room to associate user with
+   * @returns String representing room Id or null if registered successfully
+   */
+  async registerUser(user, room) {
+    const userRoom = await this.getRoom(user);
+    const client = await RedisClient.createIfAbsent();
+
+    // new user who does not exist in any room
+    if (userRoom === null) {
+      if (await this.isRoomInRedis(room)) {
+        // if room already exist, then just add user to it
+        const rawUsers = await client.hGetAll(room);
+        const users = RedisClient.fromJson(rawUsers['users']);
+        users.push(user);
+
+        await client.hSet(room, 'users', RedisClient.toJson(users));
+        return null;
+      } else {
+        // room dont exist, so create it
+        return this.createRoom([user], room);
+      }
+    } else {
+      // user found in room already, so throw error
+      throw new UserAlreadyFoundInRoomError(
+        'User is already registered to a room'
+      );
     }
-
-    users.push(userId);
-
-    // update the room
-    await client.hSet(`id-${roomId}`, 'users', this.toJson(users));
   }
 
   /**
    * Deregisters a user from a room
    *
-   * @param {string} roomId Room ID to remove user from
-   * @param {string} userId User ID of user to remove from room
+   * @param {String} user User ID of user to deregister
+   * @param {String} room Room ID of room to disassociate user with
    */
-  async deregisterUser(roomId, userId) {
-    const client = this.createIfAbsent();
-    const users = (await this.findUsersFromRoom(roomId)) ?? [];
+  async deregisterUser(user, room) {
+    const userRoom = await this.getRoom(user);
+    const client = await RedisClient.createIfAbsent();
 
-    if (!users.includes(userId)) {
-      throw new UserNotFoundInRoom();
+    if (userRoom === null) {
+      throw new UserNotFoundInRoomError('User is not registered to any rooms');
     }
 
-    // remove the user from the list
-    users = users.filter((user) => user != userId);
+    if (!Object.keys(userRoom).includes(room)) {
+      // user is not in the specified room
+      throw new UserNotFoundInRoomError(
+        'User is not registered to the specified room'
+      );
+    }
 
-    // update the room
-    await client.hSet(`id-${roomId}`, 'users', this.toJson(users));
+    const users = userRoom[room]['users'].filter((x) => x !== user);
+    await client.hSet(room, 'users', RedisClient.toJson(users));
+    return null;
   }
 
   /**
-   * Converts a JSON object containing the list of users in a room
-   * into a JSON string.
+   * Debug function to permit the dumping of all active session
    *
-   * @param {Map} users Map containing Array of users in a room
-   * @returns string object representing the JSON object
+   * FOR DEBUGGING PURPOSES ONLY
+   * @returns Map containing the mappings of roomId to List of users
    */
-  toJson(users) {
-    return JSON.stringify({
-      users: users,
-    });
-  }
+  async dumpRedis() {
+    const database = {};
+    const client = await RedisClient.createIfAbsent();
+    const iterator_params = {
+      MATCH: `*`,
+    };
 
-  /**
-   * Converts the JSON string representing the list of users back
-   * into an Array of user emails
-   *
-   * @param {string} results JSON string representing the list of users
-   * @returns JSON object containing the list of users in a room
-   */
-  fromJson(results) {
-    return JSON.parse(results.users);
+    // scan through all keys (roomIds)
+    for await (const key of client.scanIterator(iterator_params)) {
+      // get the users associated with the roomId
+      try {
+        database[key] = await client.hGetAll(key);
+      } catch (err) {
+        database[key] = await client.get(key);
+      }
+    }
+
+    return database;
   }
 }
+
+// Test cases
 
 export default RedisClient;

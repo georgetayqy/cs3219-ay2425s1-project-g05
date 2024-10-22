@@ -23,5 +23,33 @@ const corsOptions = {
   credentials: true,
 };
 
+function checkCors(request) {
+  // Inspired by https://stackoverflow.com/questions/71384801/how-to-enable-cors-for-web-sockets-using-ws-library-in-node-js
+  const origins = request?.headers?.origin?.trim();
+
+  if (origins === null || origins === undefined) {
+    return false;
+  }
+
+  if (origins.startsWith('http://')) {
+    const sliced = origins.slice(7);
+    console.log(sliced);
+  } else if (origins.startsWith('https://')) {
+    const sliced = origins.slice(8);
+    console.log(sliced);
+  }
+
+  // invalid URL
+  return false;
+}
+
+function createCors(url) {
+  return {
+    headers: {
+      origin: url,
+    },
+  };
+}
+
 const corsMiddleware = cors(corsOptions);
-export default corsMiddleware;
+export { corsMiddleware, checkCors };
