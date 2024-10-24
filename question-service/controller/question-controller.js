@@ -1,9 +1,7 @@
-import test from "node:test";
 import { categoriesIdToCategories } from "../constants/categories.js";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
 import ConflictError from "../errors/ConflictError.js";
-import ForbiddenError from "../errors/ForbiddenError.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import {
   ormCreateQuestion as _createQuestion,
@@ -15,7 +13,7 @@ import {
   ormFindQuestion as _findQuestion,
   ormGetQuestionsByDescription as _getQuestionsByDescription,
   ormGetQuestionsByTitleAndDifficulty as _getQuestionByTitleAndDifficulty,
-  ormGetDistinctCategories as _getDistinctCategories,
+  ormGetDistinctCategoriesId as _getDistinctCategoriesId,
 } from "../models/orm.js";
 
 const createQuestion = async (req, res, next) => {
@@ -44,27 +42,30 @@ const createQuestion = async (req, res, next) => {
       );
     }
 
-    const categoriesString = req.body.categoriesId.map(
-      (id) => categoriesIdToCategories[id]
-    );
-
-    // count number of isPublic test cases, !isPublic test cases, and total test cases  
+    // count number of isPublic test cases, !isPublic test cases, and total test cases
     const metaData = {
-      publicTestCaseCount: req.body.testCases.filter(testCase => testCase.isPublic).length,
-      privateTestCaseCount: req.body.testCases.filter(testCase => !testCase.isPublic).length,
-      totalTestCaseCount: req.body.testCases.length
-    }
+      publicTestCaseCount: req.body.testCases.filter(
+        (testCase) => testCase.isPublic
+      ).length,
+      privateTestCaseCount: req.body.testCases.filter(
+        (testCase) => !testCase.isPublic
+      ).length,
+      totalTestCaseCount: req.body.testCases.length,
+    };
 
     const newQuestion = {
       ...req.body,
-      categories: categoriesString,
-      meta: metaData
+      meta: metaData,
     };
 
     const createdQuestion = await _createQuestion(newQuestion);
+    const createdQuestionCategories = {
+      ...createdQuestion.toObject(),
+      categories: getCategoriesWithId(createdQuestion.categoriesId),
+    };
     return res
       .status(201)
-      .json({ statusCode: 201, data: { question: createdQuestion } });
+      .json({ statusCode: 201, data: { question: createdQuestionCategories } });
   } catch (err) {
     console.log(err);
     next(
@@ -82,6 +83,15 @@ const getAllQuestions = async (req, res, next) => {
     if (allQuestions.length === 0) {
       throw new NotFoundError("No questions found");
     }
+
+    // for all questions, get the categories with the categoriesId
+    allQuestions = allQuestions.map((question) => {
+      const categories = getCategoriesWithId(question.categoriesId);
+      return {
+        ...question.toObject(),
+        categories,
+      };
+    });
 
     return res.status(200).json({
       statusCode: 200,
@@ -110,7 +120,7 @@ const getQuestionById = async (req, res, next) => {
     // if (!req.user) {
     //   throw new ForbiddenError("Please login to perform this action");
     // }
-    // TODO: remove private test cases if not run service 
+    // TODO: remove private test cases if not run service
     // if (true) {
     //     const { testCases, ...rest } = foundQuestion[0].toObject();
     //     const publicTestCases = testCases.filter(
@@ -118,10 +128,17 @@ const getQuestionById = async (req, res, next) => {
     //     );
     //     foundQuestion = {
     //       ...rest,
-    //       testCases: publicTestCases, 
+    //       testCases: publicTestCases,
     //     };
-      
+
     // }
+
+    // get the categories with the categoriesId
+    const categories = getCategoriesWithId(foundQuestion[0].categoriesId);
+    foundQuestion = {
+      ...foundQuestion[0].toObject(),
+      categories,
+    };
 
     return res.status(200).json({
       statusCode: 200,
@@ -147,11 +164,16 @@ const deleteQuestionById = async (req, res, next) => {
       throw new NotFoundError("Question not found");
     }
 
-    const result = await _deleteQuestionById(id);
+    let result = await _deleteQuestionById(id);
 
     if (!result) {
       throw new NotFoundError("Question not found");
     }
+    result = {
+      ...result.toObject(),
+      categories: getCategoriesWithId(result.categoriesId),
+    };
+
     return res.status(200).json({
       statusCode: 200,
       message: "Question deleted successfully",
@@ -214,33 +236,24 @@ const updateQuestionById = async (req, res, next) => {
         );
       }
     }
-    let updatedQuestionDetails = req.body;
-    // UPDATE THE QUESTION
-    if (categoriesId) {
-      const categoriesString = req.body.categoriesId.map(
-        (id) => categoriesIdToCategories[id]
-      );
 
-      updatedQuestionDetails = {
-        ...req.body,
-        categories: categoriesString,
-      };
-    }
+    let updatedQuestionDetails = req.body;
 
     if (testCases) {
       const metaData = {
-        publicTestCaseCount: testCases.filter(testCase => testCase.isPublic).length,
-        privateTestCaseCount: testCases.filter(testCase => !testCase.isPublic).length,
-        totalTestCaseCount: testCases.length
-      }
+        publicTestCaseCount: testCases.filter((testCase) => testCase.isPublic)
+          .length,
+        privateTestCaseCount: testCases.filter((testCase) => !testCase.isPublic)
+          .length,
+        totalTestCaseCount: testCases.length,
+      };
       updatedQuestionDetails = {
         ...updatedQuestionDetails,
-        meta: metaData
-      }
+        meta: metaData,
+      };
     }
 
-    console.log(updatedQuestionDetails)
-    const updatedQuestion = await _updateQuestionById(
+    let updatedQuestion = await _updateQuestionById(
       id,
       updatedQuestionDetails
     );
@@ -248,6 +261,11 @@ const updateQuestionById = async (req, res, next) => {
     if (!updatedQuestion) {
       throw new NotFoundError("Question not found");
     }
+
+    updatedQuestion = {
+      ...updatedQuestion.toObject(),
+      categories: getCategoriesWithId(updatedQuestion.categoriesId),
+    };
 
     return res
       .status(200)
@@ -264,45 +282,25 @@ const updateQuestionById = async (req, res, next) => {
 
 const getFilteredQuestions = async (req, res, next) => {
   try {
-    const { categories, categoriesId, difficulty } = req.query;
+    const { categoriesId, difficulty } = req.query;
 
-    // CHECK THAT BOTH CATEGORIES AND CATEGORIESID ARE NOT PROVIDED
+    let categoriesIdInt = null;
 
-    if (categories && categoriesId) {
-      throw new BadRequestError(
-        "Only categories or categoriesId should be provided, not both!"
-      );
-    }
-
-    let categoriesString = [];
     if (categoriesId) {
       if (!Array.isArray(categoriesId)) {
         throw new BadRequestError("CategoriesId should be an array!");
       }
-      categoriesString = categoriesId.map((id) => {
-        const category = categoriesIdToCategories[id];
-        if (!category) {
-          throw new BadRequestError(`Category with id ${id} does not exist!`);
-        }
-        return category;
-      });
-    }
-
-    // leaving it here for now - might remove it later (to not break anything from matching service)
-    if (categories) {
-      if (!Array.isArray(categories)) {
-        throw new BadRequestError("Categories should be an array!");
-      }
-      categoriesString = categories;
       // check whether categories exist
-      const distinctCategories = await _getDistinctCategories();
-      const invalidCategories = categoriesString.filter(
-        (category) => !distinctCategories.includes(category.toUpperCase())
+      let distinctCategories = await _getDistinctCategoriesId();
+      categoriesIdInt = categoriesId.map((id) => parseInt(id));
+      const invalidCategories = categoriesIdInt.filter(
+        (category) => !distinctCategories.includes(category)
       );
-
       if (invalidCategories.length > 0) {
         throw new BadRequestError(
-          `Categories specified do not exist: ${invalidCategories.join(", ")}`
+          `Questions with categoriesId specified do not exist: ${invalidCategories.join(
+            ", "
+          )}`
         );
       }
     }
@@ -322,8 +320,8 @@ const getFilteredQuestions = async (req, res, next) => {
       }
     }
 
-    const filteredQuestions = await _getFilteredQuestions({
-      categories: categoriesString,
+    let filteredQuestions = await _getFilteredQuestions({
+      categoriesId: categoriesIdInt,
       difficulty,
     });
 
@@ -333,6 +331,14 @@ const getFilteredQuestions = async (req, res, next) => {
         "No questions with matching categories and difficulty found"
       );
     }
+
+    filteredQuestions = filteredQuestions.map((question) => {
+      const categories = getCategoriesWithId(question.categoriesId);
+      return {
+        ...question.toObject(),
+        categories,
+      };
+    });
 
     return res.status(200).json({
       statusCode: 200,
@@ -350,47 +356,50 @@ const getFilteredQuestions = async (req, res, next) => {
 
 const findQuestion = async (req, res, next) => {
   try {
-    const { categoriesId, difficulty, categories } = req.query;
+    const { categoriesId, difficulty } = req.query;
 
     // CHECK THAT BOTH CATEGORIES AND CATEGORIESID ARE NOT PROVIDED
-    if (categories && categoriesId) {
-      throw new BadRequestError(
-        "Only categories or categoriesId should be provided, not both!"
-      );
-    }
+    // if (categories && categoriesId) {
+    //   throw new BadRequestError(
+    //     "Only categories or categoriesId should be provided, not both!"
+    //   );
+    // }
 
-    let categoriesString = [];
+    // let categoriesString = [];
+    // if (categoriesId) {
+    //   if (!Array.isArray(categoriesId)) {
+    //     throw new BadRequestError("CategoriesId should be an array!");
+    //   }
+    //   categoriesString = categoriesId.map((id) => {
+    //     const category = categoriesIdToCategories[id];
+    //     if (!category) {
+    //       throw new BadRequestError(`Category with id ${id} does not exist!`);
+    //     }
+    //     return category;
+    //   });
+    // }
+
+    let categoriesIdInt = null;
+
     if (categoriesId) {
       if (!Array.isArray(categoriesId)) {
         throw new BadRequestError("CategoriesId should be an array!");
       }
-      categoriesString = categoriesId.map((id) => {
-        const category = categoriesIdToCategories[id];
-        if (!category) {
-          throw new BadRequestError(`Category with id ${id} does not exist!`);
-        }
-        return category;
-      });
-    }
-
-    // leaving it here for now - might remove it later (to not break anything from matching service)
-    if (categories) {
-      if (!Array.isArray(categories)) {
-        throw new BadRequestError("Categories should be an array!");
-      }
-      categoriesString = categories;
       // check whether categories exist
-      const distinctCategories = await _getDistinctCategories();
-      const invalidCategories = categoriesString.filter(
-        (category) => !distinctCategories.includes(category.toUpperCase())
+      let distinctCategories = await _getDistinctCategoriesId();
+      categoriesIdInt = categoriesId.map((id) => parseInt(id));
+      const invalidCategories = categoriesIdInt.filter(
+        (category) => !distinctCategories.includes(category)
       );
-
       if (invalidCategories.length > 0) {
         throw new BadRequestError(
-          `Categories specified do not exist: ${invalidCategories.join(", ")}`
+          `Questions with categoriesId specified do not exist: ${invalidCategories.join(
+            ", "
+          )}`
         );
       }
     }
+
 
     if (difficulty) {
       if (!Array.isArray(difficulty)) {
@@ -407,8 +416,8 @@ const findQuestion = async (req, res, next) => {
       }
     }
 
-    const foundQuestion = await _findQuestion({
-      categories: categoriesString,
+    let foundQuestion = await _findQuestion({
+      categoriesId: categoriesIdInt,
       difficulty,
     });
 
@@ -419,12 +428,18 @@ const findQuestion = async (req, res, next) => {
       );
     }
 
+    foundQuestion = {
+      ...foundQuestion.toObject(),
+      categories: getCategoriesWithId(foundQuestion.categoriesId),
+    };
+
     return res.status(200).json({
       statusCode: 200,
       message: "Question found!",
       data: { question: foundQuestion },
     });
   } catch (err) {
+    console.log(err);
     next(
       err instanceof BaseError
         ? err
@@ -433,12 +448,19 @@ const findQuestion = async (req, res, next) => {
   }
 };
 
-const getDistinctCategories = async (req, res, next) => {
+const getDistinctCategoriesId = async (req, res, next) => {
   try {
-    const distinctCategories = await _getDistinctCategories();
+    let distinctCategories = await _getDistinctCategoriesId();
 
     if (distinctCategories.length === 0) {
       throw new NotFoundError("No categories found");
+    }
+
+    // add a new array named categories string to distinctCategories
+    // let the current distinctCategories be the categoriesId array 
+    distinctCategories = {
+      categoriesId: distinctCategories,
+      categories: distinctCategories.map((id) => categoriesIdToCategories[id]),
     }
 
     return res.status(200).json({
@@ -455,6 +477,10 @@ const getDistinctCategories = async (req, res, next) => {
   }
 };
 
+const getCategoriesWithId = (categoriesId) => {
+  return categoriesId.map((id) => categoriesIdToCategories[id]);
+};
+
 export {
   createQuestion,
   getAllQuestions,
@@ -463,5 +489,5 @@ export {
   updateQuestionById,
   getFilteredQuestions,
   findQuestion,
-  getDistinctCategories,
+  getDistinctCategoriesId,
 };

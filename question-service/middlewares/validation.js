@@ -37,6 +37,24 @@ const joiTestCaseSchema = Joi.object({
     "Each test case should have testCode, isPublic, and expectedOutput",
 });
 
+const joiDescriptionSchema = Joi.object(
+  {
+    descriptionHtml: Joi.string().trim().min(1).required().messages({
+      "string.empty": "DescriptionHtml is required in description",
+      "string.min": "DescriptionHtml must be at least 1 character long",
+      "any.required": "DescriptionHtml is required in description",
+    }),
+    descriptionText: Joi.string().trim().min(1).required().messages({
+      "string.empty": "DescriptionText is required in description",
+      "string.min": "DescriptionText must be at least 1 character long",
+      "any.required": "DescriptionText is required in description",
+    }),
+  }
+).messages({
+  "object.base": "Description is required as an object with descriptionHtml and descriptionText",
+  "any.required": "Description is required with descriptionHtml and descriptionText",
+});
+
 // Schema for question - for create
 const joiQuestionSchema = Joi.object({
   title: Joi.string().trim().min(1).required().messages({
@@ -44,9 +62,9 @@ const joiQuestionSchema = Joi.object({
     "string.min": "Title must be at least 1 character long",
     "any.required": "Title is required",
   }),
-  description: Joi.object().required().messages({
-    "object.base": "Description is required as an object",
-    "any.required": "Description is required",
+  description: joiDescriptionSchema.required().messages({
+    "object.base": "Description must be an object",
+    "any.required": "Description is required with descriptionHtml and descriptionText",
   }),
   categoriesId: Joi.array()
     .items(
@@ -100,8 +118,8 @@ const joiPartialQuestionSchema = Joi.object({
     .messages({
       "string.empty": "Title cannot be empty",
     }),
-  description: Joi.object().optional().messages({
-    "object.base": "Description must be an object",
+  description: joiDescriptionSchema.optional().messages({
+    "object.base": "Description must be an object with descriptionHtml and descriptionText",
   }),
   categoriesId: Joi.array()
     .items(

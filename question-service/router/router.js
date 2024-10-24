@@ -7,7 +7,7 @@ import {
   updateQuestionById,
   getFilteredQuestions,
   findQuestion,
-  getDistinctCategories,
+  getDistinctCategoriesId,
 } from "../controller/question-controller.js";
 import { checkAdmin } from "../middlewares/access-control.js";
 import {
@@ -42,6 +42,6 @@ router.route("/filter/").get(getFilteredQuestions);
 router.route("/random/").get(findQuestion);
 
 // GET ALL DISTINCT CATEGORIES
-router.route("/categories").get(getDistinctCategories);
+router.route("/categories").get(getDistinctCategoriesId);
 
 export default router;

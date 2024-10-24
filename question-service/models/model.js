@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { publicDecrypt } from "node:crypto";
 const Schema = mongoose.Schema;
 
 const testCaseSchema = new Schema({
@@ -47,15 +46,6 @@ const questionSchema = new Schema({
   },
   categoriesId: {
     type: [Number],
-    required: [true, "Categories is required"],
-    validate: {
-      validator: (value) => {
-        return value.length > 0;
-      },
-    },
-  },
-  categories: {
-    type: [String],
     required: [true, "Categories is required"],
     validate: {
       validator: (value) => {

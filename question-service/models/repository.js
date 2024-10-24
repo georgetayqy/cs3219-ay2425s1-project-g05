@@ -4,9 +4,6 @@ const createQuestion = async (question) => {
   console.log(question);
   const newQuestion = new Question(question);
   newQuestion.difficulty = question.difficulty.toUpperCase();
-  newQuestion.categories = question.categories.map((category) =>
-    category.toUpperCase()
-  );
 
   return newQuestion.save();
 };
@@ -25,7 +22,7 @@ const deleteQuestionById = async (id) => {
 };
 
 const updateQuestionById = async (id, question) => {
-  const allowedFields = ['title', 'description', 'difficulty', 'categories', 'categoriesId', 'testCases', 'templateCode', 'solutionCode', 'link', 'meta'];
+  const allowedFields = ['title', 'description', 'difficulty', 'categoriesId', 'testCases', 'templateCode', 'solutionCode', 'link', 'meta'];
   const sanitizedQuestion = {};
   for (const key of allowedFields) {
     if (question[key] !== undefined) {
@@ -36,11 +33,12 @@ const updateQuestionById = async (id, question) => {
 };
 
 const getFilteredQuestions = async (body) => {
-  const { categories, difficulty } = body;
+  const { categoriesId, difficulty } = body;
   let filter = { isDeleted: false };
-  if (categories) {
-    filter.categories = {
-      $in: categories.map((category) => category.toUpperCase()),
+  console.log(categoriesId)
+  if (categoriesId) {
+    filter.categoriesId = {
+      $in: categoriesId, 
     };
   }
   if (difficulty) {
@@ -66,13 +64,13 @@ const getQuestionsByTitleAndDifficulty = async (title, difficulty) => {
 const getDistinctCategories = async () => {
   const distinctCategories = await Question.aggregate([
     { $match: { isDeleted: false } },
-    { $unwind: "$categories" },
-    { $group: { _id: "$categories" } },
+    { $unwind: "$categoriesId" },
+    { $group: { _id: "$categoriesId" } },
     { $sort: { _id: 1 } },
   ]);
 
-  const categories = distinctCategories.map((item) => item._id);
-  return categories;
+  const categoriesId = distinctCategories.map((item) => item._id);
+  return categoriesId;
 };
 
 export {
