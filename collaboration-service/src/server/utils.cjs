@@ -80,6 +80,18 @@ const docs = new Map();
 // exporting docs so that others can use it
 exports.docs = docs;
 
+/**
+ * @type {Map<WSSharedDoc, Array<String>>}
+ */
+const doc2User = new Map();
+exports.doc2User = doc2User;
+
+/**
+ * @type {Map<string, WSSharedDoc>}
+ */
+const user2Doc = new Map();
+exports.user2Doc = user2Doc;
+
 const messageSync = 0;
 const messageAwareness = 1;
 // const messageAuth = 2
@@ -195,17 +207,11 @@ exports.WSSharedDoc = WSSharedDoc;
  * @param {boolean} gc - whether to allow gc on the doc (applies only when created)
  * @return {WSSharedDoc}
  */
-const getYDoc = (docname, defaultQuestion = '', gc = true) =>
+const getYDoc = (docname, defaultQuestion = '', userId = '', gc = true) =>
   map.setIfUndefined(docs, docname, () => {
-    console.log(defaultQuestion);
     const doc = new WSSharedDoc(docname);
     const inititalText = doc.getText();
     inititalText.insert(0, defaultQuestion);
-    console.log('HELLO> ', inititalText);
-
-    inititalText.observe((event) => {
-      console.log(event);
-    });
 
     doc.gc = gc;
 
@@ -259,21 +265,35 @@ const messageListener = (conn, doc, message) => {
 
 /**
  * @param {WSSharedDoc} doc
+ * @param {string} userId UserId of user to close/remove
  * @param {any} conn
  */
-const closeConn = (doc, conn) => {
+const closeConn = (doc, userId, conn) => {
   if (doc.conns.has(conn)) {
     /**
      * @type {Set<number>}
      */
     // @ts-ignore
     const controlledIds = doc.conns.get(conn);
+
     doc.conns.delete(conn);
+
     awarenessProtocol.removeAwarenessStates(
       doc.awareness,
       Array.from(controlledIds),
       null
     );
+
+    // remove the doc
+    if (user2Doc.has(userId)) {
+      user2Doc.delete(userId);
+    }
+
+    // remove the users
+    const currUsers = doc2User.get(doc);
+    if (currUsers.includes(userId)) {
+      currUsers.splice(currUsers.indexOf(userId));
+    }
 
     if (doc.conns.size === 0 && persistence !== null) {
       // if persisted, we store state and destroy ydocument
@@ -325,32 +345,26 @@ const pingTimeout = 30000;
  * @param {import('http').IncomingMessage} req
  * @param {any} opts
  */
-exports.setupWSConnection = async (
+exports.setupWSConnection = (
   conn,
   req,
   { docName = (req.url || '').slice(1).split('?')[0], gc = true } = {}
 ) => {
   conn.binaryType = 'arraybuffer';
-z
   // get the difficulties and categories
-  const splitResults = urlSplitter(req.url);
+  // const { userId, splitResults } = getTemplateQuestion(req.url);
+  const result = getTemplateQuestion(req.url);
+  const question = result[0];
+  const userId = result[1];
 
   let doc = null;
 
-  if (splitResults === null) {
+  if (question === null) {
     // if no extra params provided, then we can just ignore it
     doc = getYDoc(docName, gc);
   } else {
     // otherwise, question service here to get a random question
     try {
-      const results = await axios.get(
-        `${
-          process.env.QUESTION_SERVICE_ENDPOINT ??
-          'http://localhost:8003/api/question-service/random'
-        }${splitResults}`
-      );
-
-      const question = results.data['data']['question']['templateCode'];
       doc = getYDoc(docName, question, gc);
     } catch (err) {
       console.log('Error: ', err);
@@ -360,6 +374,20 @@ z
 
   // get doc, initialize if it does not exist yet
   doc?.conns.set(conn, new Set());
+
+  // set up the user to doc mapping
+  if (!user2Doc.has(userId)) {
+    user2Doc.set(userId, doc);
+  }
+
+  // set up the doc to user mapping
+  if (!doc2User.has(doc)) {
+    doc2User.set(doc, [userId]);
+  } else {
+    if (!doc2User.get(doc).includes(userId)) {
+      doc2User.get(doc).push(userId);
+    }
+  }
 
   // listen and reply to events
   conn.on(
@@ -372,10 +400,10 @@ z
   // Check if connection is still alive
   let pongReceived = true;
 
-  const pingInterval = setInterval(() => {
+  const pingInterval = setInterval(async () => {
     if (!pongReceived) {
       if (doc.conns.has(conn)) {
-        closeConn(doc, conn);
+        closeConn(doc, userId, conn);
       }
       clearInterval(pingInterval);
     } else if (doc.conns.has(conn)) {
@@ -383,15 +411,15 @@ z
       try {
         conn.ping();
       } catch (e) {
-        closeConn(doc, conn);
+        closeConn(doc, userId, conn);
         clearInterval(pingInterval);
       }
     }
   }, pingTimeout);
 
-  conn.on('close', () => {
+  conn.on('close', async () => {
     console.log('Connection Terminated');
-    closeConn(doc, conn);
+    closeConn(doc, userId, conn);
     clearInterval(pingInterval);
   });
 
@@ -423,9 +451,7 @@ z
   }
 };
 
-exports.retrieveQuestion = () => {};
-
-const urlSplitter = (url) => {
+const getTemplateQuestion = (url) => {
   // if url is empty or absent, there is nothing to split, return null
   if (
     url === null ||
@@ -440,36 +466,20 @@ const urlSplitter = (url) => {
   url = decodeURIComponent(url);
   const splitUrl = url.split(/[&|?|/]/).filter((val, x, y) => val.length > 0);
 
-  let returnString = [];
+  let templateCode = '';
+  let userId = '';
 
   // iterate through the url entries and populate accordingly
   for (const urlEntry of splitUrl) {
-    if (urlEntry.startsWith('category')) {
-      const categories = urlEntry.split('=')[1].split(',');
-
-      for (const category of categories) {
-        if (returnString.length === 0) {
-          returnString.push(`?topics[]=${category}`);
-        } else {
-          returnString.push(`&topics[]=${category}`);
-        }
-      }
-    } else if (urlEntry.startsWith('difficulty')) {
-      const difficulties = urlEntry.split('=')[1].split(',');
-
-      for (const category of difficulties) {
-        if (returnString.length === 0) {
-          returnString.push(`?difficulty[]=${category}`);
-        } else {
-          returnString.push(`&difficulty[]=${category}`);
-        }
-      }
+    if (urlEntry.startsWith('templateCode')) {
+      templateCode = urlEntry.split('=')[1];
+    } else if (urlEntry.startsWith('userId')) {
+      userId = urlEntry.split('=')[1];
     }
   }
 
-  if (returnString.length === 0) {
-    return null;
-  }
-
-  return returnString.join('');
+  return [
+    templateCode.length == 0 ? null : templateCode,
+    userId.length == 0 ? 'defaultUser' : userId,
+  ];
 };

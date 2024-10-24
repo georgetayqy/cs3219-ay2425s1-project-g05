@@ -1,3 +1,4 @@
+import axios from 'axios';
 import BaseError from '../errors/BaseError.js';
 import RoomCreationError from '../errors/RoomCreationError.js';
 import RoomNotFoundError from '../errors/RoomNotFoundError.js';
@@ -14,6 +15,8 @@ await RedisClient.createIfAbsent();
 const createRoom = async (request, response, next) => {
   try {
     const users = request.body.users;
+    const topics = request.body.topics;
+    const difficulty = request.body.difficulty;
 
     if (users === undefined || users === null) {
       throw new RoomCreationError(
@@ -22,11 +25,22 @@ const createRoom = async (request, response, next) => {
     }
 
     const roomId = await client.createRoom(users);
+    const resp = await axios.get(
+      process.env.QUESTION_SERVICE_ENDPOINT ??
+        'http://localhost:8003/api/question-service/random',
+      {
+        params: {
+          topics: topics,
+          difficulty: difficulty,
+        },
+      }
+    );
 
     return response.status(200).json({
       statusCode: 200,
       data: {
         roomId: roomId,
+        templateCode: resp.data['data']['question']['templateCode'] ?? '',
       },
     });
   } catch (err) {

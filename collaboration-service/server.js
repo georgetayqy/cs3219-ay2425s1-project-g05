@@ -48,12 +48,8 @@ app.get('/healthz', (request, response) => {
 
 // Setup the websocketServer connection
 websocketServer.on('connection', async (conn, sock) => {
-  try {
-    await setupWSConnection(conn, sock);
-  } catch (error) {
-    // destroy the socket to terminate the condition
-    sock.destroy();
-  }
+  console.log('User Connected');
+  setupWSConnection(conn, sock);
 });
 
 // Upgrade requests to Websockets
@@ -66,7 +62,6 @@ httpServer.on('upgrade', (req, sock, head) => {
   }
 
   websocketServer.handleUpgrade(req, sock, head, (soc) => {
-    console.log('User Connected');
     websocketServer.emit('connection', soc, req);
   });
 });

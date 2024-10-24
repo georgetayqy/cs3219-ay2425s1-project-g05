@@ -17,10 +17,8 @@ function getColour() {
 interface CodeEditorProps {
   endpoint: string;
   room: string;
-  topics: string[];
-  difficulties: string[];
+  user: string;
   theme?: string;
-  name?: string;
   height?: string;
   defaultValue?: string;
   language?: string;
@@ -30,22 +28,18 @@ interface CodeEditorProps {
  * Adapted from https://github.com/yjs/yjs-demos/blob/main/monaco-react/src/App.tsx
  * @param endpoint String representing the endpoint websocket server to connect to
  * @param room String representing the room to join
- * @param topics List of Strings representing the topics to find
- * @param difficulties List of Strings representing the difficulties of questions to find
- * @param theme String representing theme to use for the editor, one of 'light' and 'vs-dark'
  * @param user Username of the current user
+ * @param theme String representing theme to use for the editor, one of 'light' and 'vs-dark'
  * @param height Height of the editor
- * @param defaultValue Default value to add into the editor
+ * @param defaultValue Default template code
  * @param language Default language to enable code completion in the editor
  * @returns Monaco Editor component
  */
 export default function CodeEditor({
   endpoint,
   room,
-  topics = [],
-  difficulties = [],
+  user,
   theme = 'light',
-  name = 'user',
   height = '90vh',
   defaultValue = '# Write your code here',
   language = 'python',
@@ -58,15 +52,10 @@ export default function CodeEditor({
 
   useEffect(() => {
     // create the params
-    const params = {};
-
-    if (topics.length > 0) {
-      params['category'] = topics.join(',');
-    }
-
-    if (difficulties.length > 0) {
-      params['difficulty'] = difficulties.join(',');
-    }
+    const params = {
+      templateCode: defaultValue,
+      userId: user
+    };
 
     const provider = new WebsocketProvider(endpoint, room, doc, {
       params: params,
