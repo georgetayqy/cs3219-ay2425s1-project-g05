@@ -47,7 +47,14 @@ app.get('/healthz', (request, response) => {
 });
 
 // Setup the websocketServer connection
-websocketServer.on('connection', setupWSConnection);
+websocketServer.on('connection', async (conn, sock) => {
+  try {
+    await setupWSConnection(conn, sock);
+  } catch (error) {
+    // destroy the socket to terminate the condition
+    sock.destroy();
+  }
+});
 
 // Upgrade requests to Websockets
 httpServer.on('upgrade', (req, sock, head) => {

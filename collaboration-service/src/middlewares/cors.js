@@ -25,11 +25,17 @@ const corsOptions = {
 
 function checkCors(request) {
   // Inspired by https://stackoverflow.com/questions/71384801/how-to-enable-cors-for-web-sockets-using-ws-library-in-node-js
-  const origins = request?.headers?.origin?.trim();
+  const origins = request?.rawHeaders ?? [];
+  const allowedO = allowedOrigins.map((value, idx, array) => {
+    const results = value.split('//');
+    return results[results.length - 1];
+  });
 
-  for (const orig of allowedOrigins) {
-    if (origins.startsWith(orig)) {
-      return true;
+  for (const orig of allowedO) {
+    for (const entry of origins) {
+      if (entry.startsWith(orig)) {
+        return true;
+      }
     }
   }
 

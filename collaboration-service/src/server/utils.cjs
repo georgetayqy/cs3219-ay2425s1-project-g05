@@ -4,6 +4,7 @@
 const Y = require('yjs');
 const syncProtocol = require('y-protocols/sync');
 const awarenessProtocol = require('y-protocols/awareness');
+const axios = require('axios');
 
 const encoding = require('lib0/encoding');
 const decoding = require('lib0/decoding');
@@ -13,6 +14,11 @@ const debounce = require('lodash.debounce');
 
 const callbackHandler = require('./callback.cjs').callbackHandler;
 const isCallbackSet = require('./callback.cjs').isCallbackSet;
+
+const config = require('dotenv');
+
+// get the env vars
+config.config();
 
 const CALLBACK_DEBOUNCE_WAIT = parseInt(
   process.env.CALLBACK_DEBOUNCE_WAIT || '2000'
@@ -185,12 +191,21 @@ exports.WSSharedDoc = WSSharedDoc;
  * Gets a Y.Doc by name, whether in memory or on disk
  *
  * @param {string} docname - the name of the Y.Doc to find or create
+ * @param {string} defaultQuestion - the default value/question to populate the editor with
  * @param {boolean} gc - whether to allow gc on the doc (applies only when created)
  * @return {WSSharedDoc}
  */
-const getYDoc = (docname, gc = true) =>
+const getYDoc = (docname, defaultQuestion = '', gc = true) =>
   map.setIfUndefined(docs, docname, () => {
+    console.log(defaultQuestion);
     const doc = new WSSharedDoc(docname);
+    const inititalText = doc.getText();
+    inititalText.insert(0, defaultQuestion);
+    console.log('HELLO> ', inititalText);
+
+    inititalText.observe((event) => {
+      console.log(event);
+    });
 
     doc.gc = gc;
 
@@ -310,15 +325,41 @@ const pingTimeout = 30000;
  * @param {import('http').IncomingMessage} req
  * @param {any} opts
  */
-exports.setupWSConnection = (
+exports.setupWSConnection = async (
   conn,
   req,
   { docName = (req.url || '').slice(1).split('?')[0], gc = true } = {}
 ) => {
   conn.binaryType = 'arraybuffer';
+z
+  // get the difficulties and categories
+  const splitResults = urlSplitter(req.url);
+
+  let doc = null;
+
+  if (splitResults === null) {
+    // if no extra params provided, then we can just ignore it
+    doc = getYDoc(docName, gc);
+  } else {
+    // otherwise, question service here to get a random question
+    try {
+      const results = await axios.get(
+        `${
+          process.env.QUESTION_SERVICE_ENDPOINT ??
+          'http://localhost:8003/api/question-service/random'
+        }${splitResults}`
+      );
+
+      const question = results.data['data']['question']['templateCode'];
+      doc = getYDoc(docName, question, gc);
+    } catch (err) {
+      console.log('Error: ', err);
+      throw new Error('Cannot find question');
+    }
+  }
+
   // get doc, initialize if it does not exist yet
-  const doc = getYDoc(docName, gc);
-  doc.conns.set(conn, new Set());
+  doc?.conns.set(conn, new Set());
 
   // listen and reply to events
   conn.on(
@@ -380,4 +421,55 @@ exports.setupWSConnection = (
       send(doc, conn, encoding.toUint8Array(encoder));
     }
   }
+};
+
+exports.retrieveQuestion = () => {};
+
+const urlSplitter = (url) => {
+  // if url is empty or absent, there is nothing to split, return null
+  if (
+    url === null ||
+    url === undefined ||
+    typeof url !== 'string' ||
+    url.length === 0
+  ) {
+    return null;
+  }
+
+  // remove url splits that result in empty strings
+  url = decodeURIComponent(url);
+  const splitUrl = url.split(/[&|?|/]/).filter((val, x, y) => val.length > 0);
+
+  let returnString = [];
+
+  // iterate through the url entries and populate accordingly
+  for (const urlEntry of splitUrl) {
+    if (urlEntry.startsWith('category')) {
+      const categories = urlEntry.split('=')[1].split(',');
+
+      for (const category of categories) {
+        if (returnString.length === 0) {
+          returnString.push(`?topics[]=${category}`);
+        } else {
+          returnString.push(`&topics[]=${category}`);
+        }
+      }
+    } else if (urlEntry.startsWith('difficulty')) {
+      const difficulties = urlEntry.split('=')[1].split(',');
+
+      for (const category of difficulties) {
+        if (returnString.length === 0) {
+          returnString.push(`?difficulty[]=${category}`);
+        } else {
+          returnString.push(`&difficulty[]=${category}`);
+        }
+      }
+    }
+  }
+
+  if (returnString.length === 0) {
+    return null;
+  }
+
+  return returnString.join('');
 };
