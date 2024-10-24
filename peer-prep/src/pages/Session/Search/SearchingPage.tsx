@@ -11,7 +11,7 @@ export default function SearchingPage() {
         <Image className={classes.searchingImage} src={SearchingImage} />
         <Title>
           {" "}
-          <span className={classes.loadingSpinner}> ⏳ </span> Loading...{" "}
+          <span className={classes.hourglass}> ⏳ </span> Loading...{" "}
         </Title>
         <Text> You will be matched with a partner soon! </Text>
       </Flex>
