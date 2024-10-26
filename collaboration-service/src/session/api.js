@@ -5,12 +5,11 @@ import RoomNotFoundError from '../errors/RoomNotFoundError.js';
 import UserDeregistrationError from '../errors/UserDeregistrationError.js';
 import UserNotFoundError from '../errors/UserNotFoundError.js';
 import UserRegistrationError from '../errors/UserRegistrationError.js';
-import RedisClient from './client.js';
+import LocalClient from './client.js';
 
 // create the client and export it
-const client = new RedisClient();
-await RedisClient.deleteIfPresent();
-await RedisClient.createIfAbsent();
+// await RedisClient.deleteIfPresent();
+// await RedisClient.createIfAbsent();
 
 const createRoom = async (request, response, next) => {
   try {
@@ -24,7 +23,7 @@ const createRoom = async (request, response, next) => {
       );
     }
 
-    const roomId = await client.createRoom(users);
+    const roomId = LocalClient.createRoom(users);
     const resp = await axios.get(
       process.env.QUESTION_SERVICE_ENDPOINT ??
         'http://localhost:8003/api/question-service/random',
@@ -52,10 +51,10 @@ const createRoom = async (request, response, next) => {
   }
 };
 
-const deleteRoom = async (request, response, next) => {
+const deleteRoom = (request, response, next) => {
   try {
-    const { roomId } = request.params;
-    await client.deleteRoom(roomId);
+    const { roomId } = request.query;
+    LocalClient.deleteRoom(roomId);
 
     return response.status(200).json({
       statusCode: 200,
@@ -74,8 +73,8 @@ const deleteRoom = async (request, response, next) => {
 
 const getRoomDetails = async (request, response, next) => {
   try {
-    const { roomId } = request.params;
-    const users = await client.getUser(roomId);
+    const { roomId } = request.query;
+    const users = LocalClient.getUserByDoc(roomId);
 
     if (users === null) {
       throw new RoomNotFoundError('Room cannot be found');
@@ -100,10 +99,11 @@ const getRoomDetails = async (request, response, next) => {
 
 const getUserDetails = async (request, response, next) => {
   try {
-    const { userId } = request.params;
-    const roomDetails = await client.getRoom(userId);
+    console.log(request.query);
+    const { userId } = request.query;
+    const roomDetails = LocalClient.getDocByUser(userId);
 
-    if (roomId === null) {
+    if (roomDetails === null) {
       throw new UserNotFoundError('User ID is invalid');
     }
 
@@ -136,22 +136,12 @@ const registerUser = async (request, response, next) => {
       );
     }
 
-    const registrationResult = await client.registerUser(roomId, userId);
-
-    // if user is registered to existing room, we continue and send 200
-    if (registrationResult === null) {
-      return response.status(200).json({
-        statusCode: 200,
-        data: {},
-      });
-    }
+    LocalClient.add(userId, roomId);
 
     // if user is registered to an empty room, we create a room ID and return it
     return response.status(200).json({
       statusCode: 200,
-      data: {
-        roomId: registrationResult,
-      },
+      data: {},
     });
   } catch (err) {
     next(
@@ -178,7 +168,7 @@ const deregisterUser = async (request, response, next) => {
       );
     }
 
-    await client.deregisterUser(roomId, userId);
+    LocalClient.delete(userId, roomId);
 
     return response.status(200).json({
       statusCode: 200,
@@ -194,7 +184,6 @@ const deregisterUser = async (request, response, next) => {
 };
 
 export {
-  client,
   createRoom,
   getRoomDetails,
   getUserDetails,
