@@ -18,8 +18,8 @@ const { Server } = pkg;
 config();
 
 // Set up host and port
-const host = process.env.HOST || '0.0.0.0';
-const port = parseInt(process.env.HOST) || 8004;
+const host = process.env.HOST?.trim() || '0.0.0.0';
+const port = parseInt(process.env.PORT?.trim()) || 8004;
 
 // Create express app and websocket server
 const app = express();
@@ -47,7 +47,10 @@ app.get('/healthz', (request, response) => {
 });
 
 // Setup the websocketServer connection
-websocketServer.on('connection', setupWSConnection);
+websocketServer.on('connection', async (conn, sock) => {
+  console.log('User Connected');
+  setupWSConnection(conn, sock);
+});
 
 // Upgrade requests to Websockets
 httpServer.on('upgrade', (req, sock, head) => {
@@ -59,7 +62,6 @@ httpServer.on('upgrade', (req, sock, head) => {
   }
 
   websocketServer.handleUpgrade(req, sock, head, (soc) => {
-    console.log('User Connected');
     websocketServer.emit('connection', soc, req);
   });
 });

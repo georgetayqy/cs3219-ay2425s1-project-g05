@@ -14,24 +14,36 @@ function getColour() {
   return Math.floor(Math.random() * 16777215).toString(16);
 }
 
+interface CodeEditorProps {
+  endpoint: string;
+  room: string;
+  user: string;
+  theme?: string;
+  height?: string;
+  defaultValue?: string;
+  language?: string;
+}
+
 /**
  * Adapted from https://github.com/yjs/yjs-demos/blob/main/monaco-react/src/App.tsx
  * @param endpoint String representing the endpoint websocket server to connect to
  * @param room String representing the room to join
  * @param user Username of the current user
+ * @param theme String representing theme to use for the editor, one of 'light' and 'vs-dark'
  * @param height Height of the editor
- * @param defaultValue Default value to add into the editor
+ * @param defaultValue Default template code
  * @param language Default language to enable code completion in the editor
  * @returns Monaco Editor component
  */
 export default function CodeEditor({
   endpoint,
   room,
-  name = 'user',
+  user,
+  theme = 'light',
   height = '90vh',
   defaultValue = '# Write your code here',
   language = 'python',
-}) {
+}: CodeEditorProps) {
   const doc = useMemo(() => new Y.Doc(), []);
   const [editor, setEditor] = useState(null);
   const [provider, setProvider] = useState(null);
@@ -39,7 +51,15 @@ export default function CodeEditor({
   const [binding, setBinding] = useState(null);
 
   useEffect(() => {
-    const provider = new WebsocketProvider(endpoint, room, doc);
+    // create the params
+    const params = {
+      templateCode: defaultValue,
+      userId: user
+    };
+
+    const provider = new WebsocketProvider(endpoint, room, doc, {
+      params: params,
+    });
 
     setProvider(provider);
 
@@ -55,8 +75,6 @@ export default function CodeEditor({
       return;
     }
 
-    console.log('Provider connected: ', provider);
-
     const awareness = provider?.awareness;
     const colour = getColour();
     const user = name + colour;
@@ -65,8 +83,6 @@ export default function CodeEditor({
       name: user,
       color: `#${colour}`,
     });
-
-    console.log('Awareness Set:', awareness);
 
     const binding = new MonacoBinding(
       doc.getText(),
@@ -85,8 +101,10 @@ export default function CodeEditor({
   return (
     <Editor
       height={height}
+      theme={theme}
       defaultValue={defaultValue}
-      defaultLanguage={language}
+      defaultLanguage='python'
+      language={language}
       onMount={(editor) => {
         setEditor(editor);
       }}

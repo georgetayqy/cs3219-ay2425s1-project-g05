@@ -4,6 +4,7 @@
 const Y = require('yjs');
 const syncProtocol = require('y-protocols/sync');
 const awarenessProtocol = require('y-protocols/awareness');
+const axios = require('axios');
 
 const encoding = require('lib0/encoding');
 const decoding = require('lib0/decoding');
@@ -13,6 +14,11 @@ const debounce = require('lodash.debounce');
 
 const callbackHandler = require('./callback.cjs').callbackHandler;
 const isCallbackSet = require('./callback.cjs').isCallbackSet;
+
+const config = require('dotenv');
+
+// get the env vars
+config.config();
 
 const CALLBACK_DEBOUNCE_WAIT = parseInt(
   process.env.CALLBACK_DEBOUNCE_WAIT || '2000'
@@ -73,6 +79,18 @@ exports.getPersistence = () => persistence;
 const docs = new Map();
 // exporting docs so that others can use it
 exports.docs = docs;
+
+/**
+ * @type {Map<WSSharedDoc, Array<String>>}
+ */
+const doc2User = new Map();
+exports.doc2User = doc2User;
+
+/**
+ * @type {Map<string, WSSharedDoc>}
+ */
+const user2Doc = new Map();
+exports.user2Doc = user2Doc;
 
 const messageSync = 0;
 const messageAwareness = 1;
@@ -185,12 +203,15 @@ exports.WSSharedDoc = WSSharedDoc;
  * Gets a Y.Doc by name, whether in memory or on disk
  *
  * @param {string} docname - the name of the Y.Doc to find or create
+ * @param {string} defaultQuestion - the default value/question to populate the editor with
  * @param {boolean} gc - whether to allow gc on the doc (applies only when created)
  * @return {WSSharedDoc}
  */
-const getYDoc = (docname, gc = true) =>
+const getYDoc = (docname, defaultQuestion = '', userId = '', gc = true) =>
   map.setIfUndefined(docs, docname, () => {
     const doc = new WSSharedDoc(docname);
+    const inititalText = doc.getText();
+    inititalText.insert(0, defaultQuestion);
 
     doc.gc = gc;
 
@@ -244,21 +265,35 @@ const messageListener = (conn, doc, message) => {
 
 /**
  * @param {WSSharedDoc} doc
+ * @param {string} userId UserId of user to close/remove
  * @param {any} conn
  */
-const closeConn = (doc, conn) => {
+const closeConn = (doc, userId, conn) => {
   if (doc.conns.has(conn)) {
     /**
      * @type {Set<number>}
      */
     // @ts-ignore
     const controlledIds = doc.conns.get(conn);
+
     doc.conns.delete(conn);
+
     awarenessProtocol.removeAwarenessStates(
       doc.awareness,
       Array.from(controlledIds),
       null
     );
+
+    // remove the doc
+    if (user2Doc.has(userId)) {
+      user2Doc.delete(userId);
+    }
+
+    // remove the users
+    const currUsers = doc2User.get(doc);
+    if (currUsers.includes(userId)) {
+      currUsers.splice(currUsers.indexOf(userId));
+    }
 
     if (doc.conns.size === 0 && persistence !== null) {
       // if persisted, we store state and destroy ydocument
@@ -316,9 +351,43 @@ exports.setupWSConnection = (
   { docName = (req.url || '').slice(1).split('?')[0], gc = true } = {}
 ) => {
   conn.binaryType = 'arraybuffer';
+  // get the difficulties and categories
+  // const { userId, splitResults } = getTemplateQuestion(req.url);
+  const result = getTemplateQuestion(req.url);
+  const question = result[0];
+  const userId = result[1];
+
+  let doc = null;
+
+  if (question === null) {
+    // if no extra params provided, then we can just ignore it
+    doc = getYDoc(docName, gc);
+  } else {
+    // otherwise, question service here to get a random question
+    try {
+      doc = getYDoc(docName, question, gc);
+    } catch (err) {
+      console.log('Error: ', err);
+      throw new Error('Cannot find question');
+    }
+  }
+
   // get doc, initialize if it does not exist yet
-  const doc = getYDoc(docName, gc);
-  doc.conns.set(conn, new Set());
+  doc?.conns.set(conn, new Set());
+
+  // set up the user to doc mapping
+  if (!user2Doc.has(userId)) {
+    user2Doc.set(userId, doc);
+  }
+
+  // set up the doc to user mapping
+  if (!doc2User.has(doc)) {
+    doc2User.set(doc, [userId]);
+  } else {
+    if (!doc2User.get(doc).includes(userId)) {
+      doc2User.get(doc).push(userId);
+    }
+  }
 
   // listen and reply to events
   conn.on(
@@ -331,10 +400,10 @@ exports.setupWSConnection = (
   // Check if connection is still alive
   let pongReceived = true;
 
-  const pingInterval = setInterval(() => {
+  const pingInterval = setInterval(async () => {
     if (!pongReceived) {
       if (doc.conns.has(conn)) {
-        closeConn(doc, conn);
+        closeConn(doc, userId, conn);
       }
       clearInterval(pingInterval);
     } else if (doc.conns.has(conn)) {
@@ -342,15 +411,15 @@ exports.setupWSConnection = (
       try {
         conn.ping();
       } catch (e) {
-        closeConn(doc, conn);
+        closeConn(doc, userId, conn);
         clearInterval(pingInterval);
       }
     }
   }, pingTimeout);
 
-  conn.on('close', () => {
+  conn.on('close', async () => {
     console.log('Connection Terminated');
-    closeConn(doc, conn);
+    closeConn(doc, userId, conn);
     clearInterval(pingInterval);
   });
 
@@ -380,4 +449,37 @@ exports.setupWSConnection = (
       send(doc, conn, encoding.toUint8Array(encoder));
     }
   }
+};
+
+const getTemplateQuestion = (url) => {
+  // if url is empty or absent, there is nothing to split, return null
+  if (
+    url === null ||
+    url === undefined ||
+    typeof url !== 'string' ||
+    url.length === 0
+  ) {
+    return null;
+  }
+
+  // remove url splits that result in empty strings
+  url = decodeURIComponent(url);
+  const splitUrl = url.split(/[&|?|/]/).filter((val, x, y) => val.length > 0);
+
+  let templateCode = '';
+  let userId = '';
+
+  // iterate through the url entries and populate accordingly
+  for (const urlEntry of splitUrl) {
+    if (urlEntry.startsWith('templateCode')) {
+      templateCode = urlEntry.split('=')[1];
+    } else if (urlEntry.startsWith('userId')) {
+      userId = urlEntry.split('=')[1];
+    }
+  }
+
+  return [
+    templateCode.length == 0 ? null : templateCode,
+    userId.length == 0 ? 'defaultUser' : userId,
+  ];
 };
