@@ -18,8 +18,8 @@ const { Server } = pkg;
 config();
 
 // Set up host and port
-const host = process.env.HOST || '0.0.0.0';
-const port = parseInt(process.env.HOST) || 8004;
+const host = process.env.HOST?.trim() || '0.0.0.0';
+const port = parseInt(process.env.PORT?.trim()) || 8004;
 
 // Create express app and websocket server
 const app = express();
