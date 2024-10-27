@@ -286,6 +286,7 @@ const closeConn = (doc, userId, conn) => {
         doc.destroy();
       });
 
+      LocalClient.removeQuestion(doc.name);
       docs.delete(doc.name);
     } else if (doc.conns.size === 0 && persistence === null) {
       // if the doc is in memory, delete it, do not persist it at all
@@ -293,6 +294,7 @@ const closeConn = (doc, userId, conn) => {
       try {
         currentDoc.destroy();
         docs.delete(doc.name);
+        LocalClient.removeQuestion(doc.name);
       } catch (err) {
         console.error('Cannot delete document');
       }
@@ -351,6 +353,7 @@ const setupWSConnection = (
     // otherwise, question service here to get a random question
     try {
       doc = getYDoc(docName, question, gc);
+      LocalClient.putQuestion(docName, question);
     } catch (err) {
       console.log('Error: ', err);
       throw new Error('Cannot find question');
