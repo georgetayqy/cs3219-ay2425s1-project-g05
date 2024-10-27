@@ -18,7 +18,7 @@ class LocalClient {
   static userToDoc = new Map();
 
   /**
-   * @type {Map<String, String>}
+   * @type {Map<String, Map<any, any>>}
    */
   static docToQuestion = new Map();
 
