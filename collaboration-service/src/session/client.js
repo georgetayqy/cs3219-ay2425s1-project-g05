@@ -216,6 +216,7 @@ class LocalClient {
     return [
       Array.from(LocalClient.userToDoc.entries()),
       Array.from(LocalClient.docToUser.entries()),
+      Array.from(LocalClient.docToQuestion.entries()),
     ];
   }
 }
