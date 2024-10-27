@@ -31,8 +31,12 @@ export default function CreateQuestionPage() {
   const [descriptionText, setDescriptionText] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [solution, setSolution] = useState("# Please provide your solution code here \n");
-  const [templateCode, setTemplateCode] = useState("# Please provide your template code here \n");
+  const [solution, setSolution] = useState(
+    "# Please provide your solution code here \n"
+  );
+  const [templateCode, setTemplateCode] = useState(
+    "# Please provide your template code here \n"
+  );
   const [link, setLink] = useState("");
 
   const navigate = useNavigate();
@@ -49,9 +53,8 @@ export default function CreateQuestionPage() {
     { value: "RECURSION", label: "Recursion" },
   ];
 
-  const [fetchedCategories, setFetchedCategories] = useState<
-    { value: string; label: string }[]
-  >(dummyCategories);
+  const [fetchedCategories, setFetchedCategories] =
+    useState<{ value: string; label: string }[]>(dummyCategories);
 
   // Mapping for difficulty display
   const difficultyOptions = [
@@ -161,127 +164,149 @@ export default function CreateQuestionPage() {
 
   const [active, setActive] = useState(1);
 
+  const canSubmit =
+    name &&
+    difficulty &&
+    categories.length &&
+    descriptionText &&
+    descriptionHtml &&
+    solution &&
+    link &&
+    testCases.length;
+
   return (
     <Container mt={48}>
       <h1>Add New Question</h1>
       <form onSubmit={handleSubmit}>
-          <TextInput
-            label="Name"
-            value={name}
-            onChange={(event) => setName(event.currentTarget.value)}
-            required
-          />
-          <Select
-            mt={8}
-            label="Difficulty"
-            value={difficulty}
-            onChange={(value: string | null) => setDifficulty(value)}
-            data={difficultyOptions}
-            required
-          />
-          <MultiSelect
-            mt={8} 
-            label="Categories"
-            value={categories}
-            onChange={(value: string[]) => setCategories(value)}
-            data={fetchedCategories}
-            required
-          />
+        <TextInput
+          label="Name"
+          value={name}
+          onChange={(event) => setName(event.currentTarget.value)}
+          required
+        />
+        <Select
+          mt={8}
+          label="Difficulty"
+          value={difficulty}
+          onChange={(value: string | null) => setDifficulty(value)}
+          data={difficultyOptions}
+          required
+        />
+        <MultiSelect
+          mt={8}
+          label="Categories"
+          value={categories}
+          onChange={(value: string[]) => setCategories(value)}
+          data={fetchedCategories}
+          required
+        />
 
-          <Space h="8" />
-          <RichTextEditor content={descriptionHtml} onContentChange={(textValue: string, htmlvalue: string) => { setDescriptionText(textValue); setDescriptionHtml(htmlvalue); }} />
+        <Space h="8" />
+        <RichTextEditor
+          content={descriptionHtml}
+          onContentChange={(textValue: string, htmlvalue: string) => {
+            setDescriptionText(textValue);
+            setDescriptionHtml(htmlvalue);
+          }}
+        />
 
-          <Space h="12" />
-          <CodeEditorWithLanguageSelector 
-            label="Solution Code"
-            code={solution} 
-            onCodeChange={setSolution} 
-            required={true}
-          />
+        <Space h="12" />
+        <CodeEditorWithLanguageSelector
+          label="Solution Code"
+          code={solution}
+          onCodeChange={setSolution}
+          required={true}
+        />
 
-          <Space h="12" />
-          <CodeEditorWithLanguageSelector 
-            label="Template Code"
-            code={templateCode} 
-            onCodeChange={setTemplateCode} 
-            required={false}
-          />
+        <Space h="12" />
+        <CodeEditorWithLanguageSelector
+          label="Template Code"
+          code={templateCode}
+          onCodeChange={setTemplateCode}
+          required={false}
+        />
 
-          <TextInput
-            mt={12}
-            label="Link to question (e.g. Leetcode)"
-            value={link}
-            onChange={(event) => setLink(event.currentTarget.value)}
-            required
-          />
+        <TextInput
+          mt={12}
+          label="Link to question (e.g. Leetcode)"
+          value={link}
+          onChange={(event) => setLink(event.currentTarget.value)}
+          required
+        />
 
-          <Flex style={{ alignItems: "baseline", gap: 4 }} mt={8}>
-            <Text className={classes.testCaseHeader}>Test Cases</Text>
-            <Text style={{ color: "red" }}>*</Text>
-          </Flex>
+        <Flex style={{ alignItems: "baseline", gap: 4 }} mt={8}>
+          <Text className={classes.testCaseHeader}>Test Cases</Text>
+          <Text style={{ color: "red" }}>*</Text>
+        </Flex>
 
-          <Stack>
-            {testCases.map((testCase, index) => (
-              <Card key={index} shadow="sm" padding="lg" radius="md">
-                <CodeEditorWithLanguageSelector 
-                  label={`Test Code ${index + 1}`}
-                  code={testCase.testCode}
-                  onCodeChange={(value) =>
-                    handleTestCaseChange(
-                      index,
-                      "testCode",
-                      value
-                    )
-                  } 
-                  required={false}
-                  height="130px"
-                />
-                <Textarea
-                  mt={8}
-                  label={`Expected Output ${index + 1}`}
-                  value={testCase.expectedOutput}
+        <Stack>
+          {testCases.map((testCase, index) => (
+            <Card key={index} shadow="sm" padding="lg" radius="md">
+              <CodeEditorWithLanguageSelector
+                label={`Test Code ${index + 1}`}
+                code={testCase.testCode}
+                onCodeChange={(value) =>
+                  handleTestCaseChange(index, "testCode", value)
+                }
+                required={false}
+                height="130px"
+              />
+              <Textarea
+                mt={8}
+                label={`Expected Output ${index + 1}`}
+                value={testCase.expectedOutput}
+                onChange={(event) =>
+                  handleTestCaseChange(
+                    index,
+                    "expectedOutput",
+                    event.currentTarget.value
+                  )
+                }
+                minRows={8}
+                required
+              />
+              <Flex
+                justify="space-between"
+                align="center"
+                style={{ paddingTop: 12 }}
+              >
+                <Switch
+                  label={"Public Test Case"}
+                  checked={testCase.isPublic}
                   onChange={(event) =>
                     handleTestCaseChange(
                       index,
-                      "expectedOutput",
-                      event.currentTarget.value
+                      "isPublic",
+                      event.currentTarget.checked
                     )
                   }
-                  minRows={8}
-                  required
                 />
-                <Flex
-                  justify="space-between"
-                  align="center"
-                  style={{ paddingTop: 12 }}
+                <Button
+                  color="red"
+                  onClick={() => removeTestCase(index)}
+                  variant="light"
                 >
-                  <Switch
-                    label={"Public Test Case"}
-                    checked={testCase.isPublic}
-                    onChange={(event) =>
-                      handleTestCaseChange(
-                        index,
-                        "isPublic",
-                        event.currentTarget.checked
-                      )
-                    }
-                  />
-                  <Button color="red" onClick={() => removeTestCase(index)}>
-                    Remove Test Case
-                  </Button>
-                </Flex>
-              </Card>
-            ))}
-            <Button onClick={addTestCase} style={{ width: "fit-content" }}>
-              Add Test Case
-            </Button>
-          </Stack>
+                  Remove Test Case
+                </Button>
+              </Flex>
+            </Card>
+          ))}
+          <Button
+            onClick={addTestCase}
+            style={{ width: "fit-content" }}
+            variant="light"
+          >
+            Add Test Case
+          </Button>
+        </Stack>
 
-          <Divider my="md" />
+        <Divider my="md" />
 
-          <Center>
-            <Button type="submit">Submit</Button>
-          </Center>
+        <Center mb={"4rem"}>
+          <Button type="submit" disabled={!canSubmit}>
+            Submit
+          </Button>
+        </Center>
       </form>
     </Container>
   );
