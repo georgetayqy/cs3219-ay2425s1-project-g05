@@ -12,7 +12,7 @@ import LoginOrRegisterPage from "./pages/Login/LoginPage.tsx";
 import { Button, createTheme, MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
-import '@mantine/tiptap/styles.css';
+import "@mantine/tiptap/styles.css";
 
 import ApplicationWrapper from "./components/ApplicationWrapper.tsx";
 import ProtectedRouteWrapper from "./pages/ProtectedRouteWrapper.tsx";
@@ -26,6 +26,9 @@ import EditQuestionPage from "./pages/Questions/EditQuestionPage/EditQuestionPag
 import { Notifications } from "@mantine/notifications";
 import AdminRouteWrapper from "./pages/AdminRouteWrapper.tsx";
 import ReadQuestionPage from "./pages/Questions/ReadQuestionPage/ReadQuestionPage.tsx";
+
+import "@fontsource/inter";
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -127,7 +130,7 @@ const router = createBrowserRouter([
 ]);
 
 const theme = createTheme({
-  fontFamily: "Inter",
+  fontFamily: "Inter, sans-serif",
   defaultRadius: "md",
   cursorType: "pointer",
   primaryColor: "cyan",
