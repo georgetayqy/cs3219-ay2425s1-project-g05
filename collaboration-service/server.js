@@ -7,7 +7,7 @@ import { corsMiddleware, checkCors } from './src/middlewares/cors.js';
 
 import { createServer } from 'node:http';
 import { config } from 'dotenv';
-import { setupWSConnection } from './src/server/utils.cjs';
+import { setupWSConnection } from './src/server/utils.js';
 import { parseInt } from 'lib0/number';
 import { router } from './src/router/router.js';
 
@@ -48,7 +48,6 @@ app.get('/healthz', (request, response) => {
 
 // Setup the websocketServer connection
 websocketServer.on('connection', async (conn, sock) => {
-  console.log('User Connected');
   setupWSConnection(conn, sock);
 });
 

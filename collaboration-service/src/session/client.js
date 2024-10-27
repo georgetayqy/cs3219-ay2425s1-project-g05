@@ -162,7 +162,7 @@ class LocalClient {
       // otherwise, we delete the doc, since we want to remove empty docs from the
       // local db
       LocalClient.docToUser.delete(docs);
-      LocalClient.removeQuestion(room);
+      LocalClient.removeQuestion(docs);
     }
   }
 
