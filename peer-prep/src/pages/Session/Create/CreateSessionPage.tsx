@@ -24,7 +24,7 @@ import { useEffect, useState } from "react";
 import { capitalizeFirstLetter } from "../../../utils/utils";
 import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
-import { CategoryResponseData } from "../../../types/question";
+import { CategoryResponseData, Question } from "../../../types/question";
 import { socket } from "../../../websockets/socket";
 import { useAuth } from "../../../hooks/useAuth";
 import { displayName } from "react-quill";
@@ -41,6 +41,7 @@ import SearchingImage from "../../../assets/searchimage.svg";
 import MatchImage from "../../../assets/matchimage.svg";
 
 import AlertBox from "../../../components/Alert/AlertBox";
+import { notifications } from "@mantine/notifications";
 
 // Arrays
 // Algorithms
@@ -56,6 +57,11 @@ enum Status {
   SEARCHING,
   MATCH_FOUND,
   NO_MATCH,
+}
+
+interface CollabResponse {
+  roomId: string;
+  question: Question;
 }
 
 export default function CreateSessionPage() {
@@ -134,23 +140,52 @@ export default function CreateSessionPage() {
       }, 1000);
     }
 
-    function onFoundMatch(data) {
-      console.log("found a match");
+    async function onFoundMatch(data) {
+      console.log("found a match", data);
+      console.log(data.emails);
 
-      // 10 seconds to redirect to the room
-      setTimeout(() => {
-        // temporary redirect to dashboard
-        navigate("/dashboard");
-      }, 10 * 1000);
+      try {
+        // call collab service to create a room
+        const response = await fetchData<ServerResponse<CollabResponse>>(
+          `/collaboration-service/create-room`,
+          SERVICE.COLLAB,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              users: data.emails,
+              topics: data.categories,
+              difficulty: data.difficulties
+            }),
+          }
+        );
 
-      console.log({ data });
+        console.log("response from collab service", response.data);
+        const roomId = response.data['roomId'];
+        const question = response.data['question'];
+        
+        // 10 seconds to redirect to the room
+        setTimeout(() => {
+          goToRoom(question, roomId, data);
+        }, 10 * 1000);
 
-      setStatus(Status.MATCH_FOUND);
-      setActive(2);
+        console.log({ data });
 
-      // stop the timer
-      if (timer) {
-        clearInterval(timer);
+        setStatus(Status.MATCH_FOUND);
+        setActive(2);
+
+        // stop the timer
+        if (timer) {
+          clearInterval(timer);
+        }
+      } catch (error: any) {
+        console.error("Error creating room", error);
+        notifications.show({
+          message: error.message || "Failed to create room.",
+          color: "red",
+        });
       }
     }
 
@@ -230,8 +265,8 @@ export default function CreateSessionPage() {
     search();
   }
 
-  function goToRoom() {
-    // stub
+  function goToRoom(question, roomId, matchData) {
+    navigate(`/session/page`, { state: { question, roomId, matchData } });
   }
 
   const CREATE_COMPONENT = (
@@ -488,9 +523,9 @@ export default function CreateSessionPage() {
             </Text>
             <Center>
               <Button
-                onClick={() => {
-                  goToRoom();
-                }}
+                // onClick={() => {
+                //   goToRoom();
+                // }}
               >
                 {" "}
                 Go to room{" "}

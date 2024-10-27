@@ -26,6 +26,7 @@ import EditQuestionPage from "./pages/Questions/EditQuestionPage/EditQuestionPag
 import { Notifications } from "@mantine/notifications";
 import AdminRouteWrapper from "./pages/AdminRouteWrapper.tsx";
 import ReadQuestionPage from "./pages/Questions/ReadQuestionPage/ReadQuestionPage.tsx";
+import SessionPage from "./pages/Session/SessionPage/SessionPage.tsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -117,6 +118,10 @@ const router = createBrowserRouter([
               {
                 path: "/session/search",
                 element: <SearchingPage />,
+              },
+              {
+                path: "/session/page",
+                element: <SessionPage />,
               },
             ],
           },
