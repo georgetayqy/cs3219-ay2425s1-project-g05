@@ -40,7 +40,7 @@ const createRoom = async (request, response, next) => {
 
       question = LocalClient.putQuestion(
         roomId,
-        resp.data['data']['question']['templateCode'] ?? ''
+        resp.data['data']['question'] ?? ''
       );
     } else {
       question = LocalClient.putQuestion(roomId, question);
@@ -50,7 +50,7 @@ const createRoom = async (request, response, next) => {
       statusCode: 200,
       data: {
         roomId: roomId,
-        templateCode: question,
+        question: question,
       },
     });
   } catch (err) {
