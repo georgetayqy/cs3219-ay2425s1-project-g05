@@ -1,12 +1,6 @@
-import { createClient } from 'redis';
 import RoomNotFoundError from '../errors/RoomNotFoundError.js';
-import RoomNotEmptyError from '../errors/RoomNotEmptyError.js';
 import UserNotFoundInRoomError from '../errors/UserNotFoundInRoomError.js';
 import UserAlreadyFoundInRoomError from '../errors/UserAlreadyFoundInRoomError.js';
-import JsonParseError from '../errors/JsonParseError.js';
-import RoomDeletionError from '../errors/RoomDeletionError.js';
-import { config } from 'dotenv';
-import { WSSharedDoc } from '../server/utils.cjs';
 import { v7 } from 'uuid';
 
 /**
@@ -23,6 +17,11 @@ class LocalClient {
    */
   static userToDoc = new Map();
 
+  /**
+   * @type {Map<String, String>}
+   */
+  static docToQuestion = new Map();
+
   static getDocByUser(userId) {
     console.log(userId);
     console.log(LocalClient.userToDoc.get(userId));
@@ -33,21 +32,74 @@ class LocalClient {
     return LocalClient.docToUser.get(doc) ?? null;
   }
 
+  static putQuestion(doc, question) {
+    if (LocalClient.docToQuestion.has(doc)) {
+      return LocalClient.docToQuestion.get(doc);
+    }
+
+    LocalClient.docToQuestion.set(doc, question);
+    return question;
+  }
+
+  static removeQuestion(doc) {
+    if (!LocalClient.docToQuestion.has(doc)) {
+      return;
+    }
+
+    LocalClient.docToQuestion.delete(doc);
+  }
+
   /**
    * Creates a unique room ID
    */
   static createRoom(users) {
+    // likely O(1) operation, since hash collisions are rare
     let uuid = v7();
 
     while (LocalClient.docToUser.has(uuid)) {
       uuid = v7();
     }
 
+    let userRoom = undefined;
+
     for (const user of users) {
-      LocalClient.add(user, uuid);
+      // if userRoom is null, attempt to get the current user's room
+      // we continue until either all are null (no user is in a room)
+      // or we get a non-null room name
+      if (userRoom === undefined) {
+        userRoom = LocalClient.userToDoc.get(user);
+      } else {
+        const currRoom = LocalClient.userToDoc.get(user);
+
+        // if currRoom is not null and not equal to the userRoom,
+        // we found a problem where one or more users have different rooms
+        // this should not happen
+        if (!currRoom === undefined && !currRoom === userRoom) {
+          // conform those who dont belong to a room to the room of the first person
+          throw new UserAlreadyFoundInRoomError(
+            'Users belong in seperate rooms'
+          );
+        }
+      }
     }
 
-    return uuid;
+    // if userRoom is null, means that all users are not in a room
+    if (userRoom === undefined) {
+      // add to predefined UUID room name
+      for (const user of users) {
+        LocalClient.add(user, uuid);
+      }
+
+      return [uuid, false];
+    } else {
+      // if userRoom has a value, that means one or the other user is already in a room
+      // so we just return the name
+      for (const user of users) {
+        LocalClient.add(user, userRoom);
+      }
+
+      return [userRoom, true];
+    }
   }
 
   /**
@@ -58,9 +110,8 @@ class LocalClient {
    */
   static add(user, doc) {
     if (LocalClient.userToDoc.has(user)) {
-      throw new UserAlreadyFoundInRoomError(
-        'User cannot be added to new room as they are already found in a room'
-      );
+      // ignore if user is already in the room
+      return;
     }
 
     // overwrites the existing doc
@@ -81,7 +132,7 @@ class LocalClient {
   static delete(user, doc) {
     const docs = LocalClient.userToDoc.get(user);
 
-    if (docs === null || docs !== doc) {
+    if (docs === undefined || docs !== doc) {
       throw new UserNotFoundInRoomError(
         'Unable to delete user as user is not found in the correct room'
       );
@@ -91,9 +142,9 @@ class LocalClient {
     LocalClient.userToDoc.delete(user);
 
     // get list of users
-    const users = LocalClient.docToUser.get(docs) ?? null;
+    const users = LocalClient.docToUser.get(docs);
 
-    if (users === null) {
+    if (users === undefined) {
       throw new RoomNotFoundError('Unable to find requested room in database');
     }
 
@@ -111,6 +162,7 @@ class LocalClient {
       // otherwise, we delete the doc, since we want to remove empty docs from the
       // local db
       LocalClient.docToUser.delete(docs);
+      LocalClient.removeQuestion(room);
     }
   }
 
@@ -157,6 +209,7 @@ class LocalClient {
     }
 
     LocalClient.docToUser.delete(room);
+    LocalClient.removeQuestion(room);
   }
 
   static getState() {

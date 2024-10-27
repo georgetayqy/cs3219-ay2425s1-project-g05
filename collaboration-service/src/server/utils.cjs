@@ -17,6 +17,14 @@ const isCallbackSet = require('./callback.cjs').isCallbackSet;
 
 const config = require('dotenv');
 
+// dynamic import within cjs modules: https://javascript.info/modules-dynamic-imports
+async function load() {
+  const { default: LocalClient } = await import('../session/client.js');
+  return LocalClient;
+}
+
+load();
+
 // get the env vars
 config.config();
 
@@ -80,17 +88,17 @@ const docs = new Map();
 // exporting docs so that others can use it
 exports.docs = docs;
 
-/**
- * @type {Map<WSSharedDoc, Array<String>>}
- */
-const doc2User = new Map();
-exports.doc2User = doc2User;
+// /**
+//  * @type {Map<WSSharedDoc, Array<String>>}
+//  */
+// const doc2User = new Map();
+// exports.doc2User = doc2User;
 
-/**
- * @type {Map<string, WSSharedDoc>}
- */
-const user2Doc = new Map();
-exports.user2Doc = user2Doc;
+// /**
+//  * @type {Map<string, WSSharedDoc>}
+//  */
+// const user2Doc = new Map();
+// exports.user2Doc = user2Doc;
 
 const messageSync = 0;
 const messageAwareness = 1;
@@ -284,16 +292,19 @@ const closeConn = (doc, userId, conn) => {
       null
     );
 
-    // remove the doc
-    if (user2Doc.has(userId)) {
-      user2Doc.delete(userId);
-    }
+    // delete room
+    LocalClient.delete(userId, doc.name);
 
-    // remove the users
-    const currUsers = doc2User.get(doc);
-    if (currUsers.includes(userId)) {
-      currUsers.splice(currUsers.indexOf(userId));
-    }
+    // // remove the doc
+    // if (user2Doc.has(userId)) {
+    //   user2Doc.delete(userId);
+    // }
+
+    // // remove the users
+    // const currUsers = doc2User.get(doc);
+    // if (currUsers.includes(userId)) {
+    //   currUsers.splice(currUsers.indexOf(userId));
+    // }
 
     if (doc.conns.size === 0 && persistence !== null) {
       // if persisted, we store state and destroy ydocument
@@ -375,19 +386,22 @@ exports.setupWSConnection = (
   // get doc, initialize if it does not exist yet
   doc?.conns.set(conn, new Set());
 
-  // set up the user to doc mapping
-  if (!user2Doc.has(userId)) {
-    user2Doc.set(userId, doc);
-  }
+  // add the user
+  LocalClient.add(userId, doc.name);
 
-  // set up the doc to user mapping
-  if (!doc2User.has(doc)) {
-    doc2User.set(doc, [userId]);
-  } else {
-    if (!doc2User.get(doc).includes(userId)) {
-      doc2User.get(doc).push(userId);
-    }
-  }
+  // // set up the user to doc mapping
+  // if (!user2Doc.has(userId)) {
+  //   user2Doc.set(userId, doc);
+  // }
+
+  // // set up the doc to user mapping
+  // if (!doc2User.has(doc)) {
+  //   doc2User.set(doc, [userId]);
+  // } else {
+  //   if (!doc2User.get(doc).includes(userId)) {
+  //     doc2User.get(doc).push(userId);
+  //   }
+  // }
 
   // listen and reply to events
   conn.on(

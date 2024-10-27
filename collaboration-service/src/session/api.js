@@ -23,30 +23,41 @@ const createRoom = async (request, response, next) => {
       );
     }
 
-    const roomId = LocalClient.createRoom(users);
-    const resp = await axios.get(
-      process.env.QUESTION_SERVICE_ENDPOINT ??
-        'http://localhost:8003/api/question-service/random',
-      {
-        params: {
-          topics: topics,
-          difficulty: difficulty,
-        },
-      }
-    );
+    const [roomId, isUsingDuplicateRoom] = LocalClient.createRoom(users);
+    let question = '';
+
+    if (!isUsingDuplicateRoom) {
+      const resp = await axios.get(
+        process.env.QUESTION_SERVICE_ENDPOINT ??
+          'http://localhost:8003/api/question-service/random',
+        {
+          params: {
+            topics: topics,
+            difficulty: difficulty,
+          },
+        }
+      );
+
+      question = LocalClient.putQuestion(
+        roomId,
+        resp.data['data']['question']['templateCode'] ?? ''
+      );
+    } else {
+      question = LocalClient.putQuestion(roomId, question);
+    }
 
     return response.status(200).json({
       statusCode: 200,
       data: {
         roomId: roomId,
-        templateCode: resp.data['data']['question']['templateCode'] ?? '',
+        templateCode: question,
       },
     });
   } catch (err) {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, `Unable to query Redis: ${err}`)
+        : new BaseError(500, `Unable to query: ${err}`)
     );
   }
 };
@@ -66,7 +77,7 @@ const deleteRoom = (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, `Unable to query Redis: ${err}`)
+        : new BaseError(500, `Unable to query: ${err}`)
     );
   }
 };
@@ -92,7 +103,7 @@ const getRoomDetails = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, `Unable to query Redis: ${err}`)
+        : new BaseError(500, `Unable to query: ${err}`)
     );
   }
 };
@@ -115,7 +126,7 @@ const getUserDetails = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, `Unable to query Redis: ${err}`)
+        : new BaseError(500, `Unable to query: ${err}`)
     );
   }
 };
@@ -147,7 +158,7 @@ const registerUser = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, `Unable to query Redis: ${err}`)
+        : new BaseError(500, `Unable to query: ${err}`)
     );
   }
 };
@@ -178,7 +189,7 @@ const deregisterUser = async (request, response, next) => {
     next(
       err instanceof BaseError
         ? err
-        : new BaseError(500, `Unable to query Redis: ${err}`)
+        : new BaseError(500, `Unable to query: ${err}`)
     );
   }
 };
