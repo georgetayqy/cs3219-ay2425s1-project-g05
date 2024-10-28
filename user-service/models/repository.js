@@ -14,5 +14,5 @@ export async function _findUser(param) {
 }
 
 export async function _updateUser({ email, prop }) {
-    return UserModel.findOneAndUpdate({ email: email }, prop, { new: true });
+    return UserModel.findOneAndUpdate({ email: email, isDeleted: false }, prop, { new: true });
 }
