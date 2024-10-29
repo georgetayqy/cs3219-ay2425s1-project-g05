@@ -1,5 +1,6 @@
 # References https://docs.docker.com/build/ci/github-actions/
 # https://stackoverflow.com/questions/77740410/github-docker-build-push-action-with-multiple-architectures-is-slow
+# https://dlmade.medium.com/ci-cd-with-github-action-and-aws-eks-5fd9714010cd
 
 name: 'Production Environment CI/CD Pipeline'
 
@@ -40,6 +41,7 @@ jobs:
   build:
     # build container for both x86 and arm platforms
     needs: test
+    environment: production
     name: Build Production Containers and Push to Docker Hub
     runs-on: ubuntu-latest
     strategy:
@@ -67,20 +69,22 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:${{ github.sha }}
 
-      - name: Build Question Image
+      - name: Build Question Service Image
         uses: docker/build-push-action@v6
         with:
-          context: ./run-service
-          file: ./run-service/Dockerfile
+          context: ./question-service
+          file: ./question-service/Dockerfile
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:${{ github.sha }}
 
-      - name: Build Matching Image
+      - name: Build Matching Service Image
         uses: docker/build-push-action@v6
         with:
           context: ./matching-service
@@ -89,11 +93,24 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:${{ github.sha }}
+
+      - name: Build Collaboration Service Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./collaboration-service
+          file: ./collaboration-service/Dockerfile
+          push: true
+          platforms: linux/${{ matrix.arch }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:${{ github.sha }}
 
   deploy:
     needs: build
-    environment: staging
+    environment: production
     name: Deploy Production Environment
     runs-on: ubuntu-latest
     steps:
@@ -113,6 +130,13 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       # Frontend Deployment to S3
+      - name: Copy Frontend Secrets into Build Folder
+        working-directory: peer-prep
+        shell: bash
+        env:
+          FRONTEND_SECRETS: ${{ secrets.FRONTEND_SECRETS }}
+        run: 'echo "$FRONTEND_SECRETS" | base64 --decode > .env'
+
       - name: Build and Deploy Frontend on S3
         working-directory: peer-prep
         run: |
@@ -127,61 +151,46 @@ jobs:
       - name: Retrieve S3 Bucket URL
         run: echo "http://peerprep.s3-website-ap-southeast-1.amazonaws.com/"
 
-      # Backend Deployment to ECS
-      - name: Render User Service Task Definition
-        id: render-user-service
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ./user-service/task-definition.json
-          container-name: user-service
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:latest
-          environment-variables: |
-            PORT=${{ secrets.USER_SERVICE_PORT }}
-            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
-            MONGO_PROD_URI=${{ secrets.USER_SERVICE_MONGO_PROD_URI }}
+      # Backend Deployment to EKS
+      - name: Get EKS kubectl Configs
+        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
 
-      - name: Deploy User Service Task Definition onto AWS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.render-user-service.outputs.task-definition }}
-          service: ${{ vars.ECS_USER_SERVICE_NAME }}
-          cluster: ${{ vars.ECS_CLUSTER_NAME }}
-          force-new-deployment: true
+      # echo out string into file taken from
+      # https://stackoverflow.com/questions/59481933/how-can-i-extract-secrets-using-github-actions
+      - name: Create Secrets File
+        working-directory: kubernetes
+        shell: bash
+        env:
+          KUBERNETES_SECRETS: ${{ secrets.KUBERNETES_SECRETS }}
+        run: 'echo "$KUBERNETES_SECRETS" | base64 --decode > 1-Kubernetes-Secrets.yml'
 
-      - name: Render Question Service Task Definition
-        id: render-question-service
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ./question-service/task-definition.json
-          container-name: question-service
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:latest
-          environment-variables: |
-            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
-            DEV_URI=${{ secrets.QUESTION_SERVICE_DEV_URI }}
+      # kubectl apply the YML files to do a deployment
+      - name: Apply Secrets YML File to EKS Cluster
+        working-directory: kubernetes
+        run: kubectl apply -f 1-Kubernetes-Secrets.yml
 
-      - name: Deploy Question Service Task Definition onto AWS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.render-question-service.outputs.task-definition }}
-          service: ${{ vars.ECS_USER_SERVICE_NAME }}
-          cluster: ${{ vars.ECS_CLUSTER_NAME }}
-          force-new-deployment: true
+      - name: Apply Services YML File to EKS Cluster
+        working-directory: kubernetes
+        run: kubectl apply -f 2-PeerPrep-Services.yml
 
-      - name: Render Matching Service Task Definition
-        id: render-matching-service
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ./matching-service/task-definition.json
-          container-name: matching-service
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:latest
-          environment-variables: |
-            PORT=${{ secrets.MATCHING_SERVICE_PORT }}
-            MONGO_TEST_URI=${{ secrets.MATCHING_SERVICE_MONGO_TEST_URI }}
+      # replaces the placeholder text with the latest build
+      - name: Run sed on Compute Infrastructure YML File
+        working-directory: kubernetes
+        run: sed -i 's/IMAGE_TAG/latest/' 3-PeerPrep-Compute-Infrastructure.yml
 
-      - name: Deploy Matching Service Task Definition onto AWS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.render-matching-service.outputs.task-definition }}
-          service: ${{ vars.ECS_MATCHING_SERVICE_NAME }}
-          cluster: ${{ vars.ECS_CLUSTER_NAME }}
-          force-new-deployment: true
+      - name: Apply Compute Infrastructure YML File
+        working-directory: kubernetes
+        run: kubectl apply -f 3-PeerPrep-Compute-Infrastructure.yml
+
+      - name: Apply Ingress YML File to EKS Cluster
+        working-directory: kubernetes
+        run: kubectl apply -f 4-PeerPrep-Ingress.yml
+
+      - name: Restart Deployment to Force Redeployment of Containers in EKS Cluster
+        working-directory: kubernetes
+        run: kubectl rollout restart deployment ${{ secrets.EKS_CLUSTER_NAME }}
+
+      # Deploy changes to API Gateway
+      - name: Deploy Changes to API Gateway v1 Stage
+        run: |
+          aws apigatewayv2 create-deployment --api-id ${{ secrets.AWS_API_GATEWAY_ID }} --stage-name staging
