@@ -21,10 +21,13 @@ import {
 } from "@mantine/core";
 import classes from "./CreateSessionPage.module.css";
 import { useEffect, useState } from "react";
-import { capitalizeFirstLetter } from "../../../utils/utils";
+import {
+  capitalizeFirstLetter,
+  convertToCombinedCategoryId,
+} from "../../../utils/utils";
 import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
-import { CategoryResponseData } from "../../../types/question";
+import { Category, CategoryResponseData } from "../../../types/question";
 import { socket } from "../../../websockets/socket";
 import { useAuth } from "../../../hooks/useAuth";
 import { displayName } from "react-quill";
@@ -72,20 +75,34 @@ export default function CreateSessionPage() {
     fetchData<ServerResponse<CategoryResponseData>>(
       `/question-service/categories`,
       SERVICE.QUESTION
-    ).then((data) => {
-      const categories = data.data.categories;
-      const transformedCategories = categories.map((category: string) => ({
-        value: category.toUpperCase(),
+    ).then((response) => {
+      const categories = response.data.categories.categories || [];
+      const categoriesId = response.data.categories.categoriesId || [];
+
+      const convertedCategories = convertToCombinedCategoryId(
+        categories,
+        categoriesId
+      );
+      const transformedCategories = convertedCategories.map((c) => ({
+        value: c.id.toString(),
         label:
-          category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
+          c.category.charAt(0).toUpperCase() +
+          c.category.slice(1).toLowerCase(),
       }));
 
-      setCategories(transformedCategories.map((v) => v.value));
+      setCategories(transformedCategories);
     });
   }, []);
 
-  const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<
+    {
+      value: string;
+      label: string;
+    }[]
+  >([]);
+  const [selectedCategoriesId, setSelectedCategoriesId] = useState<string[]>(
+    []
+  );
 
   const [difficulties, setDifficulties] = useState<string[]>([
     "easy",
@@ -99,7 +116,7 @@ export default function CreateSessionPage() {
   const { user } = useAuth();
 
   const canSearch =
-    selectedCategories.length > 0 && selectedDifficulties.length > 0;
+    selectedCategoriesId.length > 0 && selectedDifficulties.length > 0;
 
   // const data = useLoaderData() as ServerResponse<[string[]]>;
 
@@ -193,7 +210,7 @@ export default function CreateSessionPage() {
     }
 
     const query = {
-      categories: selectedCategories.map((c) => c.toUpperCase()),
+      categoriesId: selectedCategoriesId.map(Number),
       difficulties: selectedDifficulties.map((d) => d.toUpperCase()),
       email: user.email,
       displayName: user.displayName,
@@ -251,8 +268,8 @@ export default function CreateSessionPage() {
             label="Pick one or more categories to search for"
             description=""
             withAsterisk
-            value={selectedCategories}
-            onChange={(value) => setSelectedCategories(value)}
+            value={selectedCategoriesId}
+            onChange={(value) => setSelectedCategoriesId(value)}
           >
             <Stack mt="xs">
               {/* <Checkbox value="react" label="React" />
@@ -260,30 +277,34 @@ export default function CreateSessionPage() {
                 <Checkbox value="ng" label="Angular" />
                 <Checkbox value="vue" label="Vue" /> */}
               {categories.map((category, index) => (
-                <Checkbox value={category} label={category} key={index} />
+                <Checkbox
+                  value={category.value}
+                  label={category.label}
+                  key={index}
+                />
               ))}
             </Stack>
           </Checkbox.Group>
           <Divider />
           <Checkbox
-            checked={selectedCategories.length === categories.length}
+            checked={selectedCategoriesId.length === categories.length}
             indeterminate={
-              selectedCategories.length !== categories.length &&
-              selectedCategories.length > 0
+              selectedCategoriesId.length !== categories.length &&
+              selectedCategoriesId.length > 0
             }
             label={
-              selectedCategories.length > 0
-                ? `${selectedCategories.length} selected`
+              selectedCategoriesId.length > 0
+                ? `${selectedCategoriesId.length} selected`
                 : "Select all"
             }
             onChange={() => {
               // if indeterminate, select all
               // if all selected, deselect all
               // if none selected, select all
-              if (selectedCategories.length === categories.length) {
-                setSelectedCategories([]);
+              if (selectedCategoriesId.length === categories.length) {
+                setSelectedCategoriesId([]);
               } else {
-                setSelectedCategories(categories);
+                setSelectedCategoriesId(categories.map((v) => v.value));
               }
             }}
           />
@@ -339,6 +360,7 @@ export default function CreateSessionPage() {
       </SimpleGrid>
       <Center>
         <Button
+          mt={"2rem"}
           // component={Link}
           // to="/session/search"
           disabled={!canSearch}
@@ -393,7 +415,7 @@ export default function CreateSessionPage() {
                 </ThemeIcon>
               }
             >
-              {selectedCategories.map((categories, index) => (
+              {selectedCategoriesId.map((categories, index) => (
                 <List.Item key={index}>{categories}</List.Item>
               ))}
             </List>
