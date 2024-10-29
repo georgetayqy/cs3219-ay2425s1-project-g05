@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: peerprep-ingress
+  name: peerprep-ingress
+  annotations:
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=86400
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/success-codes: "200-499"
+    alb.ingress.kubernetes.io/connection-idle-timeout: "3600"
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/load-balancer-name: peerprep
+    kubernetes.io/ingress.class: alb
+spec:
+  ingressClassName: alb
+  rules:
+  - http:
+      paths:
+      - pathType: Prefix
+        path: "/api/user-service"
+        backend:
+          service:
+            name: peerprep
+            port: 
+              number: 8001
+      - pathType: Prefix
+        path: "/api/matching-service"
+        backend:
+          service:
+            name: peerprep
+            port: 
+              number: 8002
+      - pathType: Prefix
+        path: "/api/question-service"
+        backend:
+          service:
+            name: peerprep
+            port: 
+              number: 8003
+      - pathType: Prefix
+        path: "/api/collaboration-service"
+        backend:
+          service:
+            name: peerprep
+            port: 
+              number: 8004

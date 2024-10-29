@@ -4,3 +4,6 @@ node_modules/
 # k8s
 1-Kubernetes-Secrets.yml
 .old
+
+# secrets
+KNOWLEDGEBASE.md

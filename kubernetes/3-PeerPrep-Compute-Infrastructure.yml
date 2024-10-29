@@ -17,7 +17,8 @@ spec:
         app: peerprep
     spec:
       containers:
-      - image: asdfghjklxd/peerprep-user-service:latest
+      - image: asdfghjklxd/peerprep-user-service:1.0.2
+        imagePullPolicy: Always
         name: user-service
         ports:
         - containerPort: 8001
@@ -39,7 +40,8 @@ spec:
               key: USER_SERVICE_MONGO_PROD_URI
               name: peerprep-secrets
       
-      - image: asdfghjklxd/peerprep-question-service:latest
+      - image: asdfghjklxd/peerprep-question-service:1.0.2
+        imagePullPolicy: Always
         name: question-service
         ports:
         - containerPort: 8003
@@ -56,7 +58,8 @@ spec:
               key: QUESTION_SERVICE_DEV_URI
               name: peerprep-secrets
 
-      - image: asdfghjklxd/peerprep-matching-service:latest
+      - image: asdfghjklxd/peerprep-matching-service:1.0.2
+        imagePullPolicy: Always
         name: matching-service
         ports:
         - containerPort: 8002
@@ -72,8 +75,14 @@ spec:
             secretKeyRef:
               key: MATCHING_SERVICE_MONGO_TEST_URI
               name: peerprep-secrets
+        - name: TARGET_ORIGIN
+          valueFrom:
+            secretKeyRef:
+              key: MATCHING_SERVICE_TARGET_ORIGIN
+              name: peerprep-secrets
 
-      - image: asdfghjklxd/peerprep-collaboration-service:latest
+      - image: asdfghjklxd/peerprep-collaboration-service:1.0.2
+        imagePullPolicy: Always
         name: collaboration-service
         ports:
           - containerPort: 8004
