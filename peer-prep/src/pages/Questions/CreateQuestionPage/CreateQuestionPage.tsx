@@ -17,17 +17,24 @@ import {
 } from "@mantine/core";
 
 import classes from "./CreateQuestionPage.module.css";
-import { QuestionResponseData, TestCase } from "../../../types/question";
+import {
+  CategoryResponseData,
+  QuestionResponseData,
+  TestCase,
+} from "../../../types/question";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
 import CodeEditorWithLanguageSelector from "../../../components/Questions/LanguageSelector/LanguageSelector";
 import RichTextEditor from "../../../components/Questions/RichTextEditor/RichTextEditor";
+import { convertToCombinedCategoryId } from "../../../utils/utils";
 
 export default function CreateQuestionPage() {
   const [name, setName] = useState("");
   const [difficulty, setDifficulty] = useState<string | null>("EASY");
-  const [categories, setCategories] = useState<string[]>([]);
+
+  // remember to convert back into numbers
+  const [categoriesIdString, setCategoriesIdString] = useState<string[]>([]);
   const [descriptionText, setDescriptionText] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -42,19 +49,20 @@ export default function CreateQuestionPage() {
   const navigate = useNavigate();
 
   // For now, to be changed once backend sends over fixed categories
-  const dummyCategories = [
-    { value: "ARRAYS", label: "Arrays" },
-    { value: "ALGORITHMS", label: "Algorithms" },
-    { value: "DATABASES", label: "Databases" },
-    { value: "DATA STRUCTURES", label: "Data Structures" },
-    { value: "BRAINTEASER", label: "Brainteaser" },
-    { value: "STRINGS", label: "Strings" },
-    { value: "BIT MANIPULATION", label: "Bit Manipulation" },
-    { value: "RECURSION", label: "Recursion" },
-  ];
+  // const dummyCategories = [
+  //   { value: "ARRAYS", label: "Arrays" },
+  //   { value: "ALGORITHMS", label: "Algorithms" },
+  //   { value: "DATABASES", label: "Databases" },
+  //   { value: "DATA STRUCTURES", label: "Data Structures" },
+  //   { value: "BRAINTEASER", label: "Brainteaser" },
+  //   { value: "STRINGS", label: "Strings" },
+  //   { value: "BIT MANIPULATION", label: "Bit Manipulation" },
+  //   { value: "RECURSION", label: "Recursion" },
+  // ];
 
-  const [fetchedCategories, setFetchedCategories] =
-    useState<{ value: string; label: string }[]>(dummyCategories);
+  const [fetchedCategories, setFetchedCategories] = useState<
+    { value: string; label: string }[]
+  >([]);
 
   // Mapping for difficulty display
   const difficultyOptions = [
@@ -65,7 +73,7 @@ export default function CreateQuestionPage() {
 
   useEffect(() => {
     // to be uncommented once backend sends over fixed categories
-    // fetchCategories();
+    fetchCategories();
     addTestCase();
   }, []);
 
@@ -73,16 +81,23 @@ export default function CreateQuestionPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetchData<ServerResponse<QuestionResponseData>>(
+      const response = await fetchData<ServerResponse<CategoryResponseData>>(
         "/question-service/categories",
         SERVICE.QUESTION
       );
 
-      const categories = response.data.categories || [];
-      const transformedCategories = categories.map((category: string) => ({
-        value: category.toUpperCase(),
+      const categories = response.data.categories.categories || [];
+      const categoriesId = response.data.categories.categoriesId || [];
+
+      const convertedCategories = convertToCombinedCategoryId(
+        categories,
+        categoriesId
+      );
+      const transformedCategories = convertedCategories.map((c) => ({
+        value: c.id.toString(),
         label:
-          category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
+          c.category.charAt(0).toUpperCase() +
+          c.category.slice(1).toLowerCase(),
       }));
       setFetchedCategories(transformedCategories);
     } catch (error: any) {
@@ -114,7 +129,7 @@ export default function CreateQuestionPage() {
           body: JSON.stringify({
             title: name,
             description: { descriptionText, descriptionHtml },
-            categories,
+            categoriesId: categoriesIdString.map(Number),
             difficulty,
             testCases: updatedTestCases,
             solutionCode: solution,
@@ -167,7 +182,7 @@ export default function CreateQuestionPage() {
   const canSubmit =
     name &&
     difficulty &&
-    categories.length &&
+    categoriesIdString.length &&
     descriptionText &&
     descriptionHtml &&
     solution &&
@@ -195,8 +210,8 @@ export default function CreateQuestionPage() {
         <MultiSelect
           mt={8}
           label="Categories"
-          value={categories}
-          onChange={(value: string[]) => setCategories(value)}
+          value={categoriesIdString}
+          onChange={(value: string[]) => setCategoriesIdString(value)}
           data={fetchedCategories}
           required
         />

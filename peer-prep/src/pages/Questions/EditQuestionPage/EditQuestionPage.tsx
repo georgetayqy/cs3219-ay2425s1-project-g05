@@ -32,12 +32,13 @@ import {
 import useApi, { SERVICE, ServerResponse } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { useDisclosure } from "@mantine/hooks";
+import { convertToCombinedCategoryId } from "../../../utils/utils";
 
 export default function EditQuestionPage() {
   const { id } = useParams<{ id: string }>();
   const [name, setName] = useState("");
   const [difficulty, setDifficulty] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categoriesIdString, setCategoriesIdString] = useState<string[]>([]);
   const [descriptionText, setDescriptionText] = useState<string>("");
   const [descriptionHtml, setDescriptionHtml] = useState<string>("");
   const [solution, setSolution] = useState("");
@@ -46,18 +47,9 @@ export default function EditQuestionPage() {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
 
   // For now, to be changed once backend sends over fixed categories
-  const dummyCategories = [
-    { value: "ARRAYS", label: "Arrays" },
-    { value: "ALGORITHMS", label: "Algorithms" },
-    { value: "DATABASES", label: "Databases" },
-    { value: "DATA STRUCTURES", label: "Data Structures" },
-    { value: "BRAINTEASER", label: "Brainteaser" },
-    { value: "STRINGS", label: "Strings" },
-    { value: "BIT MANIPULATION", label: "Bit Manipulation" },
-    { value: "RECURSION", label: "Recursion" },
-  ];
-  const [fetchedCategories, setFetchedCategories] =
-    useState<{ value: string; label: string }[]>(dummyCategories);
+  const [fetchedCategories, setFetchedCategories] = useState<
+    { value: string; label: string }[]
+  >([]);
 
   const navigate = useNavigate();
 
@@ -70,9 +62,9 @@ export default function EditQuestionPage() {
 
   useEffect(() => {
     if (typeof id === "string") {
-      fetchQuestionDetails(id);
-      // to be uncommented once backend sends over fixed categories
-      // fetchCategories();
+      fetchCategories().then(() => {
+        fetchQuestionDetails(id);
+      });
     }
   }, [id]);
 
@@ -88,7 +80,7 @@ export default function EditQuestionPage() {
       const question = response.data.question;
       setName(question.title);
       setDifficulty(question.difficulty);
-      setCategories(question.categories);
+      setCategoriesIdString(question.categoriesId.map(String));
       setDescriptionText(question.description.descriptionText);
       setDescriptionHtml(question.description.descriptionHtml);
       setTemplateCode(question.templateCode);
@@ -111,13 +103,22 @@ export default function EditQuestionPage() {
         SERVICE.QUESTION
       );
 
-      const categories = response.data.categories;
-      const transformedCategories = categories.map((category: string) => ({
-        value: category.toUpperCase(),
+      const categories = response.data.categories.categories || [];
+      const categoriesId = response.data.categories.categoriesId || [];
+
+      const convertedCategories = convertToCombinedCategoryId(
+        categories,
+        categoriesId
+      );
+      const transformedCategories = convertedCategories.map((c) => ({
+        value: c.id.toString(),
         label:
-          category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
+          c.category.charAt(0).toUpperCase() +
+          c.category.slice(1).toLowerCase(),
       }));
       setFetchedCategories(transformedCategories);
+
+      return true;
     } catch (error: any) {
       console.error("Error fetching categories", error);
       notifications.show({
@@ -135,7 +136,7 @@ export default function EditQuestionPage() {
       ...rest,
     }));
 
-    console.log(`NOTE: ${categories} << selected categories`);
+    console.log(`NOTE: ${categoriesIdString} << selected categories`);
     try {
       const response = await fetchData<ServerResponse<QuestionResponseData>>(
         `/question-service/id/${id}`,
@@ -148,7 +149,7 @@ export default function EditQuestionPage() {
           body: JSON.stringify({
             title: name,
             description: { descriptionText, descriptionHtml },
-            categories,
+            categoriesId: categoriesIdString.map(Number),
             difficulty,
             solutionCode: solution,
             templateCode,
@@ -227,7 +228,7 @@ export default function EditQuestionPage() {
   const canSubmit =
     name &&
     difficulty &&
-    categories.length &&
+    categoriesIdString.length &&
     descriptionText &&
     descriptionHtml &&
     solution &&
@@ -270,8 +271,8 @@ export default function EditQuestionPage() {
         <MultiSelect
           mt={8}
           label="Categories"
-          value={categories}
-          onChange={(value: string[]) => setCategories(value)}
+          value={categoriesIdString}
+          onChange={(value: string[]) => setCategoriesIdString(value)}
           data={fetchedCategories}
           multiple
           required
