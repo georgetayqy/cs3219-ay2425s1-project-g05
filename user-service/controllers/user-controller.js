@@ -1,4 +1,4 @@
-import { ormCreateUser, ormDeleteUser, ormFindUser, ormUpdateUser } from '../models/user-orm.js';
+import { ormCreateUser, ormDeleteUser, ormFindUser, ormUpdateUser, ormFindUserById } from '../models/user-orm.js';
 import { comparePassword, hashPassword, generateAccessToken, checkPasswordStrength } from '../services.js';
 
 export async function loginUser(req, res) {
@@ -207,6 +207,32 @@ export async function changeDisplayName(req, res) {
         delete returnedUser.password
 
         return res.status(200).json({ statusCode: 200, message: "User display name updated successfully", data: { user: returnedUser } })
+    } catch (error) {
+        return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
+    }
+}
+
+export async function getUser(req, res) {
+    try {
+        const { id } = req.params;
+
+        // Check if id is provided
+        if (!id) {
+            return res.status(400).json({ statusCode: 400, message: "Id is required" })
+        }
+
+        // Check if user exists
+        const existingUser = await ormFindUserById(id);
+        console.log(existingUser)
+        if (!existingUser) {
+            return res.status(404).json({ statusCode: 404, message: "User not found" })
+        }
+
+        // Delete password field from user object
+        const returnedUser = { ...existingUser }
+        delete returnedUser.password
+
+        return res.status(200).json({ statusCode: 200, message: "User found by id", data: { user: returnedUser } })
     } catch (error) {
         return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
     }
