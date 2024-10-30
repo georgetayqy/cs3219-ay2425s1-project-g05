@@ -18,5 +18,5 @@ export async function _updateUser({ email, prop }) {
 }
 
 export async function _findUserById(id) {
-    return UserModel.findById(id);
+    return UserModel.findOne({ _id: id, isDeleted: false });
 }
