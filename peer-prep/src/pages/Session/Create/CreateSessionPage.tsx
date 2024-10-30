@@ -212,8 +212,7 @@ export default function CreateSessionPage() {
     const query = {
       categoriesId: selectedCategoriesId.map(Number),
       difficulties: selectedDifficulties.map((d) => d.toUpperCase()),
-      email: user.email,
-      displayName: user.displayName,
+      userId: user._id,
     };
 
     // fire a socket event
