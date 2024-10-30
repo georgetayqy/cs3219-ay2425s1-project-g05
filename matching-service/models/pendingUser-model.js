@@ -24,7 +24,7 @@ const pendingUserSchema = mongoose.Schema(
                 message: props => `${props.value} contains invalid difficulty level`
             }
         },
-        categories: {
+        categoriesId: {
             type: [Number],
             enum: categories,
             required: true,

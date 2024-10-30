@@ -1,10 +1,10 @@
 import PendingUserModel from "./pendingUser-model.js";
 
-export async function _findPendingUserByCriteria({ difficulties, categories, userId }) {
+export async function _findPendingUserByCriteria({ difficulties, categoriesId, userId }) {
     return PendingUserModel
         .findOne({
             difficulties: { $in: difficulties },
-            categories: { $in: categories },
+            categoriesId: { $in: categoriesId },
             userId: { $ne: userId }
         })
         .sort({ priority: -1 });

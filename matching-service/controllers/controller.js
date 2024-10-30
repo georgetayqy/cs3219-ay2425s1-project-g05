@@ -49,9 +49,9 @@ export async function onCancelMatch(socket) {
 
 export async function onCreateMatch(socket, data, io) {
     try {
-        const { difficulties, categories, userId } = data;
+        const { difficulties, categoriesId, userId } = data;
         const socketId = socket.id;
-        const priority = categories.length; // Priority based on number of categories selected
+        const priority = categoriesId.length; // Priority based on number of categories selected
 
         console.log(`Initiate create match by ${socket.id} (${userId}), with data:`);
         console.log(data);
@@ -74,15 +74,15 @@ export async function onCreateMatch(socket, data, io) {
         console.log(`User not in pending users`);
 
         // Find if there is a match with a pending user
-        const matchedUser = await ormFindPendingUserByCriteria({ difficulties, categories, userId });
+        const matchedUser = await ormFindPendingUserByCriteria({ difficulties, categoriesId, userId });
         if (!matchedUser) {
 
             // No match found
             console.log(`No matching users with the criteria, create new match`);
 
             // Create pending user entry
-            console.log({ userId, socketId, difficulties, categories, priority })
-            const pendingUser = await ormCreatePendingUser({ userId, socketId, difficulties, categories, priority });
+            console.log({ userId, socketId, difficulties, categoriesId, priority })
+            const pendingUser = await ormCreatePendingUser({ userId, socketId, difficulties, categoriesId, priority });
             if (!pendingUser) {
                 throw new Error(`Could not create pending user entry for new match`);
             } else {
@@ -139,7 +139,7 @@ export async function onCreateMatch(socket, data, io) {
 
             // Find intersection of difficulties and categories in both users
             const commonDifficulties = difficulties.filter(d => matchedUser.difficulties.includes(d));
-            const commonCategories = categories.filter(c => matchedUser.categories.includes(c));
+            const commonCategories = categoriesId.filter(c => matchedUser.categoriesId.includes(c));
             console.log(`Common difficulties: ${commonDifficulties}`);
             console.log(`Common categories: ${commonCategories}`);
 
@@ -148,7 +148,7 @@ export async function onCreateMatch(socket, data, io) {
                 matchId: matchedUser._id.toString(),
                 userIds: [userId, matchedUser.userId],
                 difficulties: commonDifficulties,
-                categories: commonCategories,
+                categoriesId: commonCategories,
             }
             console.log(`Match object:`);
             console.log(matchObject);
