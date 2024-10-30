@@ -10,7 +10,7 @@ export async function loginUser(req, res) {
             return res.status(400).json({ statusCode: 400, message: "Email and password are required" })
         }
 
-        // Check if user exists
+        // Check if user exists (isDeleted is false)
         const user = await ormFindUser(email);
         console.log(user)
         if (!user) {
@@ -63,7 +63,7 @@ export async function createUser(req, res) {
             return res.status(400).json({ statusCode: 400, message: "Email, password and displayName are required" })
         }
 
-        // Check if user already exists
+        // Check if user already exists (isDeleted is false)
         const existingUser = await ormFindUser(email);
         console.log(existingUser)
         if (existingUser) {
@@ -96,7 +96,7 @@ export async function createUser(req, res) {
     }
 }
 
-export async function deleteUser(req, res) {
+export async function deleteUser(req, res) { // SOFT DELETE
     try {
         const email = req.user.email; // Delete the user specified from token
 
@@ -112,7 +112,7 @@ export async function deleteUser(req, res) {
             return res.status(404).json({ statusCode: 404, message: "User not found" })
         }
 
-        // Delete user
+        // Delete user (soft delete, only sets isDeleted to true)
         const user = await ormDeleteUser(email);
         if (!user) {
             return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
