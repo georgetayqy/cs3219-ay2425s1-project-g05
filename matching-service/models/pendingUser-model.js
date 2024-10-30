@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const difficulties = ['EASY', 'MEDIUM', 'HARD']
-const categories = ['STRINGS', 'ALGORITHMS', 'DATA STRUCTURES', 'BIT MANIPULATION', 'RECURSION', 'DATABASES', 'ARRAYS', 'BRAINTEASER']
+const categories = [0, 1, 2, 3, 4, 5, 6, 7]
 
 const pendingUserSchema = mongoose.Schema(
     {
@@ -29,14 +29,14 @@ const pendingUserSchema = mongoose.Schema(
             }
         },
         categories: {
-            type: [String],
+            type: [Number],
             enum: categories,
             required: true,
             validate: {
                 validator: function (value) {
                     return value.every(v => categories.includes(v));
                 },
-                message: props => `${props.value} contains invalid difficulty level`
+                message: props => `${props.value} contains invalid category`
             }
         },
         priority: {
