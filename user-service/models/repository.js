@@ -16,3 +16,7 @@ export async function _findUser(param) {
 export async function _updateUser({ email, prop }) {
     return UserModel.findOneAndUpdate({ email: email, isDeleted: false }, prop, { new: true });
 }
+
+export async function _findUserById(id) {
+    return UserModel.findOne({ _id: id, isDeleted: false });
+}
