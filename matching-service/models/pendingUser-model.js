@@ -5,11 +5,7 @@ const categories = [0, 1, 2, 3, 4, 5, 6, 7]
 
 const pendingUserSchema = mongoose.Schema(
     {
-        email: {
-            type: String,
-            required: true
-        },
-        displayName: {
+        userId: {
             type: String,
             required: true
         },
