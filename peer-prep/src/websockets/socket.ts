@@ -5,4 +5,7 @@ const URL = process.env.NODE_ENV === 'production' ? undefined : 'http://localhos
 
 export const socket = io(URL, {
   autoConnect: false,
+  path: "/api/matching-service",
+  transports: ["websocket"],
+  withCredentials: true,
 });
