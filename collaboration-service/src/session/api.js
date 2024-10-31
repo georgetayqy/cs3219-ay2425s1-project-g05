@@ -14,7 +14,7 @@ import LocalClient from './client.js';
 const createRoom = async (request, response, next) => {
   try {
     const users = request.body.users;
-    const topics = request.body.topics;
+    const categoriesId = request.body.categoriesId;
     const difficulty = request.body.difficulty;
 
     if (users === undefined || users === null) {
@@ -32,18 +32,25 @@ const createRoom = async (request, response, next) => {
           'http://localhost:8003/api/question-service/random',
         {
           params: {
-            topics: topics,
+            categoriesId: categoriesId,
             difficulty: difficulty,
           },
         }
       );
+
+      console.log(resp);
+      const questionInResponse = resp.data['data']['question'];
+
+      if (questionInResponse === null || questionInResponse === undefined) {
+        console.log(`Question is possibly missing: Response => ${resp}`);
+      }
 
       question = LocalClient.putQuestion(
         roomId,
         resp.data['data']['question'] ?? ''
       );
     } else {
-      question = LocalClient.putQuestion(roomId, question);
+      question = LocalClient.getQuestion(roomId);
     }
 
     return response.status(200).json({
