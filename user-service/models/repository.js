@@ -6,13 +6,17 @@ export async function _createUser(param) {
 }
 
 export async function _deleteUser(param) {
-    return UserModel.findOneAndDelete({ email: param });
+    return UserModel.findOneAndUpdate({ email: param }, { isDeleted: true }, { new: true }); // soft delete
 }
 
 export async function _findUser(param) {
-    return UserModel.findOne({ email: param });
+    return UserModel.findOne({ email: param, isDeleted: false });
 }
 
 export async function _updateUser({ email, prop }) {
-    return UserModel.findOneAndUpdate({ email: email }, prop, { new: true });
+    return UserModel.findOneAndUpdate({ email: email, isDeleted: false }, prop, { new: true });
+}
+
+export async function _findUserById(id) {
+    return UserModel.findOne({ _id: id, isDeleted: false });
 }

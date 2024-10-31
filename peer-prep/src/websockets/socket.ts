@@ -10,4 +10,7 @@ export const socket = io(URL, {
   path: '/api/matching-service',
   transports: ['websocket'],
   autoConnect: false,
+  path: "/api/matching-service",
+  transports: ["websocket"],
+  withCredentials: true,
 });

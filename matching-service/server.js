@@ -1,5 +1,5 @@
 import express from 'express';
-import corsMiddleware from './middlewares/cors.js';
+import { corsOp, allowedOrigins } from './middlewares/cors.js';
 import dotenv from 'dotenv';
 import { connectToDB } from './services.js';
 import { createServer } from 'node:http';
@@ -12,9 +12,7 @@ const server = createServer(app);
 const io = new Server(server, {
   path: '/api/matching-service',
   cors: {
-    origin:
-      'http://peerprep.s3-website-ap-southeast-1.amazonaws.com' ||
-      'http://localhost:5173', // set cors origin to frontend
+    origin: allowedOrigins, // set cors origin to frontend
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -27,7 +25,7 @@ dotenv.config();
 // Initialise middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(corsMiddleware);
+app.use(corsOp);
 
 // Initialise socket handler
 socketHandler(io);
