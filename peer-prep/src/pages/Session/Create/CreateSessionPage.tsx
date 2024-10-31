@@ -151,13 +151,19 @@ export default function CreateSessionPage() {
       }, 1000);
     }
 
-    function onFoundMatch(data) {
+    function onFoundMatch(data: {
+      matchId: string;
+      userIds: string[];
+      categoriesId: number[];
+      difficulties: string[];
+    }) {
       console.log("found a match");
 
       // 10 seconds to redirect to the room
       setTimeout(() => {
         // temporary redirect to dashboard
-        navigate("/dashboard");
+        // navigate("/dashboard");
+        navigate(`/session/${data.matchId}`);
       }, 10 * 1000);
 
       console.log({ data });

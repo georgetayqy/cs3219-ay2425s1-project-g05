@@ -28,6 +28,7 @@ import AdminRouteWrapper from "./pages/AdminRouteWrapper.tsx";
 import ReadQuestionPage from "./pages/Questions/ReadQuestionPage/ReadQuestionPage.tsx";
 
 import "@fontsource/inter";
+import TempSessionPage from "./pages/Session/Temp/TempSessionPage.tsx";
 
 const router = createBrowserRouter([
   {
@@ -120,6 +121,10 @@ const router = createBrowserRouter([
               {
                 path: "/session/search",
                 element: <SearchingPage />,
+              },
+              {
+                path: "/session/:id",
+                element: <TempSessionPage />,
               },
             ],
           },

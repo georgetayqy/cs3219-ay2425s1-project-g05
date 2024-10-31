@@ -1,9 +1,34 @@
-import { Button, Group, Input, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Avatar,
+  Box,
+  Button,
+  Center,
+  Collapse,
+  Flex,
+  Group,
+  Input,
+  Space,
+  Stack,
+  Text,
+  Textarea,
+} from "@mantine/core";
 import { useEffect, useRef, useState } from "react";
 
 import classes from "./TextChatWidget.module.css";
 import { useAuth } from "../../../hooks/useAuth";
 import { socket } from "../../../websockets/communication/socket";
+import {
+  IconCamera,
+  IconCaretUpFilled,
+  IconPhone,
+  IconPhoneFilled,
+  IconSend,
+  IconSend2,
+  IconVideo,
+} from "@tabler/icons-react";
+import { useTimeout } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
 
 enum ChatState {
   DISCONNECTED,
@@ -11,17 +36,24 @@ enum ChatState {
   CONNECTED,
 }
 
+const ChatStateText = {
+  0: "Disconnected",
+  1: "Connecting",
+  2: "Connected",
+};
+
 enum MessageState {
   SENDING,
   BEFORE_SEND,
 }
 
 type Message = {
-  senderId: string;
+  sender: ChatRoomUser;
   content: string | any;
   timestamp: Date;
 };
 
+// not used
 type ChatRoomEnterExitEvent = {
   userSocketId: string;
   userId: string;
@@ -53,14 +85,41 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
 
   const [messages, setMessages] = useState<Message[]>([]);
 
-  const onConnectToChat = () => {
-    if (chatState === ChatState.DISCONNECTED) {
-      socket.connect();
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
-      setChatState(ChatState.CONNECTING);
-    } else {
-      console.log("LOG: already connected!");
-    }
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // max 3 re-tries
+  const [connectTries, setConnectTries] = useState(0);
+
+  const { start: startSendTimeout, clear: clearSendTimeout } = useTimeout(
+    () => {
+      // if message is still in sending state after 2 seconds, there's some error
+      notifications.show({
+        message: "Please check your internet connection",
+        title: "Error sending message",
+        color: "red",
+      });
+
+      // try to connect to the room
+      setMessageState(MessageState.BEFORE_SEND);
+      // setChatState(ChatState.DISCONNECTED);
+      // console.log(`HUH: ${chatState}`);
+      // requestAnimationFrame(() => {
+      //   console.log(`HUH in RAF: ${chatState}`);
+
+      //   onConnectToChat();
+      // });
+    },
+    2000
+  );
+
+  const onConnectToChat = () => {
+    console.log(`HUH in function: ${chatState}`);
+
+    socket.connect();
+
+    setChatState(ChatState.CONNECTING);
   };
   const onJoinRoom = () => {
     if (roomId.trim() === "") return;
@@ -77,15 +136,14 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   };
 
   const onSendMessage = () => {
-    if (chatState !== ChatState.CONNECTED) {
-      return;
-    }
-
     console.log("LOG: sending message", {
       roomId,
       message: draftMessage,
     });
 
+    // set a timer for sending for 2 seconds,
+    // if after 2 seconds, the message is still in sending state, there's some error
+    startSendTimeout();
     socket.emit("chat-message", { roomId: roomId, message: draftMessage });
     setMessageState(MessageState.SENDING);
   };
@@ -96,12 +154,16 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       console.log(`INFO: socket connected with id ${socket.id}!`);
 
       setChatState(ChatState.CONNECTED);
+      setConnectTries(0);
       setSocketUserId(socket.id);
 
       onJoinRoom();
     }
     function onDisconnected() {
       console.log("INFO: socket disconnected!");
+
+      setChatState(ChatState.DISCONNECTED);
+      setUsersInRoom([]);
     }
 
     function onMessageSent() {
@@ -114,6 +176,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     function onReceivedChatMessage(msg: Message) {
       console.log(`INFO: Received message`, msg);
 
+      clearSendTimeout();
       setMessages((prev) => [...prev, msg]);
     }
 
@@ -148,40 +211,133 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     };
   }, [roomId]);
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+  const otherUser = usersInRoom.find((u) => u.userId !== user._id);
+
   return (
     <>
-      <Stack>
-        <Button onClick={onConnectToChat}> Connect to chat server </Button>
-
-        <Group>
-          <Input
-            id="msg"
-            value={draftMessage}
-            onChange={(e) => setDraftMessage(e.target.value)}
-            disabled={messageState === MessageState.SENDING}
-          />
-          <Button
-            onClick={onSendMessage}
-            disabled={messageState === MessageState.SENDING}
-          >
+      <Box className={classes.chatContainer}>
+        <Flex
+          className={classes.chatHeader}
+          onClick={() => setIsChatOpen((prev) => !prev)}
+        >
+          <Text size="lg" fw="600">
             {" "}
-            send{" "}
-          </Button>
-        </Group>
+            Chat ({usersInRoom.length}){" "}
+          </Text>
+          <Group>
+            <ActionIcon variant="transparent" color="initials">
+              <IconCaretUpFilled
+                width="1.25rem"
+                className={`${classes.icon} ${isChatOpen && classes.open}`}
+              />
+            </ActionIcon>
+          </Group>
+        </Flex>
 
-        <Text> Users in room: {usersInRoom.length} </Text>
-        <Group gap={"lg"}>
-          {usersInRoom.map((user, i) => (
-            <Text key={i}> {user.name} </Text>
-          ))}
-        </Group>
+        <Collapse in={isChatOpen}>
+          <Group className={classes.chatContentColored}>
+            {otherUser ? (
+              <>
+                <Avatar
+                  src={""}
+                  radius="xl"
+                  name={otherUser?.name}
+                  color={"white"}
+                  size={"md"}
+                  autoContrast={false}
+                />
+                <Text style={{ color: "white" }}>{otherUser?.name}</Text>
 
-        <Stack>
-          {messages.map((msg, i) => (
-            <Text key={i}> {msg.content} </Text>
-          ))}
-        </Stack>
-      </Stack>
+                <Space flex={1} />
+                <Group gap="xs">
+                  <ActionIcon variant="subtle" color="white">
+                    {" "}
+                    <IconPhone size={"20px"} />
+                  </ActionIcon>
+                  <ActionIcon variant="subtle" color="white">
+                    {" "}
+                    <IconVideo size="20px" />
+                  </ActionIcon>
+                </Group>
+              </>
+            ) : (
+              <Text style={{ color: "white" }}>
+                {" "}
+                Waiting for other user to join...
+              </Text>
+            )}
+          </Group>
+          <Box className={classes.chatContents}>
+            {messages.map((msg, i) =>
+              msg.sender.userId === user._id ? (
+                <Box key={i} className={`${classes.entry} ${classes.send}`}>
+                  <Text className={`${classes.textBox}`}> {msg.content} </Text>
+                </Box>
+              ) : (
+                <Box key={i} className={`${classes.entry} ${classes.receive}`}>
+                  <Avatar
+                    src={""}
+                    radius="xl"
+                    name={otherUser.name}
+                    color={"cyan"}
+                    size={"md"}
+                  />
+                  <Text className={`${classes.textBox}`}> {msg.content} </Text>
+                </Box>
+              )
+            )}
+            <div ref={chatEndRef}></div>
+          </Box>
+          <Box className={classes.chatInput}>
+            {chatState === ChatState.CONNECTED ? (
+              <>
+                <Textarea
+                  value={draftMessage}
+                  onChange={(e) => setDraftMessage(e.target.value)}
+                  placeholder="Type a message... (ENTER) to send"
+                  w={"100%"}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && event.ctrlKey) {
+                      // onSendMessage();
+                      // add newlinw
+                      setDraftMessage((prev) => prev + "\n");
+                    } else if (event.key === "Enter") {
+                      event.stopPropagation();
+                      onSendMessage();
+                    }
+                  }}
+                  disabled={messageState === MessageState.SENDING}
+                />
+                <ActionIcon
+                  variant="subtle"
+                  onClick={onSendMessage}
+                  style={{ padding: "6px" }}
+                  size={"lg"}
+                  color="gray"
+                  loading={messageState === MessageState.SENDING}
+                >
+                  <IconSend2 />
+                </ActionIcon>
+              </>
+            ) : (
+              <Center style={{ width: "100%" }}>
+                <Button
+                  onClick={onConnectToChat}
+                  fullWidth
+                  variant="light"
+                  style={{ maxWidth: "500px" }}
+                  loading={chatState === ChatState.CONNECTING}
+                >
+                  Connect to chat
+                </Button>
+              </Center>
+            )}
+          </Box>
+        </Collapse>
+      </Box>
     </>
   );
 }

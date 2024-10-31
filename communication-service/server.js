@@ -114,7 +114,12 @@ function onChatMessage(io, socket, data) {
 
   console.log(`Received message { ${message} } for room id { ${roomId} }`)
   io.to(roomId).emit('chat-message', {
-    senderId: socket.id,
+    sender: {
+      userId: socket.userId,
+      name: socket.name,
+      email: socket.email,
+      userSocketId: socket.id
+    },
     content: message,
     timeStamp: new Date()
   }); // Broadcast to users in the room

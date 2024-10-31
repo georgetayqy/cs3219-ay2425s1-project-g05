@@ -1,0 +1,137 @@
+.chatContainer {
+  width: 500px;
+  /* height: 150px; */
+  /* background-color: red; */
+
+  position: absolute;
+  bottom: 0;
+  left: 4rem;
+
+  display: flex;
+  flex-direction: column;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+
+  /* shadow */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+
+  z-index: 20;
+
+  border: light-dark(0px, 1px solid var(--mantine-color-dark-7));
+}
+
+.chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* padding: 2.5rem; */
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+
+  /* background-color: var(--mantine-color-teal-8); */
+  background: rgb(12, 133, 153);
+  background: linear-gradient(
+    90deg,
+    var(--mantine-color-cyan-8) 0%,
+    var(--mantine-color-cyan-6) 70%
+  );
+
+  color: white;
+  font-weight: 800;
+
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+
+  cursor: pointer;
+
+  .icon {
+    transition: all 0.3s;
+    transform: rotate(0deg);
+
+    &.open {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+:root[data-mantine-color-scheme="dark"] {
+  .chatHeader {
+    background: var(--mantine-color-dark-7);
+  }
+  .chatContentColored {
+    background: var(--mantine-color-dark-7);
+  }
+  .chatContents {
+    background: var(--mantine-color-dark-8);
+  }
+}
+
+.chatContentColored {
+  background: rgb(12, 133, 153);
+  background: linear-gradient(
+    90deg,
+    var(--mantine-color-cyan-8) 0%,
+    var(--mantine-color-cyan-6) 70%
+  );
+
+  padding: 1rem;
+  padding-top: 0rem;
+}
+
+.chatContents {
+  background-color: white;
+  height: 500px;
+
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+
+  .entry {
+    .textBox {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      border-radius: 12px;
+      margin-left: 1rem;
+      margin-right: 1rem;
+
+      background-color: light-dark(
+        var(--mantine-color-gray-2),
+        var(--mantine-color-gray-8)
+      );
+      width: max-content;
+      max-width: 70%;
+      word-wrap: break-word;
+
+      white-space: pre-wrap;
+    }
+    &.send {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    &.receive {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: flex-end;
+      margin-left: 1rem;
+    }
+  }
+}
+
+.chatInput {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 1rem;
+  gap: 1rem;
+}
