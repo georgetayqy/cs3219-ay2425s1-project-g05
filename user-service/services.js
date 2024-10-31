@@ -22,11 +22,24 @@ export function hashPassword(password) {
 }
 
 export function generateAccessToken({ email, displayName, isAdmin }) {
-    return jwt.sign({ email: email, displayName: displayName, isAdmin: isAdmin }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+    return jwt.sign({ email: email, displayName: displayName, isAdmin: isAdmin }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1m' });
 }
 
 export function verifyAccessToken(token) {
     return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        if (err) {
+            return null;
+        }
+        return user;
+    });
+}
+
+export function generateRefreshToken({ email, displayName, isAdmin, isDeleted }) {
+    return jwt.sign({ email: email, displayName: displayName, isAdmin: isAdmin, isDeleted }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '2m' });
+}
+
+export function verifyRefreshToken(token) {
+    return jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
         if (err) {
             return null;
         }

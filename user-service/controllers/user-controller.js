@@ -1,5 +1,7 @@
 import { ormCreateUser, ormDeleteUser, ormFindUser, ormUpdateUser, ormFindUserById } from '../models/user-orm.js';
-import { comparePassword, hashPassword, generateAccessToken, checkPasswordStrength } from '../services.js';
+import { comparePassword, hashPassword, generateAccessToken, generateRefreshToken, checkPasswordStrength, verifyRefreshToken, verifyAccessToken } from '../services.js';
+
+const whiteListRefreshTokens = [];
 
 export async function loginUser(req, res) {
     try {
@@ -29,12 +31,23 @@ export async function loginUser(req, res) {
 
         // Generate access token
         const accessToken = generateAccessToken(user);
-        console.log(accessToken)
         if (process.env.NODE_ENV === 'DEV') {
-            res.cookie('accessToken', accessToken, { httpOnly: true, sameSite: 'none', secure: true }); // 60 minutes
+            res.cookie('accessToken', accessToken, { httpOnly: true, sameSite: 'none', secure: true });
         } else {
-            res.cookie('accessToken', accessToken, { httpOnly: true }); // 60 minutes
+            res.cookie('accessToken', accessToken, { httpOnly: true });
         }
+
+        // Generate refresh token
+        const refreshToken = generateRefreshToken(user);
+        if (process.env.NODE_ENV === 'DEV') {
+            res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'none', secure: true });
+        } else {
+            res.cookie('refreshToken', refreshToken, { httpOnly: true });
+        }
+        // Add refresh token to white list
+        whiteListRefreshTokens.push(refreshToken);
+        console.log("whitelist refresh tokens:")
+        console.log(whiteListRefreshTokens)
 
         return res.status(200).json({ statusCode: 200, message: "Login successful", data: { user: returnedUser } })
     } catch (error) {
@@ -45,8 +58,19 @@ export async function loginUser(req, res) {
 
 export async function logoutUser(req, res) {
     try {
-        // Clear access token cookie
+        // Clear tokens cookie
         res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
+
+        // Remove refresh token from white list
+        const { refreshToken } = req.cookies;
+        const index = whiteListRefreshTokens.indexOf(refreshToken);
+        if (index > -1) {
+            whiteListRefreshTokens.splice(index, 1);
+        }
+        console.log("whitelist refresh tokens:")
+        console.log(whiteListRefreshTokens)
+
         return res.status(200).json({ statusCode: 200, message: "Logout successful" })
     } catch (error) {
         console.log(error)
@@ -233,6 +257,101 @@ export async function getUser(req, res) {
         delete returnedUser.password
 
         return res.status(200).json({ statusCode: 200, message: "User found by id", data: { user: returnedUser } })
+    } catch (error) {
+        return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
+    }
+}
+
+export async function authAcccessToken(req, res) {
+    try {
+        const { accessToken } = req.cookies;
+
+        // Check if accessToken is provided
+        if (!accessToken) {
+            return res.status(400).json({ statusCode: 400, message: "Access token is required" })
+        }
+
+        // Verify access token
+        const user = verifyAccessToken(accessToken);
+        if (!user) {
+            return res.status(401).json({ statusCode: 401, message: "Invalid access token" })
+        }
+
+        return res.status(200).json({ statusCode: 200, message: "Access token verified", data: { user } })
+    } catch (error) {
+        return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
+    }
+}
+
+export async function authRefreshToken(req, res) {
+    try {
+        
+        console.log("whitelist refresh tokens:")
+        console.log(whiteListRefreshTokens)
+
+        const { refreshToken } = req.cookies;
+
+        // Check if refreshToken is provided
+        if (!refreshToken) {
+            return res.status(400).json({ statusCode: 400, message: "Refresh token is required" })
+        }
+
+        // Verify refresh token
+        const user = verifyRefreshToken(refreshToken);
+        if (!user) {
+            return res.status(401).json({ statusCode: 401, message: "Invalid refresh token" })
+        }
+
+        // Check if refresh token is in white list
+        if (!whiteListRefreshTokens.includes(refreshToken)) {
+            return res.status(401).json({ statusCode: 401, message: "Refresh token is not whitelisted" })
+        }
+        
+
+        return res.status(200).json({ statusCode: 200, message: "Refresh token verified", data: { user } })
+    } catch (error) {
+        return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
+    }
+}
+
+export async function regenerateAccessToken(req, res) {
+    try {
+        console.log("whitelist refresh tokens:")
+        console.log(whiteListRefreshTokens)
+
+        const { refreshToken, accessToken } = req.cookies;
+
+        // Check if refreshToken and accessToken is provided
+        if (!refreshToken || !accessToken) {
+            return res.status(400).json({ statusCode: 400, message: "Refresh token is required" })
+        }
+
+        // If access token is valid, return 200 and do nothing
+        const userAccessToken = verifyAccessToken(accessToken);
+        if (userAccessToken) {
+            return res.status(200).json({ statusCode: 200, message: "Access token is still valid" })
+        }
+
+        // Verify refresh token
+        const userRefreshToken = verifyRefreshToken(refreshToken);
+        if (!userRefreshToken) {
+            return res.status(401).json({ statusCode: 401, message: "Invalid refresh token" })
+        }
+
+        // Check if refresh token is in white list
+        if (!whiteListRefreshTokens.includes(refreshToken)) {
+            return res.status(401).json({ statusCode: 401, message: "Refresh token is not whitelisted" })
+        }
+
+        // Generate new access token
+        const newAccessToken = generateAccessToken(userRefreshToken);
+        if (process.env.NODE_ENV === 'DEV') {
+            res.cookie('accessToken', newAccessToken, { httpOnly: true, sameSite: 'none', secure: true });
+        } else {
+            res.cookie('accessToken', newAccessToken, { httpOnly: true });
+        }
+
+        return res.status(200).json({ statusCode: 200, message: "Access token refreshed" })
     } catch (error) {
         return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
     }
