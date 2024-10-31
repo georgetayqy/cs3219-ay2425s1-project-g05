@@ -159,6 +159,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   };
 
   const onSendMessage = () => {
+    if (draftMessage.trim() === "") return;
     console.log("LOG: sending message", {
       roomId,
       message: draftMessage,
@@ -219,6 +220,8 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       console.log(`INFO: Received message`, msg);
 
       clearSendTimeout();
+
+      // note: for normal operations, we only send over the NEW message from BE
       setMessages((prev) => [...prev, msg]);
     }
 
@@ -236,12 +239,20 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       setUsersInRoom(evt.users);
     }
 
+    // this function gets called whenever a room is joined
+    // will reset all messagse
+    function onReceiveChatHistory({ chatHistory }: { chatHistory: Message[] }) {
+      console.log("INFO: Received chat history", chatHistory);
+      setMessages(chatHistory);
+    }
+
     socket.on("connect", onConnected);
     socket.on("disconnect", onDisconnected);
     socket.on("message-sent", onMessageSent); // for ack
     socket.on("chat-message", onReceivedChatMessage);
     socket.on("user-joined", onUserJoinedChat); // unused
     socket.on("room-people-update", onRoomPeopleUpdate);
+    socket.on("chat-history", onReceiveChatHistory);
 
     return () => {
       socket.disconnect();
@@ -473,7 +484,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                       onSendMessage();
                     }
                   }}
-                  disabled={messageState === MessageState.SENDING}
+                  // disabled={messageState === MessageState.SENDING}
                 />
                 <ActionIcon
                   variant="subtle"

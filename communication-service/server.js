@@ -15,6 +15,34 @@ const io = new Server(server, {
 
 app.use(express.static('public'));
 
+// in-memory store for room and chat history
+// to be replaced with a database in the future
+/**
+ * @type {{
+ * [roomId: string]: {
+ *  chatHistory: any[]
+ *  }
+ * }}
+ */
+const rooms = {}
+
+function storeMessage(roomId, message) {
+  if (!rooms[roomId]) {
+    rooms[roomId] = {
+      chatHistory: []
+    }
+  }
+
+  rooms[roomId].chatHistory.push(message)
+
+  console.log("INFO: Stored message in room { " + roomId + " }, room now has { " + rooms[roomId].chatHistory.length + " } messages")
+}
+
+function cleanupRoom(roomId) {
+  delete rooms[roomId]
+}
+
+
 /**
  * 
  * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} io 
@@ -45,6 +73,16 @@ function onJoinRoom(io, socket, data) {
   // update users in room
   onRoomPeopleUpdate(io, socket, { roomId })
 
+  // specifically tell the user who just joined the room
+  // about the message history
+  if (rooms[roomId]) {
+    const chatHistory = rooms[roomId].chatHistory
+
+    socket.emit("chat-history", {
+      chatHistory
+    })
+
+  }
 
 }
 
@@ -80,6 +118,11 @@ function onRoomPeopleUpdate(io, socket, data, removeUserId) {
     // console.log({ usersInRoom })
 
     console.log(`INFO: there are now { ${users.length} } users in the room`)
+    if (users.length === 0) {
+      // cleanup the store
+      cleanupRoom(roomId)
+    }
+
     userSocketsInRoom.forEach(socket => {
       socket.emit("room-people-update", {
         users: users
@@ -125,10 +168,10 @@ function onChatMessage(io, socket, data) {
   const { roomId, message, replyToId } = data
 
   console.log(`Received message { ${message} } for room id { ${roomId} }`)
-
   // generate a messageId based on the roomId and the current timestamp
   const uniqueId = `${roomId}-${new Date().getTime()}`
-  io.to(roomId).emit('chat-message', {
+  // append this message to the room's chat history
+  const messageObject = {
     sender: {
       userId: socket.userId,
       name: socket.name,
@@ -139,7 +182,15 @@ function onChatMessage(io, socket, data) {
     timestamp: new Date(),
     messageId: uniqueId,
     replyToId: replyToId
-  }); // Broadcast to users in the room
+  }
+
+  storeMessage(roomId, messageObject)
+
+
+
+  // note: for normal operations, we only send over the NEW message from BE to FE
+  // only when users reconnect, we send over the entire chat history
+  io.to(roomId).emit('chat-message', messageObject); // Broadcast to users in the room
 
   // send back confirmation saying server received sent chat message
   socket.emit("message-sent")
