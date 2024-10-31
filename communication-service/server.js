@@ -1,4 +1,3 @@
-const { timeStamp } = require('console');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -40,7 +39,7 @@ function onJoinRoom(io, socket, data) {
   // broadcast that a user has joined the room
   io.to(roomId).emit("user-joined", {
     userSocketId: socket.id,
-    timeStamp: new Date()
+    timestamp: new Date()
   })
 
   // update users in room
@@ -124,7 +123,7 @@ function onChatMessage(io, socket, data) {
       userSocketId: socket.id
     },
     content: message,
-    timeStamp: new Date()
+    timestamp: new Date()
   }); // Broadcast to users in the room
 
   // send back confirmation saying server received sent chat message
@@ -145,7 +144,7 @@ function onBeforeDisconnect(io, socket) {
     onRoomPeopleUpdate(io, socket, { roomId }, socket.userId)
     io.to(roomId).emit("user-left", {
       userId: socket.id,
-      timeStamp: new Date()
+      timestamp: new Date()
     })
 
   })

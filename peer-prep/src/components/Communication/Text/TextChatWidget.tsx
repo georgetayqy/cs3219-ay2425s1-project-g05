@@ -29,6 +29,7 @@ import {
 } from "@tabler/icons-react";
 import { useTimeout } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
+import { formatTime } from "../../../utils/utils";
 
 enum ChatState {
   DISCONNECTED,
@@ -275,17 +276,31 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
               msg.sender.userId === user._id ? (
                 <Box key={i} className={`${classes.entry} ${classes.send}`}>
                   <Text className={`${classes.textBox}`}> {msg.content} </Text>
+                  <Text
+                    className={`${classes.timestamp}`}
+                    onClick={() => console.log(msg)}
+                    size="xs"
+                  >
+                    {formatTime(new Date(msg.timestamp))}{" "}
+                  </Text>
                 </Box>
               ) : (
                 <Box key={i} className={`${classes.entry} ${classes.receive}`}>
                   <Avatar
                     src={""}
                     radius="xl"
-                    name={otherUser.name}
+                    name={otherUser?.name}
                     color={"cyan"}
                     size={"md"}
                   />
-                  <Text className={`${classes.textBox}`}> {msg.content} </Text>
+                  <Text className={`${classes.textBox}`}>
+                    {" "}
+                    {msg.content}{" "}
+                    <span className={`${classes.timestamp}`}>
+                      {formatTime(new Date(msg.timestamp))}{" "}
+                    </span>{" "}
+                  </Text>
+                  <Text onClick={() => console.log(msg)} size="xs"></Text>
                 </Box>
               )
             )}

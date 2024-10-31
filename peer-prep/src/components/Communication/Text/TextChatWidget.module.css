@@ -56,18 +56,6 @@
   }
 }
 
-:root[data-mantine-color-scheme="dark"] {
-  .chatHeader {
-    background: var(--mantine-color-dark-7);
-  }
-  .chatContentColored {
-    background: var(--mantine-color-dark-7);
-  }
-  .chatContents {
-    background: var(--mantine-color-dark-8);
-  }
-}
-
 .chatContentColored {
   background: rgb(12, 133, 153);
   background: linear-gradient(
@@ -94,6 +82,8 @@
   padding-bottom: 1rem;
 
   .entry {
+    position: relative;
+
     .textBox {
       padding-top: 0.5rem;
       padding-bottom: 0.5rem;
@@ -101,7 +91,7 @@
       padding-right: 1rem;
       border-radius: 12px;
       margin-left: 1rem;
-      margin-right: 1rem;
+      margin-right: 1.5rem;
 
       background-color: light-dark(
         var(--mantine-color-gray-2),
@@ -112,10 +102,32 @@
       word-wrap: break-word;
 
       white-space: pre-wrap;
+
+      position: relative;
     }
     &.send {
       display: flex;
       justify-content: flex-end;
+
+      .timestamp {
+        opacity: 0;
+        transition: ease-out 0.1s;
+
+        position: absolute;
+        bottom: -12px;
+        right: calc(1.25rem - 8px); /* 1rem is the margin-right */
+        font-size: 0.8rem;
+        color: var(--mantine-color-gray-6);
+        background-color: light-dark(
+          var(--mantine-color-gray-2),
+          var(--mantine-color-gray-8)
+        );
+        padding: 4px;
+        font-size: 11px;
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        border-top-right-radius: 6px;
+      }
     }
 
     &.receive {
@@ -124,6 +136,30 @@
       justify-content: flex-start;
       align-items: flex-end;
       margin-left: 1rem;
+
+      .timestamp {
+        opacity: 0;
+        transition: ease-out 0.1s;
+
+        position: absolute;
+        bottom: -12px;
+        right: -8px; /* 1rem is the margin-right */
+        font-size: 0.8rem;
+        color: var(--mantine-color-gray-6);
+        background-color: light-dark(
+          var(--mantine-color-gray-2),
+          var(--mantine-color-gray-8)
+        );
+        padding: 4px;
+        font-size: 11px;
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        border-top-right-radius: 6px;
+      }
+    }
+
+    &:hover .timestamp {
+      opacity: 1;
     }
   }
 }
@@ -134,4 +170,16 @@
   align-items: flex-end;
   padding: 1rem;
   gap: 1rem;
+}
+
+:root[data-mantine-color-scheme="dark"] {
+  .chatHeader {
+    background: var(--mantine-color-dark-7);
+  }
+  .chatContentColored {
+    background: var(--mantine-color-dark-7);
+  }
+  .chatContents {
+    background: var(--mantine-color-dark-8);
+  }
 }
