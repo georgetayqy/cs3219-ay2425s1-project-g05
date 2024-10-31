@@ -1,12 +1,18 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
+import express from 'express';
+import { corsOp, allowedOrigins } from './src/middlewares/cors.js';
+import { config } from 'dotenv';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+
+// get configs
+config();
 
 const app = express();
-const server = http.createServer(app);
+const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // set cors origin to frontend
+    origin: allowedOrigins, // set cors origin to frontend
+    methods: ['GET', 'POST'],
     credentials: true,
   },
   path: '/api/communication-service',
@@ -14,6 +20,16 @@ const io = new Server(server, {
 });
 
 app.use(express.static('public'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(corsOp);
+
+// health check path
+app.get('/healthz', (req, res) => {
+  res
+    .status(200)
+    .json({ message: 'Connected to /healthz route of communication-service' });
+});
 
 // in-memory store for room and chat history
 // to be replaced with a database in the future
@@ -44,9 +60,9 @@ function cleanupRoom(roomId) {
 
 
 /**
- * 
- * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} io 
- * @param {Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket 
+ *
+ * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} io
+ * @param {Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket
  * @param {{
  *  roomId: string,
  *  user: {
@@ -54,26 +70,24 @@ function cleanupRoom(roomId) {
  *    displayName: string,
  *    email: string
  *    }
- *  }} data 
+ *  }} data
  *
  */
 function onJoinRoom(io, socket, data) {
-  const { roomId, user } = data
-  onSetUsername(io, socket, user)
+  const { roomId, user } = data;
+  onSetUsername(io, socket, user);
 
   socket.join(roomId); // User joins the specified room
   console.log(`User ${socket.id} joined room ${roomId}`);
 
   // broadcast that a user has joined the room
-  io.to(roomId).emit("user-joined", {
+  io.to(roomId).emit('user-joined', {
     userSocketId: socket.id,
-    timestamp: new Date()
-  })
+    timestamp: new Date(),
+  });
 
   // update users in room
-  onRoomPeopleUpdate(io, socket, { roomId })
-
-  // specifically tell the user who just joined the room
+  onRoomPeopleUpdate(io, socket, { roomId });  // specifically tell the user who just joined the room
   // about the message history
   if (rooms[roomId]) {
     const chatHistory = rooms[roomId].chatHistory
@@ -87,70 +101,76 @@ function onJoinRoom(io, socket, data) {
 }
 
 /**
- * 
- * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} io 
- * @param {Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket 
- * @param {*} data 
+ *
+ * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} io
+ * @param {Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket
+ * @param {*} data
  * @param {string?} removeUserId
  */
 function onRoomPeopleUpdate(io, socket, data, removeUserId) {
-  const { roomId } = data
+  const { roomId } = data;
 
-  console.log("LOG: Remove user id", removeUserId)
-  io.in(roomId).fetchSockets().then((sockets) => {
-    console.log(`LOG: userIds in room = ${sockets.map(socket => socket.userId)}`)
-    // in this loop, this is all the users in this room 
-    const userSocketsInRoom = sockets.filter(socket => !removeUserId ? true : socket.userId !== removeUserId)
+  console.log('LOG: Remove user id', removeUserId);
+  io.in(roomId)
+    .fetchSockets()
+    .then((sockets) => {
+      console.log(
+        `LOG: userIds in room = ${sockets.map((socket) => socket.userId)}`
+      );
+      // in this loop, this is all the users in this room
+      const userSocketsInRoom = sockets.filter((socket) =>
+        !removeUserId ? true : socket.userId !== removeUserId
+      );
 
+      // tell frontend who is in the room
+      // if removeUserId is not null, means that we are calling this function
+      // from onBeforeDisconnect, and we want to remove the user who is about to disconenct
+      // from this list
+      const users = userSocketsInRoom.map((socket) => ({
+        userId: socket.userId,
+        name: socket.name,
+        email: socket.email,
+        userSocketId: socket.id,
+      }));
 
-    // tell frontend who is in the room
-    // if removeUserId is not null, means that we are calling this function
-    // from onBeforeDisconnect, and we want to remove the user who is about to disconenct
-    // from this list
-    const users = userSocketsInRoom.map(socket => ({
-      userId: socket.userId,
-      name: socket.name,
-      email: socket.email,
-      userSocketId: socket.id
-    }))
+      // console.log("<<<<<<<<<")
+      // console.log({ usersInRoom })
 
-    // console.log("<<<<<<<<<")
-    // console.log({ usersInRoom })
+      console.log(`INFO: there are now { ${users.length} } users in the room`);
+      if (users.length === 0) {
+        // cleanup the store
+        cleanupRoom(roomId)
+      }
 
-    console.log(`INFO: there are now { ${users.length} } users in the room`)
-    if (users.length === 0) {
-      // cleanup the store
-      cleanupRoom(roomId)
-    }
-
-    userSocketsInRoom.forEach(socket => {
-      socket.emit("room-people-update", {
-        users: users
-      })
-    })
-
-  })
+      userSocketsInRoom.forEach((socket) => {
+        socket.emit('room-people-update', {
+          users: users,
+        });
+      });
+    });
 }
 
 /**
- * 
- * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} io 
- * @param {Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket  
+ *
+ * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} io
+ * @param {Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket
  * @param {{
  *  name: string,
  *  email: string,
  *  userId: string,
- * }} data 
+ * }} data
  */
 function onSetUsername(io, socket, data) {
-  const { name, email, userId } = data
-  socket.name = name
-  socket.email = email
-  socket.userId = userId
-  console.log(`User socketId { ${socket.id} } set name to ${name} and email to ${email}`)
+  const { name, email, userId } = data;
+  socket.name = name;
+  socket.email = email;
+  socket.userId = userId;
+  console.log(
+    `User socketId { ${socket.id} } set name to ${name} and email to ${email}`
+  );
 
   // note: username-set not captured on the client side
-  socket.emit("username-set", { name, email })
+  socket.emit('username-set', { name, email });
 }
 
 
@@ -165,9 +185,9 @@ function onSetUsername(io, socket, data) {
  * }} data 
  */
 function onChatMessage(io, socket, data) {
-  const { roomId, message, replyToId } = data
+  const { roomId, message, replyToId } = data;
 
-  console.log(`Received message { ${message} } for room id { ${roomId} }`)
+  console.log(`Received message { ${message} } for room id { ${roomId} }`);
   // generate a messageId based on the roomId and the current timestamp
   const uniqueId = `${roomId}-${new Date().getTime()}`
   // append this message to the room's chat history
@@ -193,45 +213,40 @@ function onChatMessage(io, socket, data) {
   io.to(roomId).emit('chat-message', messageObject); // Broadcast to users in the room
 
   // send back confirmation saying server received sent chat message
-  socket.emit("message-sent")
+  socket.emit('message-sent');
 }
 
-
 function onBeforeDisconnect(io, socket) {
-  console.log("LOG: onBeforeDisconnect")
+  console.log('LOG: onBeforeDisconnect');
 
   // because each socket is automatically assigned to a room with the same id as the socket id
   // remove tha troom
-  const rooms = socket.rooms
-  rooms.delete(socket.id)
+  const rooms = socket.rooms;
+  rooms.delete(socket.id);
 
-  rooms.forEach(roomId => {
-
-    onRoomPeopleUpdate(io, socket, { roomId }, socket.userId)
-    io.to(roomId).emit("user-left", {
+  rooms.forEach((roomId) => {
+    onRoomPeopleUpdate(io, socket, { roomId }, socket.userId);
+    io.to(roomId).emit('user-left', {
       userId: socket.id,
-      timestamp: new Date()
-    })
-
-  })
+      timestamp: new Date(),
+    });
+  });
 }
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-
   // Listen for a join request from the client
-  socket.on('joinRoom', (data) => onJoinRoom(io, socket, data))
+  socket.on('joinRoom', (data) => onJoinRoom(io, socket, data));
 
   // Handle chat messages for a specific room
   socket.on('chat-message', (data) => onChatMessage(io, socket, data));
 
   // capture event before fully disconnect to alert other user of leaving the chatroom
-  socket.on("disconnecting", () => onBeforeDisconnect(io, socket))
+  socket.on('disconnecting', () => onBeforeDisconnect(io, socket));
 
   // set user details
-  socket.on("set-details", (data) => onSetUsername(io, socket, data))
-
+  socket.on('set-details', (data) => onSetUsername(io, socket, data));
 
   socket.on('disconnect', () => {
     console.log(`INFO: User disconnected with socket id { ${socket.id} }`);
@@ -242,4 +257,3 @@ const PORT = process.env.PORT || 8005;
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-
