@@ -26,8 +26,7 @@ const corsOptions = {
   allowedHeaders: [
     'Content-Type',
     'Authorization',
-    'Content-Type',
-    'Authorization',
+    'Cookie',
     'X-Amz-Date',
     'X-Api-Key',
     'X-Amz-Security-Token',

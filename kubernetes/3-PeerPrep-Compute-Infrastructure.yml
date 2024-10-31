@@ -5,7 +5,7 @@ metadata:
     app: peerprep
   name: peerprep
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: peerprep
@@ -17,7 +17,7 @@ spec:
         app: peerprep
     spec:
       containers:
-      - image: asdfghjklxd/peerprep-user-service:1.0.2
+      - image: asdfghjklxd/peerprep-user-service:IMAGE_TAG
         imagePullPolicy: Always
         name: user-service
         ports:
@@ -40,7 +40,7 @@ spec:
               key: USER_SERVICE_MONGO_PROD_URI
               name: peerprep-secrets
       
-      - image: asdfghjklxd/peerprep-question-service:1.0.2
+      - image: asdfghjklxd/peerprep-question-service:IMAGE_TAG
         imagePullPolicy: Always
         name: question-service
         ports:
@@ -58,7 +58,7 @@ spec:
               key: QUESTION_SERVICE_DEV_URI
               name: peerprep-secrets
 
-      - image: asdfghjklxd/peerprep-matching-service:1.0.2
+      - image: asdfghjklxd/peerprep-matching-service:IMAGE_TAG
         imagePullPolicy: Always
         name: matching-service
         ports:
@@ -81,7 +81,7 @@ spec:
               key: MATCHING_SERVICE_TARGET_ORIGIN
               name: peerprep-secrets
 
-      - image: asdfghjklxd/peerprep-collaboration-service:1.0.2
+      - image: asdfghjklxd/peerprep-collaboration-service:IMAGE_TAG
         imagePullPolicy: Always
         name: collaboration-service
         ports:
