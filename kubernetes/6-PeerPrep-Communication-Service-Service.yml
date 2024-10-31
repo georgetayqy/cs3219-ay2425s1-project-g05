@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: communication-service
+spec:
+  selector:
+    app: communication-service
+  ports:
+    - name: communication-service
+      protocol: TCP
+      port: 8005
+      targetPort: 8005

@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: question-service
+spec:
+  selector:
+    app: question-service
+  ports:
+    - name: question-service
+      protocol: TCP
+      port: 8003
+      targetPort: 8003

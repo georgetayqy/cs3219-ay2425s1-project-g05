@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: question-service
+  name: question-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: question-service
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: question-service
+    spec:
+      containers:
+      - image: asdfghjklxd/peerprep-question-service:IMAGE_TAG
+        imagePullPolicy: Always
+        name: question-service
+        ports:
+        - containerPort: 8003
+        resources:
+        env:
+        - name: ACCESS_TOKEN_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: ACCESS_TOKEN_SECRET
+              name: peerprep-secrets
+        - name: DEV_URI
+          valueFrom:
+            secretKeyRef:
+              key: QUESTION_SERVICE_DEV_URI
+              name: peerprep-secrets

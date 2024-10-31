@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: user-service
+  ports:
+    - name: user-service
+      protocol: TCP
+      port: 8001
+      targetPort: 8001

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: collaboration-service
+  name: collaboration-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: collaboration-service
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: collaboration-service
+    spec:
+      containers:
+      - image: asdfghjklxd/peerprep-collaboration-service:latest
+        imagePullPolicy: Always
+        name: collaboration-service
+        ports:
+          - containerPort: 8004
+        resources:
+        env:
+        - name: HOST
+          valueFrom:
+            secretKeyRef:
+              key: COLLABORATION_SERVICE_HOST
+              name: peerprep-secrets
+        - name: PORT
+          valueFrom:
+            secretKeyRef:
+              key: COLLABORATION_SERVICE_PORT
+              name: peerprep-secrets
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              key: COLLABORATION_SERVICE_REDIS_HOST
+              name: peerprep-secrets
+        - name: REDIS_PORT
+          valueFrom:
+            secretKeyRef:
+              key: COLLABORATION_SERVICE_REDIS_PORT
+              name: peerprep-secrets
+        - name: QUESTION_SERVICE_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              key: COLLABORATION_SERVICE_QUESTION_SERVICE_ENDPOINT
+              name: peerprep-secrets
