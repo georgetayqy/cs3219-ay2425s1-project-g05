@@ -27,3 +27,9 @@ services:
     ports:
       - '5173:5173'
     network_mode: bridge
+  redis:
+    build:
+      context: ./redis-server
+      dockerfile: Dockerfile
+    ports:
+      - "6379:6379"  # Expose Redis port to the host
