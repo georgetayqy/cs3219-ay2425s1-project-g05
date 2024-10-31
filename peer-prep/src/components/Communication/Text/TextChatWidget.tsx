@@ -20,12 +20,18 @@ import { useAuth } from "../../../hooks/useAuth";
 import { socket } from "../../../websockets/communication/socket";
 import {
   IconCamera,
+  IconCancel,
   IconCaretUpFilled,
+  IconCornerLeftUp,
+  IconCornerRightUp,
+  IconCornerUpRight,
+  IconCurrencyLeu,
   IconPhone,
   IconPhoneFilled,
   IconSend,
   IconSend2,
   IconVideo,
+  IconX,
 } from "@tabler/icons-react";
 import { useTimeout } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
@@ -52,6 +58,8 @@ type Message = {
   sender: ChatRoomUser;
   content: string | any;
   timestamp: Date;
+  messageId: string;
+  replyToId?: string;
 };
 
 // not used
@@ -87,6 +95,20 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+
+  const resetState = () => {
+    setReplyToMessage(null);
+    setSelectedMessage(null);
+  };
+
+  const onMessageClicked = (msg: Message | null) => {
+    if (chatState !== ChatState.CONNECTED) return;
+    setReplyToMessage(msg);
+    setSelectedMessage(msg);
+  };
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -140,13 +162,29 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     console.log("LOG: sending message", {
       roomId,
       message: draftMessage,
+      replyToId: replyToMessage?.messageId,
     });
 
     // set a timer for sending for 2 seconds,
     // if after 2 seconds, the message is still in sending state, there's some error
     startSendTimeout();
-    socket.emit("chat-message", { roomId: roomId, message: draftMessage });
+    socket.emit("chat-message", {
+      roomId: roomId,
+      message: draftMessage,
+      replyToId: replyToMessage?.messageId,
+    });
     setMessageState(MessageState.SENDING);
+  };
+
+  const onViewReply = (msg: Message) => {
+    // find the reply
+    const reply = messages.find((m) => m.messageId === msg.replyToId);
+    setSelectedMessage(reply);
+
+    // eh...
+    document.getElementById(reply.messageId)?.scrollIntoView({
+      behavior: "smooth",
+    });
   };
 
   // register events when component is mounted, even though they're not active yet
@@ -164,6 +202,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       console.log("INFO: socket disconnected!");
 
       setChatState(ChatState.DISCONNECTED);
+      resetState();
       setUsersInRoom([]);
     }
 
@@ -172,6 +211,8 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
 
       setMessageState(MessageState.BEFORE_SEND);
       setDraftMessage("");
+      // setReplyToMessage(null);
+      resetState();
     }
 
     function onReceivedChatMessage(msg: Message) {
@@ -267,48 +308,156 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
             ) : (
               <Text style={{ color: "white" }}>
                 {" "}
-                Waiting for other user to join...
+                Waiting for other users to join...
               </Text>
             )}
           </Group>
           <Box className={classes.chatContents}>
-            {messages.map((msg, i) =>
-              msg.sender.userId === user._id ? (
-                <Box key={i} className={`${classes.entry} ${classes.send}`}>
-                  <Text className={`${classes.textBox}`}> {msg.content} </Text>
-                  <Text
-                    className={`${classes.timestamp}`}
-                    onClick={() => console.log(msg)}
-                    size="xs"
+            {messages.map((msg, i) => (
+              <Box
+                id={msg.messageId}
+                key={i}
+                onClick={() => onMessageClicked(msg)}
+                className={`${classes.canSelect} ${
+                  selectedMessage?.messageId === msg.messageId
+                    ? classes.isSelected
+                    : ""
+                }`}
+              >
+                {msg.sender.userId === user._id ? (
+                  <Box
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      flexDirection: "column",
+                    }}
                   >
-                    {formatTime(new Date(msg.timestamp))}{" "}
-                  </Text>
-                </Box>
-              ) : (
-                <Box key={i} className={`${classes.entry} ${classes.receive}`}>
-                  <Avatar
-                    src={""}
-                    radius="xl"
-                    name={otherUser?.name}
-                    color={"cyan"}
-                    size={"md"}
-                  />
-                  <Text className={`${classes.textBox}`}>
-                    {" "}
-                    {msg.content}{" "}
-                    <span className={`${classes.timestamp}`}>
-                      {formatTime(new Date(msg.timestamp))}{" "}
-                    </span>{" "}
-                  </Text>
-                  <Text onClick={() => console.log(msg)} size="xs"></Text>
-                </Box>
-              )
-            )}
+                    {msg.replyToId && (
+                      <Flex>
+                        <Text
+                          size="xs"
+                          className={classes.replyToText}
+                          style={{ marginLeft: "auto" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            onViewReply(msg);
+                          }}
+                        >
+                          <Flex style={{ flexShrink: 0, gap: "8px" }}>
+                            <IconCornerLeftUp size="14px" /> replied to{" "}
+                          </Flex>
+                          <span
+                            style={{
+                              textOverflow: "ellipsis",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {
+                              messages.find(
+                                (otherMsg) =>
+                                  otherMsg.messageId === msg.replyToId
+                              )?.content
+                            }
+                          </span>
+                          <Flex style={{ flexShrink: 0, gap: "8px" }}>
+                            <IconCurrencyLeu
+                              size="14px"
+                              style={{
+                                transform: "rotate(180deg) translateY(-50%)",
+                              }}
+                            />
+                          </Flex>
+                        </Text>
+                      </Flex>
+                    )}
+                    <Box className={`${classes.entry} ${classes.send}`}>
+                      <Text className={`${classes.textBox}`}>
+                        {" "}
+                        {msg.content}{" "}
+                      </Text>
+                      <Text
+                        className={`${classes.timestamp}`}
+                        onClick={() => console.log(msg)}
+                        size="xs"
+                      >
+                        {formatTime(new Date(msg.timestamp))}{" "}
+                      </Text>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      flexDirection: "column",
+                    }}
+                  >
+                    {msg.replyToId && (
+                      <Flex>
+                        <Text
+                          size="xs"
+                          className={classes.replyToText}
+                          style={{ marginLeft: "2rem" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            onViewReply(msg);
+                          }}
+                        >
+                          <Flex style={{ flexShrink: 0, gap: "8px" }}>
+                            <IconCurrencyLeu
+                              size="14px"
+                              style={{
+                                transform: "scale(1, -1) translateY(-50%)",
+                              }}
+                            />{" "}
+                            replied to{" "}
+                          </Flex>
+                          <span
+                            style={{
+                              textOverflow: "ellipsis",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {
+                              messages.find(
+                                (otherMsg) =>
+                                  otherMsg.messageId === msg.replyToId
+                              )?.content
+                            }
+                          </span>
+                          <Flex style={{ flexShrink: 0, gap: "8px" }}>
+                            <IconCornerRightUp size="14px" />
+                          </Flex>
+                        </Text>
+                      </Flex>
+                    )}
+                    <Box className={`${classes.entry} ${classes.receive}`}>
+                      <Avatar
+                        src={""}
+                        radius="xl"
+                        name={otherUser?.name}
+                        color={"cyan"}
+                        size={"md"}
+                      />
+                      <Text className={`${classes.textBox}`}>
+                        {" "}
+                        {msg.content}{" "}
+                        <span className={`${classes.timestamp}`}>
+                          {formatTime(new Date(msg.timestamp))}{" "}
+                        </span>{" "}
+                      </Text>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            ))}
             <div ref={chatEndRef}></div>
           </Box>
-          <Box className={classes.chatInput}>
+          <Box>
             {chatState === ChatState.CONNECTED ? (
-              <>
+              <Flex className={classes.chatInput}>
                 <Textarea
                   value={draftMessage}
                   onChange={(e) => setDraftMessage(e.target.value)}
@@ -336,9 +485,34 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                 >
                   <IconSend2 />
                 </ActionIcon>
-              </>
+
+                {replyToMessage && (
+                  <Box className={classes.replyTo}>
+                    <Center>
+                      <IconCornerUpRight
+                        size="12px"
+                        style={{ flexShrink: 0 }}
+                      />
+                    </Center>
+                    <Text className={classes.replyToText} truncate="end">
+                      Replying to{" "}
+                      <span style={{ fontWeight: "800" }}>
+                        {replyToMessage.content}
+                      </span>
+                    </Text>
+                    <Space flex={1} />
+                    <ActionIcon
+                      variant="transparent"
+                      onClick={() => onMessageClicked(null)}
+                    >
+                      {/* cancel */}
+                      <IconX size="16px" />
+                    </ActionIcon>
+                  </Box>
+                )}
+              </Flex>
             ) : (
-              <Center style={{ width: "100%" }}>
+              <Center style={{ width: "100%", padding: "1rem" }}>
                 <Button
                   onClick={onConnectToChat}
                   fullWidth

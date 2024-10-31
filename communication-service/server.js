@@ -111,19 +111,34 @@ function onSetUsername(io, socket, data) {
 }
 
 
+/**
+ * 
+ * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} io 
+ * @param {Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket 
+ * @param {{
+ *  roomId: string,
+ *  message: string,
+ *  replyToId?: string
+ * }} data 
+ */
 function onChatMessage(io, socket, data) {
-  const { roomId, message } = data
+  const { roomId, message, replyToId } = data
 
   console.log(`Received message { ${message} } for room id { ${roomId} }`)
+
+  // generate a messageId based on the roomId and the current timestamp
+  const uniqueId = `${roomId}-${new Date().getTime()}`
   io.to(roomId).emit('chat-message', {
     sender: {
       userId: socket.userId,
       name: socket.name,
       email: socket.email,
-      userSocketId: socket.id
+      userSocketId: socket.id,
     },
     content: message,
-    timestamp: new Date()
+    timestamp: new Date(),
+    messageId: uniqueId,
+    replyToId: replyToId
   }); // Broadcast to users in the room
 
   // send back confirmation saying server received sent chat message
