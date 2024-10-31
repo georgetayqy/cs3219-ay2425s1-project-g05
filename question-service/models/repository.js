@@ -29,7 +29,7 @@ const updateQuestionById = async (id, question) => {
       sanitizedQuestion[key] = question[key];
     }
   }
-  return Question.findByIdAndUpdate(id, sanitizedQuestion, { new: true });
+  return Question.findOneAndUpdate({_id: { $eq: id } }, sanitizedQuestion, { new: true });
 };
 
 const getFilteredQuestions = async (body) => {

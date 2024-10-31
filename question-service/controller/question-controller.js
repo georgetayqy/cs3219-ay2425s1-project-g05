@@ -481,6 +481,39 @@ const getCategoriesWithId = (categoriesId) => {
   return categoriesId.map((id) => categoriesIdToCategories[id]);
 };
 
+const getTestCasesWithId = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    let foundQuestion = await _getQuestionById(id);
+
+    if (foundQuestion.length === 0) {
+      throw new NotFoundError("Question not found");
+    }
+
+    if(!foundQuestion[0].testCases || foundQuestion[0].testCases.length === 0) {
+      throw new NotFoundError("No testcases found for this question");
+    }
+    
+    // get all testCases from foundQuestion
+    const testCases = foundQuestion[0].testCases;
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Testcases for question found successfully",
+      data: { testCase: testCases},
+    });
+  } catch (err) {
+    console.log(err);
+    next(
+      err instanceof BaseError
+        ? err
+        : new BaseError(500, "Error retrieving question")
+    );
+  }
+}
+
+
 export {
   createQuestion,
   getAllQuestions,
@@ -490,4 +523,5 @@ export {
   getFilteredQuestions,
   findQuestion,
   getDistinctCategoriesId,
+  getTestCasesWithId
 };

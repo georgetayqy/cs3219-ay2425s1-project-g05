@@ -8,6 +8,7 @@ import {
   getFilteredQuestions,
   findQuestion,
   getDistinctCategoriesId,
+  getTestCasesWithId,
 } from "../controller/question-controller.js";
 import { checkAdmin } from "../middlewares/access-control.js";
 import {
@@ -43,5 +44,8 @@ router.route("/random/").get(findQuestion);
 
 // GET ALL DISTINCT CATEGORIES
 router.route("/categories").get(getDistinctCategoriesId);
+
+// GET TESTCASES (For run-service)
+router.route("/testcases/:id").get(getTestCasesWithId);
 
 export default router;
