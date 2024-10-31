@@ -7,8 +7,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173" // set cors origin to frontend
-  }
+    origin: "http://localhost:5173", // set cors origin to frontend
+    credentials: true,
+  },
+  path: '/api/communication-service',
+  transports: ['websocket'],
 });
 
 app.use(express.static('public'));
