@@ -27,7 +27,7 @@ import {
 } from "../../../utils/utils";
 import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
-import { Category, CategoryResponseData } from "../../../types/question";
+import { Category, CategoryResponseData, Question } from "../../../types/question";
 import { socket } from "../../../websockets/socket";
 import { useAuth } from "../../../hooks/useAuth";
 import { displayName } from "react-quill";
