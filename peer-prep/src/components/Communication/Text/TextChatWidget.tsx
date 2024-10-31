@@ -23,10 +23,20 @@ type Message = {
 };
 
 type ChatRoomEnterExitEvent = {
+  userSocketId: string;
   userId: string;
   timestamp: Date;
 };
 
+type ChatRoomUser = {
+  userId: string;
+  userSocketId: string;
+  name: string;
+  email: string;
+};
+type ChatRoomUpdateEvent = {
+  users: ChatRoomUser[];
+};
 interface TextChatWidgetProps {
   roomId: string;
 }
@@ -37,7 +47,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     MessageState.BEFORE_SEND
   );
   const [chatState, setChatState] = useState<ChatState>(ChatState.DISCONNECTED);
-
+  const [usersInRoom, setUsersInRoom] = useState<ChatRoomUser[]>([]);
   const [socketUserId, setSocketUserId] = useState("");
   const [draftMessage, setDraftMessage] = useState("");
 
@@ -56,13 +66,13 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     if (roomId.trim() === "") return;
     console.log(`Room ID: ${roomId}`);
 
-    socket.emit("joinRoom", roomId);
-  };
-
-  const onSetUsername = () => {
-    socket.emit("set-details", {
-      name: user.displayName,
-      email: user.email,
+    socket.emit("joinRoom", {
+      roomId,
+      user: {
+        userId: user._id,
+        name: user.displayName,
+        email: user.email,
+      },
     });
   };
 
@@ -71,9 +81,12 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       return;
     }
 
-    console.log("LOG: sending message");
+    console.log("LOG: sending message", {
+      roomId,
+      message: draftMessage,
+    });
 
-    socket.emit("chat message", { roomId: roomId, message: draftMessage });
+    socket.emit("chat-message", { roomId: roomId, message: draftMessage });
     setMessageState(MessageState.SENDING);
   };
 
@@ -86,7 +99,6 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       setSocketUserId(socket.id);
 
       onJoinRoom();
-      onSetUsername();
     }
     function onDisconnected() {
       console.log("INFO: socket disconnected!");
@@ -106,20 +118,28 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     }
 
     function onUserJoinedChat(evt: ChatRoomEnterExitEvent) {
-      console.log(`INFO: User { ${evt.userId} } joined the chat `);
+      console.log(`INFO: User { ${evt.userSocketId} } joined the chat `);
     }
 
     function onUserLeftChat(evt: ChatRoomEnterExitEvent) {
-      console.log(`INFO: User { ${evt.userId} } left the chat`);
+      console.log(`INFO: User { ${evt.userSocketId} } left the chat`);
+    }
+
+    function onRoomPeopleUpdate(evt: ChatRoomUpdateEvent) {
+      console.log("INFO: Room now has: ", evt.users);
+
+      setUsersInRoom(evt.users);
     }
 
     socket.on("connect", onConnected);
     socket.on("disconnect", onDisconnected);
-    socket.on("message-sent", onMessageSent);
+    socket.on("message-sent", onMessageSent); // for ack
     socket.on("chat-message", onReceivedChatMessage);
-    socket.on("user-joined", onUserJoinedChat);
+    socket.on("user-joined", onUserJoinedChat); // unused
+    socket.on("room-people-update", onRoomPeopleUpdate);
 
     return () => {
+      socket.disconnect();
       socket.off("connect", onConnected);
       socket.off("disconnect", onDisconnected);
       socket.off("message-sent", onMessageSent);
@@ -147,6 +167,13 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
             {" "}
             send{" "}
           </Button>
+        </Group>
+
+        <Text> Users in room: {usersInRoom.length} </Text>
+        <Group gap={"lg"}>
+          {usersInRoom.map((user, i) => (
+            <Text key={i}> {user.name} </Text>
+          ))}
         </Group>
 
         <Stack>
