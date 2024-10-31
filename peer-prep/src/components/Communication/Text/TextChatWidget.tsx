@@ -104,13 +104,18 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     setSelectedMessage(null);
   };
 
+  // for replying
   const onMessageClicked = (msg: Message | null) => {
     if (chatState !== ChatState.CONNECTED) return;
     setReplyToMessage(msg);
     setSelectedMessage(msg);
+
+    // focus on the input
+    inputRef.current?.focus();
   };
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // max 3 re-tries
   const [connectTries, setConnectTries] = useState(0);
@@ -355,9 +360,15 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                             onViewReply(msg);
                           }}
                         >
-                          <Flex style={{ flexShrink: 0, gap: "8px" }}>
+                          <span
+                            style={{
+                              flexShrink: 0,
+                              gap: "8px",
+                              display: "flex",
+                            }}
+                          >
                             <IconCornerLeftUp size="14px" /> replied to{" "}
-                          </Flex>
+                          </span>
                           <span
                             style={{
                               textOverflow: "ellipsis",
@@ -470,6 +481,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
             {chatState === ChatState.CONNECTED ? (
               <Flex className={classes.chatInput}>
                 <Textarea
+                  ref={inputRef}
                   value={draftMessage}
                   onChange={(e) => setDraftMessage(e.target.value)}
                   placeholder="Type a message... (ENTER) to send"
