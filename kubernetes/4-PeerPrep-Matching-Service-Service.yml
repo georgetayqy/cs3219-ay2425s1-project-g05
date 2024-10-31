@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: matching-service
+spec:
+  selector:
+    app: matching-service
+  ports:
+    - name: matching-service
+      protocol: TCP
+      port: 8002
+      targetPort: 8002

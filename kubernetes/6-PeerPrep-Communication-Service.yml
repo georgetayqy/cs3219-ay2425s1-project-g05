@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: communication-service
+  name: communication-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: communication-service
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: communication-service
+    spec:
+      containers:
+      - image: asdfghjklxd/peerprep-communication-service:IMAGE_TAG
+        imagePullPolicy: Always
+        name: communication-service
+        ports:
+          - containerPort: 8004
+        resources:
+        env:
+        - name: PORT
+          valueFrom:
+            secretKeyRef:
+              key: COMMUNICATION_SERVICE_PORT
+              name: peerprep-secrets
