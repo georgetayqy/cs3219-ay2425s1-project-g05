@@ -32,6 +32,14 @@ class LocalClient {
     return LocalClient.docToUser.get(doc) ?? null;
   }
 
+  static getQuestion(doc) {
+    if (LocalClient.docToQuestion.has(doc)) {
+      return LocalClient.docToQuestion.get(doc);
+    }
+
+    return '# Enter in your code here';
+  }
+
   static putQuestion(doc, question) {
     if (LocalClient.docToQuestion.has(doc)) {
       return LocalClient.docToQuestion.get(doc);
