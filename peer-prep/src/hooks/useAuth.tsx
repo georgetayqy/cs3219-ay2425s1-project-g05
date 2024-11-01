@@ -1,22 +1,34 @@
 import { useLocalStorage } from "@mantine/hooks";
-import { createContext, ReactElement, useContext, useMemo } from "react";
+import {
+  createContext,
+  ReactElement,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
-import { User } from "../types/user";
-import useApi, { SERVICE, UserServerResponse } from "./useApi";
+import { User, UserResponseData } from "../types/user";
+import useApi, { ServerResponse, SERVICE } from "./useApi";
 import { notifications } from "@mantine/notifications";
-
+export enum AUTH_STATUS {
+  LOGGED_IN,
+  LOGGED_OUT,
+  LOADING,
+}
 export interface AuthContextType {
   user: User | null;
   login: (data: any) => void;
   logout: () => void;
   register: (data: any) => void;
+  authStatus: AUTH_STATUS;
 }
 
 const DEFAULT_TEMP_USER: User = {
   email: "johndoe@gmail.com",
   displayName: "John Doe",
   isAdmin: false,
-  id: "123",
+  _id: "123",
   // password: "password",
 };
 
@@ -27,6 +39,7 @@ const DEFAULT: AuthContextType = {
   },
   logout: () => {},
   register: () => {},
+  authStatus: AUTH_STATUS.LOADING,
 };
 const AuthContext = createContext<AuthContextType>(DEFAULT);
 
@@ -37,15 +50,29 @@ export const AuthProvider = ({
 }) => {
   const [user, setUser] = useLocalStorage<User | null>({
     key: "user",
-    defaultValue: null,
+    defaultValue: undefined,
   });
+
+  const [authStatus, setAuthStatus] = useState(AUTH_STATUS.LOADING);
+
+  console.log({ authStatus });
+
+  useEffect(() => {
+    console.log(`log: user changed: `, user);
+    if (user === null) {
+      setAuthStatus(AUTH_STATUS.LOGGED_OUT);
+    } else if (user && user._id) {
+      // if this is a valid user
+      setAuthStatus(AUTH_STATUS.LOGGED_IN);
+    }
+  }, [user]);
 
   const { fetchData, isLoading, error } = useApi();
   const navigate = useNavigate();
 
   // call this function when you want to authenticate the user
   const login = async (data: { email: string; password: string }) => {
-    fetchData<UserServerResponse<User>>(
+    fetchData<ServerResponse<UserResponseData>>(
       `/user-service/users/login`,
       SERVICE.USER,
       {
@@ -56,10 +83,10 @@ export const AuthProvider = ({
         body: JSON.stringify(data),
       }
     )
-      .then((data) => {
+      .then((response) => {
         // ok!
-        setUser(data.user || null);
-        console.log(data.user, "<<<<");
+        setUser(response.data.user || null);
+        console.log(response.data.user, "<<<<");
         navigate("/dashboard", { replace: true });
 
         notifications.show({
@@ -159,8 +186,9 @@ export const AuthProvider = ({
       login,
       logout,
       register,
+      authStatus,
     }),
-    [user]
+    [user, authStatus]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
