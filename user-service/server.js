@@ -3,9 +3,13 @@ import cookieParser from 'cookie-parser';
 import userRouter from "./routers/user-router.js"
 import corsMiddleware from "./middlewares/cors.js"
 import { connectToDB } from "./services.js";
+import dotenv from 'dotenv';
 
 // Create express app
 const app = express()
+
+// Setup environment variables
+dotenv.config();
 
 // Initialise middlewares
 app.use(cookieParser())
