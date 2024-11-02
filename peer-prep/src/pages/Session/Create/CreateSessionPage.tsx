@@ -77,6 +77,9 @@ export default function CreateSessionPage() {
   let timer: NodeJS.Timeout | null = null;
   const [isTimerPaused, setIsTimerPaused] = useState(false);
 
+  const [redirectCountdown, setRedirectCountdown] = useState(3);
+  const [matchFound, setMatchFound] = useState(false);
+
   useEffect(() => {
     fetchData<ServerResponse<CategoryResponseData>>(
       `/question-service/categories`,
@@ -159,11 +162,13 @@ export default function CreateSessionPage() {
 
     async function onFoundMatch(data) {
       console.log("found a match", data);
-      console.log(data.emails);
+      
+      setStatus(Status.MATCH_FOUND);
+      setActive(2);
 
       try {
-        // call collab service to create a room
-        const response = await fetchData<ServerResponse<CollabResponse>>(
+        // Create a room with the matched users and question for the session
+        fetchData<ServerResponse<CollabResponse>>(
           `/collaboration-service/create-room`,
           SERVICE.COLLAB,
           {
@@ -172,26 +177,35 @@ export default function CreateSessionPage() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              users: data.emails,
-              topics: data.categories,
-              difficulty: data.difficulties
+              users: data.userIds,
+              question: data.question
             }),
           }
-        );
+        ).then((response) => {
+          // console.log("response from collab service", response.data);
+          const roomId = response.data['roomId'];
+          const question = response.data['question'];
 
-        console.log("response from collab service", response.data);
-        const roomId = response.data['roomId'];
-        const question = response.data['question'];
-        
-        // 10 seconds to redirect to the room
-        setTimeout(() => {
-          goToRoom(question, roomId, data);
-        }, 10 * 1000);
+          console.log("room id after creating room ", roomId);
+          console.log("question after creating room", question);
+          
+          setMatchFound(true); // Display the success component when a match is found
 
-        console.log({ data });
+          // Start countdown timer
+          const interval = setInterval(() => {
+            setRedirectCountdown((prevCountdown) => {
+              if (prevCountdown <= 1) {
+                clearInterval(interval);
+                goToRoom(question, roomId, response.data); // Redirect to room
+              }
+              return prevCountdown - 1;
+            });
+          }, 1000);
 
-        setStatus(Status.MATCH_FOUND);
-        setActive(2);
+        })
+        .catch((error) => {
+          console.error("Error creating room", error);
+        });
 
         // stop the timer
         if (timer) {
@@ -282,7 +296,7 @@ export default function CreateSessionPage() {
   }
 
   function goToRoom(question, roomId, matchData) {
-    navigate(`/session/page`, { state: { question, roomId, matchData } });
+    navigate(`/session/${roomId}`, { state: { questionReceived: question, roomIdReceived: roomId, matchData } });
   }
 
   const CREATE_COMPONENT = (
@@ -540,9 +554,9 @@ export default function CreateSessionPage() {
               Found a match for you!
             </Text>
             <Text style={{ textAlign: "center" }}>
-              You'll be redirected to the room shortly.
+              You'll be redirected to the room in {redirectCountdown} seconds...
             </Text>
-            <Center>
+            {/* <Center>
               <Button
                 // onClick={() => {
                 //   goToRoom();
@@ -551,7 +565,7 @@ export default function CreateSessionPage() {
                 {" "}
                 Go to room{" "}
               </Button>
-            </Center>
+            </Center> */}
           </Stack>
         </AlertBox>
       </Stack>

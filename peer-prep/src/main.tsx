@@ -123,7 +123,7 @@ const router = createBrowserRouter([
                 element: <SearchingPage />,
               },
               {
-                path: "/session/page",
+                path: "/session/:roomId",
                 element: <SessionPage />,
               },
             ],
