@@ -17,7 +17,7 @@ spec:
         app: collaboration-service
     spec:
       containers:
-      - image: asdfghjklxd/peerprep-collaboration-service:latest
+      - image: asdfghjklxd/peerprep-collaboration-service:IMAGE_TAG
         imagePullPolicy: Always
         name: collaboration-service
         ports:
