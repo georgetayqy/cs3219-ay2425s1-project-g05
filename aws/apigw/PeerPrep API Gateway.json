@@ -1,0 +1,523 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "API Gateway",
+    "description": "Main API Gateway for PeerPrep",
+    "version": "1.0.2"
+  },
+  "servers": [
+    {
+      "url": "https://01678sag05.execute-api.ap-southeast-1.amazonaws.com/{basePath}",
+      "variables": {
+        "basePath": {
+          "default": ""
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/api/collaboration-service/rooms": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "Default response for GET /api/collaboration-service/rooms"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "GET",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/collaboration-service/rooms",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      },
+      "delete": {
+        "responses": {
+          "default": {
+            "description": "Default response for DELETE /api/collaboration-service/rooms"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "DELETE",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/collaboration-service/rooms",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/question-service/id/{id}": {
+      "get": {
+        "operationId": "getQuestionById",
+        "responses": {
+          "default": {
+            "description": "Default response for GET /api/question-service/id/{id}"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "GET",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/question-service/id/{id}",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      },
+      "put": {
+        "operationId": "updateQuestionById",
+        "responses": {
+          "default": {
+            "description": "Default response for PUT /api/question-service/id/{id}"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "PUT",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/question-service/id/{id}",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      },
+      "delete": {
+        "operationId": "deleteQuestionById",
+        "responses": {
+          "default": {
+            "description": "Default response for DELETE /api/question-service/id/{id}"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "DELETE",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/question-service/id/{id}",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Generated path parameter for id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/user-service/users": {
+      "post": {
+        "operationId": "createUser",
+        "responses": {
+          "default": {
+            "description": "Default response for POST /api/user-service/users"
+          }
+        },
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "POST",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/user-service/users",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      },
+      "delete": {
+        "operationId": "deleteUser",
+        "responses": {
+          "default": {
+            "description": "Default response for DELETE /api/user-service/users"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "DELETE",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/user-service/users",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/collaboration-service/users": {
+      "get": {
+        "responses": {
+          "default": {
+            "description": "Default response for GET /api/collaboration-service/users"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "GET",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/collaboration-service/users",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/question-service": {
+      "get": {
+        "operationId": "getAllQuestions",
+        "responses": {
+          "default": {
+            "description": "Default response for GET /api/question-service"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "GET",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/question-service",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      },
+      "post": {
+        "operationId": "createQuestion",
+        "responses": {
+          "default": {
+            "description": "Default response for POST /api/question-service"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "POST",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/question-service",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/question-service/categories": {
+      "get": {
+        "operationId": "getCategories",
+        "responses": {
+          "default": {
+            "description": "Default response for GET /api/question-service/categories"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "GET",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/question-service/categories",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/question-service/filter": {
+      "get": {
+        "operationId": "getFilteredQuestions",
+        "responses": {
+          "default": {
+            "description": "Default response for GET /api/question-service/filter"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "GET",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/question-service/filter",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/question-service/random": {
+      "get": {
+        "operationId": "findQuestion",
+        "responses": {
+          "default": {
+            "description": "Default response for GET /api/question-service/random"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "GET",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/question-service/random",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/collaboration-service/create-room": {
+      "post": {
+        "responses": {
+          "default": {
+            "description": "Default response for POST /api/collaboration-service/create-room"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "POST",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/collaboration-service/create-room",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/collaboration-service/deregister": {
+      "post": {
+        "responses": {
+          "default": {
+            "description": "Default response for POST /api/collaboration-service/deregister"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "POST",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/collaboration-service/deregister",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/collaboration-service/register": {
+      "post": {
+        "responses": {
+          "default": {
+            "description": "Default response for POST /api/collaboration-service/register"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "POST",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/collaboration-service/register",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/run-service/execute": {
+      "post": {
+        "responses": {
+          "default": {
+            "description": "Default response for POST /api/run-service/execute"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "POST",
+          "uri": "http://PeerPrepALB-705702575.ap-southeast-1.elb.amazonaws.com:2358/submissions/?wait=true",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/user-service/users/login": {
+      "post": {
+        "operationId": "login",
+        "responses": {
+          "default": {
+            "description": "Default response for POST /api/user-service/users/login"
+          }
+        },
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "POST",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/user-service/users/login",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/user-service/users/logout": {
+      "post": {
+        "operationId": "logout",
+        "responses": {
+          "default": {
+            "description": "Default response for POST /api/user-service/users/logout"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "POST",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/user-service/users/logout",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/user-service/users/changeDisplayName": {
+      "put": {
+        "operationId": "changeDisplayName",
+        "responses": {
+          "default": {
+            "description": "Default response for PUT /api/user-service/users/changeDisplayName"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "PUT",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/user-service/users/changeDisplayName",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    },
+    "/api/user-service/users/changePassword": {
+      "put": {
+        "operationId": "changePassword",
+        "responses": {
+          "default": {
+            "description": "Default response for PUT /api/user-service/users/changePassword"
+          }
+        },
+        "security": [
+          {
+            "jwtAuth": []
+          }
+        ],
+        "x-amazon-apigateway-integration": {
+          "payloadFormatVersion": "1.0",
+          "type": "http_proxy",
+          "httpMethod": "PUT",
+          "uri": "http://peerprep-1039182349.ap-southeast-1.elb.amazonaws.com/api/user-service/users/changePassword",
+          "connectionType": "INTERNET",
+          "timeoutInMillis": 30000
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "jwtAuth": {
+        "type": "apiKey",
+        "name": "Cookie",
+        "in": "header",
+        "x-amazon-apigateway-authorizer": {
+          "identitySource": "$request.header.Cookie",
+          "authorizerUri": "arn:aws:apigateway:ap-southeast-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ap-southeast-1:730335480348:function:newJwtAuthorizer/invocations",
+          "authorizerPayloadFormatVersion": "2.0",
+          "authorizerResultTtlInSeconds": 0,
+          "type": "request",
+          "enableSimpleResponses": true
+        }
+      }
+    }
+  },
+  "x-amazon-apigateway-cors": {
+    "allowMethods": ["*"],
+    "allowHeaders": [
+      "*",
+      "authorization",
+      "content-type",
+      "x-amz-date",
+      "x-amz-security-token",
+      "x-api-key"
+    ],
+    "exposeHeaders": ["*", "cookie", "set-cookie"],
+    "maxAge": 0,
+    "allowCredentials": true,
+    "allowOrigins": [
+      "http://localhost:5173",
+      "http://peerprep.s3-website-ap-southeast-1.amazonaws.com"
+    ]
+  },
+  "x-amazon-apigateway-importexport-version": "1.0"
+}
