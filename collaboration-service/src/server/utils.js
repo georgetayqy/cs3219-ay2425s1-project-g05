@@ -269,17 +269,6 @@ const closeConn = (doc, userId, conn) => {
     // delete room
     LocalClient.delete(userId, doc.name);
 
-    // // remove the doc
-    // if (user2Doc.has(userId)) {
-    //   user2Doc.delete(userId);
-    // }
-
-    // // remove the users
-    // const currUsers = doc2User.get(doc);
-    // if (currUsers.includes(userId)) {
-    //   currUsers.splice(currUsers.indexOf(userId));
-    // }
-
     if (doc.conns.size === 0 && persistence !== null) {
       // if persisted, we store state and destroy ydocument
       persistence.writeState(doc.name, doc).then(() => {

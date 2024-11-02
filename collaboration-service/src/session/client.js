@@ -23,8 +23,6 @@ class LocalClient {
   static docToQuestion = new Map();
 
   static getDocByUser(userId) {
-    console.log(userId);
-    console.log(LocalClient.userToDoc.get(userId));
     return LocalClient.userToDoc.get(userId) ?? null;
   }
 
@@ -33,6 +31,10 @@ class LocalClient {
   }
 
   static getQuestion(doc) {
+    if (typeof doc !== 'string') {
+      throw new Error('Room ID must be a string');
+    }
+
     if (LocalClient.docToQuestion.has(doc)) {
       return LocalClient.docToQuestion.get(doc);
     }
@@ -41,6 +43,14 @@ class LocalClient {
   }
 
   static putQuestion(doc, question) {
+    if (typeof doc !== 'string' || typeof question !== 'string') {
+      throw new Error('Room ID or question must be of type string');
+    }
+
+    if (!LocalClient.docToUser.has(doc)) {
+      throw new Error('Room ID has not been created yet');
+    }
+
     if (LocalClient.docToQuestion.has(doc)) {
       return LocalClient.docToQuestion.get(doc);
     }
@@ -50,6 +60,10 @@ class LocalClient {
   }
 
   static removeQuestion(doc) {
+    if (typeof doc !== 'string') {
+      throw new Error('Room ID must be of type string');
+    }
+
     if (!LocalClient.docToQuestion.has(doc)) {
       return;
     }
@@ -71,6 +85,11 @@ class LocalClient {
     let userRoom = undefined;
 
     for (const user of users) {
+      // check user type
+      if (!(typeof user === 'string')) {
+        throw new Error('User ID must be of type string');
+      }
+
       // if userRoom is null, attempt to get the current user's room
       // we continue until either all are null (no user is in a room)
       // or we get a non-null room name
@@ -82,7 +101,7 @@ class LocalClient {
         // if currRoom is not null and not equal to the userRoom,
         // we found a problem where one or more users have different rooms
         // this should not happen
-        if (!currRoom === undefined && !currRoom === userRoom) {
+        if (currRoom !== undefined && currRoom !== userRoom) {
           // conform those who dont belong to a room to the room of the first person
           throw new UserAlreadyFoundInRoomError(
             'Users belong in seperate rooms'
@@ -117,6 +136,10 @@ class LocalClient {
    * @param {string} doc Room Id
    */
   static add(user, doc) {
+    if (typeof user !== 'string' || typeof doc !== 'string') {
+      throw new Error('User or Room ID is not of type string');
+    }
+
     if (LocalClient.userToDoc.has(user)) {
       // ignore if user is already in the room
       return;
@@ -138,6 +161,11 @@ class LocalClient {
    * Deletes a user from a room
    */
   static delete(user, doc) {
+    // check both are strings
+    if (typeof user !== 'string' || typeof doc !== 'string') {
+      throw new Error('User or Room ID is not of type string');
+    }
+
     const docs = LocalClient.userToDoc.get(user);
 
     if (docs === undefined || docs !== doc) {
@@ -174,6 +202,16 @@ class LocalClient {
     }
   }
 
+  /**
+   * Clears out the maps. This is only useful for debugging and testing
+   * purposes only.
+   */
+  static purge() {
+    LocalClient.docToQuestion.clear();
+    LocalClient.docToUser.clear();
+    LocalClient.userToDoc.clear();
+  }
+
   // /**
   //  * Deletes a user from the database
   //  *
@@ -206,6 +244,10 @@ class LocalClient {
    * @returns
    */
   static deleteRoom(room) {
+    if (typeof room !== 'string') {
+      throw new Error('Room ID is not of type string');
+    }
+
     const users = LocalClient.getUserByDoc(room);
 
     if (users === null) {
