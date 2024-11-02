@@ -27,10 +27,6 @@ import { Question } from "../../../types/question";
 import { useLocalStorage, useSessionStorage } from "@mantine/hooks";
 import { modals, ModalsProvider } from "@mantine/modals";
 
-// const dummyHtmlTitle = "Reverse String";
-// const dummyHtmlDescription =
-//   "<p>Write a function that reverses a string. The input string is given as an array of characters s.</p> <p>Example 1:</p> <pre>Input: s = ['h','e','l','l','o'] Output: ['o','l','l','e','h']</pre> <p>Example 2:</p> <pre>Input: s = ['H','a','n','n','a','h'] Output: ['h','a','n','n','a','H']</pre>";
-
 type QuestionCategory = "ALGORITHMS" | "DATABASES" | "DATA STRUCTURES" | "BRAINTEASER" | "STRINGS" | "BIT MANIPULATION" | "RECURSION";
 
 // Map of category to color for badges
