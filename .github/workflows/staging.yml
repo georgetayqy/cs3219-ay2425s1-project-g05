@@ -39,6 +39,36 @@ jobs:
         working-directory: peer-prep
         run: npm run build
 
+      - name: Test User Service
+        working-directory: user-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test Question Service
+        working-directory: question-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test Matching Service
+        working-directory: matching-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test Collaboration Service
+        working-directory: collaboration-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test Communication Service
+        working-directory: communication-sevice
+        run: |
+          npm ci
+          npm run test
+
   build:
     # build container for both x86 and arm platforms
     needs: test
