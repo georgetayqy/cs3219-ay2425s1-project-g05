@@ -21,10 +21,8 @@ spec:
         imagePullPolicy: Always
         name: communication-service
         ports:
-          - containerPort: 8004
+          - containerPort: 8005
         resources:
-          limits:
-            cpu: 400m
         env:
         - name: PORT
           valueFrom:
@@ -46,18 +44,3 @@ spec:
       protocol: TCP
       port: 8005
       targetPort: 8005
-
----
-
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: communication-service
-spec:
-  maxReplicas: 2
-  minReplicas: 1
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: communication-service
-  targetCPUUtilizationPercentage: 80

@@ -23,8 +23,6 @@ spec:
         ports:
         - containerPort: 8002
         resources:
-          limits:
-            cpu: 400m
         env:
         - name: PORT
           valueFrom:
@@ -56,18 +54,3 @@ spec:
       protocol: TCP
       port: 8002
       targetPort: 8002
-
----
-
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: matching-service
-spec:
-  maxReplicas: 2
-  minReplicas: 1
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: matching-service
-  targetCPUUtilizationPercentage: 80

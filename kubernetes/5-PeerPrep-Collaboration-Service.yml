@@ -23,8 +23,6 @@ spec:
         ports:
           - containerPort: 8004
         resources:
-          limits:
-            cpu: 400m
         env:
         - name: HOST
           valueFrom:
@@ -66,18 +64,3 @@ spec:
       protocol: TCP
       port: 8004
       targetPort: 8004
-
----
-
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: collaboration-service
-spec:
-  maxReplicas: 2
-  minReplicas: 1
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: collaboration-service
-  targetCPUUtilizationPercentage: 80
