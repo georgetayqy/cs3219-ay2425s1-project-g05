@@ -16,10 +16,16 @@ const createRoom = async (request, response, next) => {
     const users = request.body.users;
     const question = request.body.question;
 
-    if (users === undefined || users === null || question === null || question === undefined) {
-      throw new RoomCreationError(
-        'Unable to create room as no users or questions are defined'
-      );
+    if (
+      users === undefined ||
+      users === null ||
+      question === null ||
+      question === undefined
+    ) {
+      return response.status(403).json({
+        statusCode: 403,
+        message: 'Unable to create room as no users or questions are defined',
+      });
     }
 
     const [roomId, isUsingDuplicateRoom] = LocalClient.createRoom(users);
@@ -33,11 +39,17 @@ const createRoom = async (request, response, next) => {
       },
     });
   } catch (err) {
-    next(
-      err instanceof BaseError
-        ? err
-        : new BaseError(500, `Unable to query: ${err}`)
-    );
+    if (err instanceof BaseError) {
+      return response.status(err.statusCode).json({
+        statusCode: err.statusCode,
+        message: err.message,
+      });
+    } else {
+      return response.status(500).json({
+        statusCode: 500,
+        message: `Unable to query: ${err}`,
+      });
+    }
   }
 };
 
@@ -48,16 +60,20 @@ const deleteRoom = (request, response, next) => {
 
     return response.status(200).json({
       statusCode: 200,
-      data: {
-        message: 'Deletion successful',
-      },
+      message: 'Deletion successful',
     });
   } catch (err) {
-    next(
-      err instanceof BaseError
-        ? err
-        : new BaseError(500, `Unable to query: ${err}`)
-    );
+    if (err instanceof BaseError) {
+      return response.status(err.statusCode).json({
+        statusCode: err.statusCode,
+        message: err.message,
+      });
+    } else {
+      return response.status(500).json({
+        statusCode: 500,
+        message: `Unable to query: ${err}`,
+      });
+    }
   }
 };
 
@@ -79,17 +95,22 @@ const getRoomDetails = async (request, response, next) => {
       },
     });
   } catch (err) {
-    next(
-      err instanceof BaseError
-        ? err
-        : new BaseError(500, `Unable to query: ${err}`)
-    );
+    if (err instanceof BaseError) {
+      return response.status(err.statusCode).json({
+        statusCode: err.statusCode,
+        message: err.message,
+      });
+    } else {
+      return response.status(500).json({
+        statusCode: 500,
+        message: `Unable to query: ${err}`,
+      });
+    }
   }
 };
 
 const getUserDetails = async (request, response, next) => {
   try {
-    console.log(request.query);
     const { userId } = request.query;
     const roomDetails = LocalClient.getDocByUser(userId);
 
@@ -102,11 +123,17 @@ const getUserDetails = async (request, response, next) => {
       data: roomDetails,
     });
   } catch (err) {
-    next(
-      err instanceof BaseError
-        ? err
-        : new BaseError(500, `Unable to query: ${err}`)
-    );
+    if (err instanceof BaseError) {
+      return response.status(err.statusCode).json({
+        statusCode: err.statusCode,
+        message: err.message,
+      });
+    } else {
+      return response.status(500).json({
+        statusCode: 500,
+        message: `Unable to query: ${err}`,
+      });
+    }
   }
 };
 
@@ -134,11 +161,17 @@ const registerUser = async (request, response, next) => {
       data: {},
     });
   } catch (err) {
-    next(
-      err instanceof BaseError
-        ? err
-        : new BaseError(500, `Unable to query: ${err}`)
-    );
+    if (err instanceof BaseError) {
+      return response.status(err.statusCode).json({
+        statusCode: err.statusCode,
+        message: err.message,
+      });
+    } else {
+      return response.status(500).json({
+        statusCode: 500,
+        message: `Unable to query: ${err}`,
+      });
+    }
   }
 };
 
@@ -165,11 +198,17 @@ const deregisterUser = async (request, response, next) => {
       data: {},
     });
   } catch (err) {
-    next(
-      err instanceof BaseError
-        ? err
-        : new BaseError(500, `Unable to query: ${err}`)
-    );
+    if (err instanceof BaseError) {
+      return response.status(err.statusCode).json({
+        statusCode: err.statusCode,
+        message: err.message,
+      });
+    } else {
+      return response.status(500).json({
+        statusCode: 500,
+        message: `Unable to query: ${err}`,
+      });
+    }
   }
 };
 
