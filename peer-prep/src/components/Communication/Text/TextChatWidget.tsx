@@ -1,6 +1,15 @@
+/*
+TODO list:
+1. add message deletion
+2. handle missing messions
+3. add notification when minimized and new messages
+4. 
+*/
+
 import {
   ActionIcon,
   Avatar,
+  Badge,
   Box,
   Button,
   Center,
@@ -19,6 +28,8 @@ import classes from "./TextChatWidget.module.css";
 import { useAuth } from "../../../hooks/useAuth";
 import { socket } from "../../../websockets/communication/socket";
 import {
+  IconArrowDown,
+  IconArrowNarrowDown,
   IconCamera,
   IconCancel,
   IconCaretUpFilled,
@@ -33,7 +44,7 @@ import {
   IconVideo,
   IconX,
 } from "@tabler/icons-react";
-import { useTimeout } from "@mantine/hooks";
+import { useInViewport, useTimeout } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { formatTime } from "../../../utils/utils";
 
@@ -99,6 +110,8 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
   const resetState = () => {
     setReplyToMessage(null);
     setSelectedMessage(null);
@@ -113,6 +126,8 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     // focus on the input
     inputRef.current?.focus();
   };
+
+  const chatContentRef = useRef<HTMLDivElement>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -228,6 +243,8 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
 
       // note: for normal operations, we only send over the NEW message from BE
       setMessages((prev) => [...prev, msg]);
+
+      // if we are at the bottom, set read messages to be messages too
     }
 
     function onUserJoinedChat(evt: ChatRoomEnterExitEvent) {
@@ -269,9 +286,30 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     };
   }, [roomId]);
 
+  const { ref, inViewport } = useInViewport();
+
+  // when we've scrolled to bottom, mark all messages as read
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (inViewport) {
+      setUnreadMessages(0);
+    }
+  }, [inViewport]);
+
+  useEffect(() => {
+    // if chat is at the bottom scroll, scroll down
+    if (
+      inViewport ||
+      messages[messages.length - 1]?.sender.userId === user._id
+    ) {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      // setReadMessages(messages.length);
+    } else {
+      if (messages.length > 0) {
+        // this code is prone to break
+        setUnreadMessages((prev) => prev + 1);
+      }
+    }
+  }, [messages.length]);
   const otherUser = usersInRoom.find((u) => u.userId !== user._id);
 
   return (
@@ -283,8 +321,16 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
         >
           <Text size="lg" fw="600">
             {" "}
-            Chat ({usersInRoom.length}){" "}
+            Chat
+            {/* ({`${messages.length - readMessages}`} unread){" "} */}
           </Text>
+          <Space flex={1} />
+          {unreadMessages > 0 && (
+            <Badge variant="filled" color="orange" radius="xs">
+              {" "}
+              {`${unreadMessages}`} unread
+            </Badge>
+          )}
           <Group>
             <ActionIcon variant="transparent" color="initials">
               <IconCaretUpFilled
@@ -328,7 +374,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
               </Text>
             )}
           </Group>
-          <Box className={classes.chatContents}>
+          <Box className={classes.chatContents} ref={chatContentRef}>
             {messages.map((msg, i) => (
               <Box
                 id={msg.messageId}
@@ -476,6 +522,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
               </Box>
             ))}
             <div ref={chatEndRef}></div>
+            <div ref={ref}></div>
           </Box>
           <Box>
             {chatState === ChatState.CONNECTED ? (
@@ -509,30 +556,53 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                   <IconSend2 />
                 </ActionIcon>
 
-                {replyToMessage && (
-                  <Box className={classes.replyTo}>
-                    <Center>
-                      <IconCornerUpRight
-                        size="12px"
-                        style={{ flexShrink: 0 }}
-                      />
-                    </Center>
-                    <Text className={classes.replyToText} truncate="end">
-                      Replying to{" "}
-                      <span style={{ fontWeight: "800" }}>
-                        {replyToMessage.content}
-                      </span>
-                    </Text>
-                    <Space flex={1} />
-                    <ActionIcon
-                      variant="transparent"
-                      onClick={() => onMessageClicked(null)}
+                <Box className={classes.additions}>
+                  {unreadMessages > 0 && (
+                    <Flex
+                      className={classes.unread}
+                      onClick={() => {
+                        chatEndRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                        });
+
+                        setUnreadMessages(0);
+                      }}
                     >
-                      {/* cancel */}
-                      <IconX size="16px" />
-                    </ActionIcon>
-                  </Box>
-                )}
+                      <IconArrowNarrowDown size="12px" />
+                      <Text style={{ grow: 1, fontSize: "0.8rem" }}>
+                        {" "}
+                        {unreadMessages} new messages{" "}
+                      </Text>
+                      <IconArrowNarrowDown size="12px" />
+                    </Flex>
+                  )}
+
+                  {replyToMessage && (
+                    <Flex className={classes.replyTo}>
+                      {" "}
+                      <Center>
+                        <IconCornerUpRight
+                          size="12px"
+                          style={{ flexShrink: 0 }}
+                        />
+                      </Center>
+                      <Text className={classes.replyToText} truncate="end">
+                        Replying to{" "}
+                        <span style={{ fontWeight: "800" }}>
+                          {replyToMessage.content}
+                        </span>
+                      </Text>
+                      <Space flex={1} />
+                      <ActionIcon
+                        variant="transparent"
+                        onClick={() => onMessageClicked(null)}
+                      >
+                        {/* cancel */}
+                        <IconX size="16px" />
+                      </ActionIcon>
+                    </Flex>
+                  )}
+                </Box>
               </Flex>
             ) : (
               <Center style={{ width: "100%", padding: "1rem" }}>
