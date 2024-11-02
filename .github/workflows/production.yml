@@ -220,31 +220,26 @@ jobs:
         working-directory: kubernetes
         run: |
           kubectl apply -f 2-PeerPrep-User-Service.yml
-          kubectl apply -f 2-PeerPrep-User-Service-Service.yml
 
       - name: Deploy Question Service
         working-directory: kubernetes
         run: |
           kubectl apply -f 3-PeerPrep-Question-Service.yml
-          kubectl apply -f 3-PeerPrep-Question-Service-Service.yml
 
       - name: Deploy Matching Service
         working-directory: kubernetes
         run: |
           kubectl apply -f 4-PeerPrep-Matching-Service.yml
-          kubectl apply -f 4-PeerPrep-Matching-Service-Service.yml
 
       - name: Deploy Collaboration Service
         working-directory: kubernetes
         run: |
           kubectl apply -f 5-PeerPrep-Collaboration-Service.yml
-          kubectl apply -f 5-PeerPrep-Collaboration-Service-Service.yml
 
       - name: Deploy Communication Service
         working-directory: kubernetes
         run: |
           kubectl apply -f 6-PeerPrep-Communication-Service.yml
-          kubectl apply -f 6-PeerPrep-Communication-Service-Service.yml
 
       - name: Apply Ingress YML File to EKS Cluster
         working-directory: kubernetes
