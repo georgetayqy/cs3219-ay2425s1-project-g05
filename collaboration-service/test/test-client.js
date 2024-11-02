@@ -6,7 +6,7 @@ import RoomNotFoundError from '../src/errors/RoomNotFoundError.js';
 
 describe('Collaboration Service LocalClient', () => {
   describe('#purge(void)', () => {
-    it('purge removes all data', () => {
+    it('removes all data', () => {
       LocalClient.docToQuestion.set('abc', {});
       LocalClient.docToUser.set('abc', ['123']);
       LocalClient.userToDoc.set('123', 'abc');
@@ -24,7 +24,7 @@ describe('Collaboration Service LocalClient', () => {
   });
 
   describe('#getState(void)', () => {
-    it('getState returns all data', () => {
+    it('returns all data', () => {
       LocalClient.docToQuestion.set('abc', {});
       LocalClient.docToUser.set('abc', ['123']);
       LocalClient.userToDoc.set('123', 'abc');
