@@ -6,6 +6,10 @@ const testCaseSchema = new Schema({
     type: String,
     required: [true, "Test code is required"],
   },
+  input: {
+    type: String,
+    required: [true, "Input is required"],
+  },
   isPublic:{
     type: Boolean,
     required: [true, "isPublic status is required"]
@@ -20,6 +24,21 @@ const testCaseSchema = new Schema({
   },
 });
 
+const metaSchema = new Schema({
+  publicTestCaseCount: {
+    type: Number,
+    required: [true, "Public test case count is required"]
+  },
+  privateTestCaseCount: {
+    type: Number,
+    required: [true, "Private test case count is required"]
+  },
+  totalTestCaseCount: {
+    type: Number,
+    required: [true, "Total test case count is required"]
+  }
+})
+
 const questionSchema = new Schema({
   title: {
     type: String,
@@ -29,9 +48,9 @@ const questionSchema = new Schema({
     type: Object,
     required: [true, "Description is required"]
   },
-  categories: {
-    type: [String],
-    required: [true, "Topic is required"],
+  categoriesId: {
+    type: [Number],
+    required: [true, "Categories is required"],
     validate: {
       validator: (value) => {
         return value.length > 0;
@@ -63,6 +82,10 @@ const questionSchema = new Schema({
   },
   link: {
     type: String
+  },
+  meta: {
+    type: metaSchema,
+    required: [true, "Meta is required"]
   },
   isDeleted: {
     type: Boolean,

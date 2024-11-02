@@ -1,12 +1,25 @@
 import express from "express";
-import { createQuestion, getAllQuestions, getQuestionById, deleteQuestionById, updateQuestionById, getFilteredQuestions, findQuestion, getDistinctCategories } from "../controller/question-controller.js";
-import checkAdmin from "../middlewares/access-control.js";
-import { validateNewQuestion, validateUpdatedQuestion } from "../middlewares/validation.js";
+import {
+  createQuestion,
+  getAllQuestions,
+  getQuestionById,
+  deleteQuestionById,
+  updateQuestionById,
+  getFilteredQuestions,
+  findQuestion,
+  getDistinctCategoriesId,
+  getTestCasesWithId,
+} from "../controller/question-controller.js";
+import { checkAdmin } from "../middlewares/access-control.js";
+import {
+  validateNewQuestion,
+  validateUpdatedQuestion,
+} from "../middlewares/validation.js";
 
 const router = express.Router();
 
 // CREATE NEW QUESTION
-router.post('/', checkAdmin, validateNewQuestion, createQuestion);
+router.post("/", checkAdmin, validateNewQuestion, createQuestion);
 
 // GET ALL QUESTIONS
 router.route("/").get(getAllQuestions);
@@ -18,7 +31,9 @@ router.route("/id/:id").get(getQuestionById);
 router.route("/id/:id").delete(checkAdmin, deleteQuestionById);
 
 // UPDATE QUESTION BY ID
-router.route("/id/:id").put(checkAdmin, validateUpdatedQuestion, updateQuestionById);
+router
+  .route("/id/:id")
+  .put(checkAdmin, validateUpdatedQuestion, updateQuestionById);
 
 // GET ALL QUESTIONS BY CATEGORY & DIFFICULTY (CAN HAVE MULTIPLE/NO CATEGORIES/DIFFICULTIES)
 router.route("/filter/").get(getFilteredQuestions);
@@ -28,6 +43,9 @@ router.route("/filter/").get(getFilteredQuestions);
 router.route("/random/").get(findQuestion);
 
 // GET ALL DISTINCT CATEGORIES
-router.route("/categories").get(getDistinctCategories);
+router.route("/categories").get(getDistinctCategoriesId);
 
- export default router;
+// GET TESTCASES (For run-service)
+router.route("/testcases/:id").get(getTestCasesWithId);
+
+export default router;
