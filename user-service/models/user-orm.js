@@ -1,6 +1,7 @@
 import { _createUser, _deleteUser, _findUser, _updateUser, _findUserById } from "./repository.js"
 
 export async function ormCreateUser(email, password, displayName) {
+    console.log("REAL ORM CREATE USER");
     try {
         const user = await _createUser({ email, password, displayName });
         return user.toObject();
@@ -21,13 +22,11 @@ export async function ormDeleteUser(email) {
 };
 
 export async function ormFindUser(email) {
-    try {
-        const user = await _findUser(email);
-        return user.toObject();
-    } catch (error) {
-        console.log(`Error: could not find user due to: ${error}`);
+    const user = await _findUser(email);
+    if (!user) {
         return undefined;
     }
+    return user.toObject();
 };
 
 export async function ormUpdateUser(email, prop) {

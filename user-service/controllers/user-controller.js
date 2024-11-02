@@ -12,7 +12,6 @@ export async function loginUser(req, res) {
 
         // Check if user exists (isDeleted is false)
         const user = await ormFindUser(email);
-        console.log(user)
         if (!user) {
             return res.status(401).json({ statusCode: 401, message: "Incorrect email or password" })
         }
@@ -65,7 +64,6 @@ export async function createUser(req, res) {
 
         // Check if user already exists (isDeleted is false)
         const existingUser = await ormFindUser(email);
-        console.log(existingUser)
         if (existingUser) {
             return res.status(409).json({ statusCode: 409, message: "Email already exists" })
         }
