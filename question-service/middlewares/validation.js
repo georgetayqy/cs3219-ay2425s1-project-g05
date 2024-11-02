@@ -15,6 +15,11 @@ const joiTestCaseSchema = Joi.object({
       "string.empty": "Test code cannot be empty",
       "any.required": "Test code is required",
     }),
+  input: Joi.string().required().messages({
+    "string.empty": "Input cannot be empty for all test cases",
+    "any.required": "Input is required for all test cases",
+    "string.min": "Input must be at least 1 character long for all test cases",
+  }),
   isPublic: Joi.boolean().required().messages({
     "boolean.base": "isPublic must be a boolean",
     "any.required": "isPublic is required",
