@@ -300,8 +300,6 @@ const closeConn = (doc, userId, conn) => {
       }
     }
   }
-
-  conn.close();
 };
 
 /**

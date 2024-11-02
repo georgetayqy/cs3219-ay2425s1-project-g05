@@ -14,37 +14,16 @@ import LocalClient from './client.js';
 const createRoom = async (request, response, next) => {
   try {
     const users = request.body.users;
-    const topics = request.body.topics;
-    const difficulty = request.body.difficulty;
+    const question = request.body.question;
 
-    if (users === undefined || users === null) {
+    if (users === undefined || users === null || question === null || question === undefined) {
       throw new RoomCreationError(
-        'Unable to create room as no users are defined'
+        'Unable to create room as no users or questions are defined'
       );
     }
 
     const [roomId, isUsingDuplicateRoom] = LocalClient.createRoom(users);
-    let question = '';
-
-    if (!isUsingDuplicateRoom) {
-      const resp = await axios.get(
-        process.env.QUESTION_SERVICE_ENDPOINT ??
-          'http://localhost:8003/api/question-service/random',
-        {
-          params: {
-            topics: topics,
-            difficulty: difficulty,
-          },
-        }
-      );
-
-      question = LocalClient.putQuestion(
-        roomId,
-        resp.data['data']['question'] ?? ''
-      );
-    } else {
-      question = LocalClient.putQuestion(roomId, question);
-    }
+    LocalClient.putQuestion(roomId, question);
 
     return response.status(200).json({
       statusCode: 200,
