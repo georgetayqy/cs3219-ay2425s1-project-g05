@@ -1,8 +1,8 @@
 import {
     _findPendingUserByCriteria,
-    _deletePendingUserByEmail,
+    _deletePendingUserByUserId,
     _createPendingUser,
-    _findPendingUserByEmail,
+    _findPendingUserByUserId,
     _deletePendingUserBySocketId,
     _findAllPendingUsers,
     _deletePendingUserByDocId
@@ -12,12 +12,12 @@ export async function ormFindPendingUserByCriteria(criteria) {
     return _findPendingUserByCriteria(criteria);
 }
 
-export async function ormDeletePendingUserByEmail(email) {
-    return _deletePendingUserByEmail(email);
+export async function ormDeletePendingUserByUserId(id) {
+    return _deletePendingUserByUserId(id);
 }
 
-export async function ormFindPendingUserByEmail(email) {
-    return _findPendingUserByEmail(email);
+export async function ormFindPendingUserByUserId(id) {
+    return _findPendingUserByUserId(id);
 }
 
 export async function ormCreatePendingUser(data) {
