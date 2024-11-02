@@ -23,6 +23,8 @@ spec:
         ports:
         - containerPort: 8003
         resources:
+          limits:
+            cpu: 400m
         env:
         - name: ACCESS_TOKEN_SECRET
           valueFrom:
@@ -34,3 +36,33 @@ spec:
             secretKeyRef:
               key: QUESTION_SERVICE_DEV_URI
               name: peerprep-secrets
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: question-service
+spec:
+  selector:
+    app: question-service
+  ports:
+    - name: question-service
+      protocol: TCP
+      port: 8003
+      targetPort: 8003
+
+---
+
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: question-service
+spec:
+  maxReplicas: 2
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: question-service
+  targetCPUUtilizationPercentage: 80

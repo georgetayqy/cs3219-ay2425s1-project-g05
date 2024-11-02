@@ -23,9 +23,41 @@ spec:
         ports:
           - containerPort: 8004
         resources:
+          limits:
+            cpu: 400m
         env:
         - name: PORT
           valueFrom:
             secretKeyRef:
               key: COMMUNICATION_SERVICE_PORT
               name: peerprep-secrets
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: communication-service
+spec:
+  selector:
+    app: communication-service
+  ports:
+    - name: communication-service
+      protocol: TCP
+      port: 8005
+      targetPort: 8005
+
+---
+
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: communication-service
+spec:
+  maxReplicas: 2
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: communication-service
+  targetCPUUtilizationPercentage: 80
