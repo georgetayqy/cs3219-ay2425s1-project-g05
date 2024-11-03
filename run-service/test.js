@@ -34,17 +34,22 @@ async function executeQuestion(questionId, codeAttempt) {
 }
 
 async function subscribeToResults(jobId) {
-  // This uses EventSource for SSE
   const eventSource = new EventSource(`${RUN_SERVICE_URL}/result/${jobId}`);
+
+  // Uncomment this code to disconnect eventsource after 2 seconds to see how disconnect from client is handled
+  setTimeout(() => {
+    eventSource.close();
+    console.log("EventSource closed after x seconds");
+  }, 10);
+
   eventSource.onmessage = (event) => {
     const message = JSON.parse(event.data);
     if (message.status === "complete") {
       console.log("Test execution completed!");
       for (const result of message.data.results) {
-        // Assuming result.data.result contains the actual result object you want to print
         const resultData = result.data.result;
         const { isPassed, stdout, stderr, memory, time, questionDetails, _id } =
-          resultData; // Destructure properties
+          resultData;
 
         console.log(`Test Case ${_id}:`);
         console.log(`  Passed: ${isPassed}`);
@@ -54,7 +59,7 @@ async function subscribeToResults(jobId) {
         console.log(`  Time: ${time}`);
         console.log(`  Question Details: ${questionDetails.expectedOutput}`);
       }
-      eventSource.close(); 
+      eventSource.close();
     }
     console.log("Received message:", message);
   };
@@ -72,8 +77,9 @@ async function subscribeToResults(jobId) {
     console.log("Random Question:", randomQuestion);
 
     // Step 2: Execute the question with some code attempt
-    const questionId = randomQuestion.data.question._id; // Adjust based on your question structure
-    const codeAttempt = randomQuestion.data.question.solutionCode; // Replace with actual code attempt
+    const questionId = randomQuestion.data.question._id; 
+    // Runs solution code as code attempt
+    const codeAttempt = randomQuestion.data.question.solutionCode; 
 
     const executeResponse = await executeQuestion(questionId, codeAttempt);
     const jobId = executeResponse.data.jobId;
