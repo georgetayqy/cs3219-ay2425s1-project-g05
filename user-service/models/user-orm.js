@@ -1,7 +1,6 @@
 import { _createUser, _deleteUser, _findUser, _updateUser, _findUserById } from "./repository.js"
 
 export async function ormCreateUser(email, password, displayName) {
-    console.log("REAL ORM CREATE USER");
     try {
         const user = await _createUser({ email, password, displayName });
         return user.toObject();
