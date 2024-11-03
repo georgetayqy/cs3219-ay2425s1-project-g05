@@ -3,7 +3,7 @@ import EventSource from "eventsource";
 
 
 const QUESTION_SERVICE_URL = "http://localhost:8003/api/question-service"; 
-const RUN_SERVICE_URL = "http://localhost:8009";
+const RUN_SERVICE_URL = "http://localhost:8009/api/run-service";
 
 async function getRandomQuestion() {
     try {
@@ -38,12 +38,12 @@ async function subscribeToResults(jobId) {
         const message = JSON.parse(event.data);
         if (message.status === "complete") {
             console.log("Test execution completed!");
-            for (const result of message.results) {
+            for (const result of message.data.results) {
                 // Assuming result.data.result contains the actual result object you want to print
                 const resultData = result.data.result; 
-                const { isPassed, stdout, stderr, memory, time, questionDetails } = resultData; // Destructure properties
+                const { isPassed, stdout, stderr, memory, time, questionDetails, _id } = resultData; // Destructure properties
     
-                console.log(`Test Case ${result.testcaseId}:`);
+                console.log(`Test Case ${_id}:`);
                 console.log(`  Passed: ${isPassed}`);
                 console.log(`  Output: ${stdout}`);
                 console.log(`  Error: ${stderr}`);
@@ -71,7 +71,6 @@ async function subscribeToResults(jobId) {
         // Step 2: Execute the question with some code attempt
         const questionId = randomQuestion.data.question._id; // Adjust based on your question structure
         const codeAttempt = randomQuestion.data.question.solutionCode; // Replace with actual code attempt
-        console.log(codeAttempt)
 
         const executeResponse = await executeQuestion(questionId, codeAttempt);
         const jobId = executeResponse.data.jobId;
