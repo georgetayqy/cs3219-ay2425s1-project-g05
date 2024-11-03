@@ -169,7 +169,8 @@ async function runTestcase(testcase, code) {
     if (error.response) {
         switch (error.response.status) {
           case 404:
-            throw new NotFoundError("Execution Service not found. Test execution halted.");
+            // Service not found error -> means not available?
+            throw new ServiceUnavailableError("Execution Service not found. Test execution halted.");
           case 401:
             throw new UnauthorizedError("Authentication failed. Test execution halted.");
           case 503:
