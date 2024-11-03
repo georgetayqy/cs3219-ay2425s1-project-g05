@@ -17,6 +17,7 @@ import { SAMPLE_QUESTIONS } from "../../types/question";
 
 import classes from "./DashboardPage.module.css";
 import { Link } from "react-router-dom";
+import TextChatWidget from "../../components/Communication/Text/TextChatWidget";
 export default function DashboardPage() {
   const { user } = useAuth();
 
@@ -48,6 +49,10 @@ export default function DashboardPage() {
           </Flex>
         </Box>
         {/* </Container> */}
+      </section>
+
+      <section>
+        <TextChatWidget roomId="room1" />
       </section>
     </>
   );

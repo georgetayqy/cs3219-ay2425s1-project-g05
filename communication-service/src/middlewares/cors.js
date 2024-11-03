@@ -11,6 +11,7 @@ const allowedOrigins = [
   'http://localhost:8002', // matching service
   'http://localhost:8003', // question service
   'http://localhost:8004', // collaboration service
+  'http://localhost:8005', // communication service
 ];
 
 const corsOptions = {
