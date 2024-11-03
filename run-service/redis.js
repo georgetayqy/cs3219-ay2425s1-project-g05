@@ -1,3 +1,5 @@
+import { redisClient } from "./server.js";
+
 // Function to print Redis memory contents
 async function printRedisMemory() {
   try {

@@ -21,6 +21,7 @@ redisClient.on("connect", () => console.log("Connected to Redis"));
 redisClient.on("ready", () => console.log("Redis Client Ready"));
 await redisClient.connect();
 
+//TODO: Add cors middleware
 app.use("/api/run-service", router);
 
 // Test Route for Health Checks

@@ -4,102 +4,93 @@ import printRedisMemory from "./redis.js";
 import { questionServiceUrl, redisClient } from "./server.js";
 
 const executeTest = async (req, res) => {
-  // change questionId to be in req params
   const questionId = req.params.questionId;
-  console.log(req.body);
-  const { codeAttempt, language_id } = req.body;
+  const { codeAttempt } = req.body;
   const jobId = uuidv4();
 
-  // Retrieve test cases for the questionId
-  const testcases = await getTestcases(questionId);
-  if (!testcases) {
-    return res
-      .status(404)
-      .json({ error: `No question found for ID ${questionId}` });
+  try {
+    // Retrieve test cases for the questionId
+    const testcases = await getTestcases(questionId);
+    if (!testcases) {
+      return res
+        .status(404)
+        .json({ error: `No question found for ID ${questionId}` });
+    }
+
+    // Initialize job data in Redis
+    await redisClient.hSet(`job:${jobId}`, {
+      status: "processing",
+      questionId,
+      codeAttempt,
+      data: JSON.stringify([]),
+    });
+
+    // Respond to client with jobId
+    res.json({ data: { jobId: jobId } });
+
+    // Start processing test cases
+    processTestcases(jobId, testcases, codeAttempt);
+  } catch (error) {
+    console.error("Error fetching test cases:", error.message);
+    res.status(500).json({ error: "Failed to retrieve test cases" });
   }
-
-  // Initialize job data in Redis
-  await redisClient.hSet(`job:${jobId}`, {
-    status: "processing",
-    questionId,
-    codeAttempt,
-    data: JSON.stringify([]),
-  });
-
-  // Respond to client with jobId and SSE URL
-  res.json({ data: { jobId: jobId } });
-
-  // Start processing test cases
-  processTestcases(jobId, testcases, codeAttempt);
 };
 
 // SSE route for incremental updates
 const getResults = async (req, res) => {
   const { jobId } = req.params;
-
-  // Set up headers for SSE
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
-  // Initialize a Redis subscriber client
   const subscriber = redisClient.duplicate();
   await subscriber.connect();
 
-  res.write(
-    `data: ${JSON.stringify({
-      status: "processing",
-      data: { statusCode: 200, message: "Starting test cases..." },
-    })}\n\n`
-  );
-
-  let isCompleted = false; // Track if job completed
-  // change timeoutDuration to 2 minutes
-  const timeoutDuration = 120000; // Set a timeout period (e.g., 30 seconds)
+  let isCompleted = false;
+  const timeoutDuration = 120000;
   let timeoutHandle;
 
-  // Function to handle timeout in the event pub-sub fails (end request)
+  // Function to reset timeout
   const resetTimeout = () => {
     clearTimeout(timeoutHandle);
     timeoutHandle = setTimeout(() => {
       if (!isCompleted) {
-        res.write(
-          `data: ${JSON.stringify({
-            status: "error",
-            message: "Timeout: No response from server.",
-          })}\n\n`
-        );
-        subscriber.unsubscribe();
-        res.end();
+        sendErrorAndClose(res, subscriber);
       }
     }, timeoutDuration);
   };
 
+  // Initial response
+  res.write(
+    `data: ${JSON.stringify({
+      status: "processing",
+      message: "Starting test cases...",
+    })}\n\n`
+  );
+
+  // Start timeout
   resetTimeout();
 
   subscriber.subscribe(`job-update:${jobId}`, (message) => {
-    console.log("Received message:", message);
     const update = JSON.parse(message);
 
-    // Complete execution of all testcases and send final result
     if (update.status === "complete") {
-      // get question
+      isCompleted = true;
       res.write(`data: ${JSON.stringify(update)}\n\n`);
       subscriber.unsubscribe();
       res.end();
     } else {
-      // Send single testcase result
       res.write(
         `data: ${JSON.stringify({
-          message: "processing",
-          data: update.result,
+          status: "processing",
+          result: update.result,
         })}\n\n`
       );
+      resetTimeout(); // Reset timeout on each message
     }
   });
 
-  // Cleanup on client disconnect
   req.on("close", async () => {
+    console.log("Receiving client's closing connection response");
+    // delete job data from Redis
+    // TODO: check whether connection disconnect is due to completion of testcases
+    // If not, then do not job data from Redis & implement fault tolerance mechanism
     await redisClient.del(`job:${jobId}`);
     await subscriber.unsubscribe();
     await subscriber.disconnect();
@@ -135,6 +126,7 @@ async function runTestcase(testcase, code) {
       requestBody,
       { headers }
     );
+
     console.log("Response from API:", response.data);
     const responseData = response.data;
     const testCaseResult = {
@@ -158,18 +150,26 @@ async function runTestcase(testcase, code) {
     return testCaseResult;
   } catch (error) {
     console.error("Error executing test case:", error.message);
-    return {
-      testcaseId: testcase._id,
-      statusCode: 500,
-      message: error.message,
-    };
+
+    // Differentiate error responses based on status codes
+    if (error.response && error.response.status === 503) {
+      throw new Error("Queue is full. Test execution halted.");
+    } else if (error.response && error.response.status === 401) {
+      throw new Error("Authentication failed. Test execution halted.");
+    } else {
+      console.error("Error executing test case:", error.message);
+      return {
+        testcaseId: testcase._id,
+        statusCode: 500,
+        message: error.message,
+      };
+    }
   }
 }
 
 async function processTestcases(jobId, testcases, code) {
   const results = [];
-  console.log("starting testcases execution");
-  console.log(testcases);
+  console.log("============Starting testcases execution==========");
   for (let i = 0; i < testcases.length; i++) {
     try {
       const result = await runTestcase(testcases[i], code);
@@ -189,14 +189,20 @@ async function processTestcases(jobId, testcases, code) {
       };
       results.push(errorMessage);
 
+      console.log(
+        "==========Error while executing testcase:",
+        errorMessage.testcaseId
+      );
+      console.log("==========Error Message:", errorMessage.error);
       // Publish only the latest error result
       await redisClient.publish(
         `job-update:${jobId}`,
         JSON.stringify({ status: "error", message: errorMessage })
       );
+      break;
     }
   }
-  console.log("completed testcases execution");
+  console.log("Completed testcases execution");
 
   // After all test cases, publish the full results array
   await redisClient.hSet(`job:${jobId}`, {
@@ -217,5 +223,17 @@ async function getTestcases(questionId) {
   const testcases = response.data.data.testCase;
   return testcases;
 }
+
+const sendErrorAndClose = (res, subscriber) => {
+  const errorMessage = JSON.stringify({
+    status: "error",
+    statusCode: 499,
+    message: "Timeout occurred: No response from server",
+  });
+
+  res.write(`data: ${errorMessage}\n\n`);
+  subscriber.unsubscribe();
+  res.end();
+};
 
 export { executeTest, getResults };
