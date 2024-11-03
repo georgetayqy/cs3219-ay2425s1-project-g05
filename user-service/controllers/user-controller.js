@@ -1,5 +1,5 @@
 import { ormCreateUser, ormDeleteUser, ormFindUser, ormUpdateUser, ormFindUserById } from '../models/user-orm.js';
-import { comparePassword, hashPassword, generateAccessToken, checkPasswordStrength } from '../services.js';
+import { comparePassword, hashPassword, generateAccessToken, checkPasswordStrength, isValidUserId } from '../services.js';
 
 export async function loginUser(req, res) {
     try {
@@ -142,7 +142,6 @@ export async function changePassword(req, res) {
 
         // Check if user exists
         const existingUser = await ormFindUser(email);
-        console.log(existingUser)
         if (!existingUser) {
             return res.status(404).json({ statusCode: 404, message: "User not found" })
         }
@@ -190,7 +189,6 @@ export async function changeDisplayName(req, res) {
 
         // Check if user exists
         const existingUser = await ormFindUser(email);
-        console.log(existingUser)
         if (!existingUser) {
             return res.status(404).json({ statusCode: 404, message: "User not found" })
         }
@@ -214,14 +212,13 @@ export async function getUser(req, res) {
     try {
         const { id } = req.params;
 
-        // Check if id is provided
-        if (!id) {
-            return res.status(400).json({ statusCode: 400, message: "Id is required" })
+        // Check if valid user Id
+        if (!isValidUserId(id)) {
+            return res.status(400).json({ statusCode: 400, message: "Invalid user Id given" })
         }
 
         // Check if user exists
         const existingUser = await ormFindUserById(id);
-        console.log(existingUser)
         if (!existingUser) {
             return res.status(404).json({ statusCode: 404, message: "User not found" })
         }
