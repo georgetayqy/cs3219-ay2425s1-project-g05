@@ -1,7 +1,7 @@
 import { createClient } from 'redis';
 
 const client = createClient({
-    url: 'redis://localhost:6379' // Adjust the URL if using Docker or a remote instance
+    url: process.env.REDIS_URL || 'redis://redis:6379' // Adjust the URL if using Docker or a remote instance
 });
 
 client.on("ready", () => console.log("Connected to redis!"));
