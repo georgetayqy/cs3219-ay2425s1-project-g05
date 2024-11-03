@@ -2,6 +2,9 @@ import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import printRedisMemory from "./redis.js";
 import { questionServiceUrl, redisClient } from "./server.js";
+import UnauthorizedError from "./errors/UnauthorisedError.js";
+import NotFoundError from "./errors/NotFoundError.js";
+import ServiceUnavailableError from "./errors/ServiceUnavailable.js";
 
 const executeTest = async (req, res) => {
   const questionId = req.params.questionId;
@@ -70,11 +73,23 @@ const getResults = async (req, res) => {
   subscriber.subscribe(`job-update:${jobId}`, (message) => {
     const update = JSON.parse(message);
 
+    console.log("Received update (in sub):", update);
     if (update.status === "complete") {
       isCompleted = true;
       res.write(`data: ${JSON.stringify(update)}\n\n`);
       subscriber.unsubscribe();
       res.end();
+    } else if (update.status === "error") {
+      update.message = {
+        ...update.message,
+        questionId: jobId,
+      };
+      res.write(
+        `data: ${JSON.stringify({
+          status: "error",
+          result: update.message,
+        })}\n\n`
+      );
     } else {
       res.write(
         `data: ${JSON.stringify({
@@ -122,7 +137,7 @@ async function runTestcase(testcase, code) {
 
     // Send POST request to the external API
     const response = await axios.post(
-      "http://PeerPrepALB-705702575.ap-southeast-1.elb.amazonaws.com:2358/submissions/?wait=true",
+      "http://PeerPrepALB-705702575.ap-southeast-1.elb.amazonaws.com:2358/xx/submissions/?wait=true",
       requestBody,
       { headers }
     );
@@ -151,19 +166,20 @@ async function runTestcase(testcase, code) {
   } catch (error) {
     console.error("Error executing test case:", error.message);
 
-    // Differentiate error responses based on status codes
-    if (error.response && error.response.status === 503) {
-      throw new Error("Queue is full. Test execution halted.");
-    } else if (error.response && error.response.status === 401) {
-      throw new Error("Authentication failed. Test execution halted.");
-    } else {
-      console.error("Error executing test case:", error.message);
-      return {
-        testcaseId: testcase._id,
-        statusCode: 500,
-        message: error.message,
-      };
-    }
+    if (error.response) {
+        switch (error.response.status) {
+          case 404:
+            throw new NotFoundError("Execution Service not found. Test execution halted.");
+          case 401:
+            throw new UnauthorizedError("Authentication failed. Test execution halted.");
+          case 503:
+            throw new ServiceUnavailableError(503, "Queue is full. Test execution halted.");
+          default:
+            throw new BaseError(error.response.status, "Error executing test case.");
+        }
+      } else {
+        throw new BaseError(500, "Error executing test case.");
+      }
   }
 }
 
@@ -184,7 +200,7 @@ async function processTestcases(jobId, testcases, code) {
     } catch (error) {
       const errorMessage = {
         testcaseId: testcases[i]._id,
-        status: "failed",
+        statusCode: error.statusCode,
         error: error.message,
       };
       results.push(errorMessage);
