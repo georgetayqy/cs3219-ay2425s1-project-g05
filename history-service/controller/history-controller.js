@@ -12,15 +12,15 @@ import {
 } from "../models/orm.js";
 
 const createAttempt = async (req, res, next) => {
-  const userEmail = req.userEmail;
+  const userId = req.userId;
   const attempt = req.body;
 
   try {
     // check for duplicate attempt
     if (
       await ormIsDuplicateAttempt(
-        userEmail,
-        attempt.otherUserEmail,
+        userId,
+        attempt.otherUserId,
         attempt.questionId,
         attempt.roomId
       )
@@ -41,17 +41,17 @@ const createAttempt = async (req, res, next) => {
 };
 
 const getAttempt = async (req, res, next) => {
-  const userEmail = req.userEmail;
-  const { roomId } = req.query;
+  const userId = req.userId;
+  const { roomId } = req.params;
 
   try {
-    if (!userEmail || !roomId) {
-      throw new BadRequestError("userEmail and roomId are required");
+    if (!userId || !roomId) {
+      throw new BadRequestError("userId and roomId are required");
     }
 
-    console.log(userEmail, roomId);
+    console.log(userId, roomId);
 
-    const attempt = await ormGetAttempt(userEmail, roomId);
+    const attempt = await ormGetAttempt(userId, roomId);
     // NO EXISTING ATTEMPT TO GET
     if (!attempt) {
       throw new NotFoundError("Attempt not found");
@@ -67,7 +67,7 @@ const getAttempt = async (req, res, next) => {
 };
 
 const updateAttempt = async (req, res, next) => {
-  const userEmail = req.userEmail;
+  const userId = req.userId;
   const { roomId } = req.params;
   const attempt = req.body;
 
@@ -78,17 +78,17 @@ const updateAttempt = async (req, res, next) => {
       throw new BadRequestError("Only notes can be updated");
     }
 
-    console.log(userEmail, roomId);
-    if (!userEmail || !roomId) {
-      throw new BadRequestError("userEmail and roomId are required");
+    console.log(userId, roomId);
+    if (!userId || !roomId) {
+      throw new BadRequestError("userId and roomId are required");
     }
 
     // NO EXISTING ATTEMPT TO UPDATE
-    const existingAttempt = await ormGetAttempt(userEmail, roomId);
+    const existingAttempt = await ormGetAttempt(userId, roomId);
     if (!existingAttempt) {
       throw new NotFoundError("Attempt not found");
     }
-    const updatedAttempt = await ormUpdateAttempt(userEmail, roomId, attempt);
+    const updatedAttempt = await ormUpdateAttempt(userId, roomId, attempt);
     return res.status(200).json({
       statusCode: 200,
       message: "Attempt updated successfully",
@@ -104,20 +104,20 @@ const updateAttempt = async (req, res, next) => {
 };
 
 const deleteAttempt = async (req, res, next) => {
-  const userEmail = req.userEmail;
+  const userId = req.userId;
   const { roomId } = req.params;
 
   try {
-    if (!userEmail || !roomId) {
+    if (!userId || !roomId) {
       throw new BadRequestError("userId and roomId are required");
     }
-    console.log(userEmail, roomId);
+    console.log(userId, roomId);
     // NO EXISTING ATTEMPT TO DELETE
-    const existingAttempt = await ormGetAttempt(userEmail, roomId);
+    const existingAttempt = await ormGetAttempt(userId, roomId);
     if (!existingAttempt) {
       throw new NotFoundError("Attempt not found");
     }
-    const deletedAttempt = await ormDeleteAttempt(userEmail, roomId);
+    const deletedAttempt = await ormDeleteAttempt(userId, roomId);
     console.log(deletedAttempt);
     return res.status(200).json({
       statusCode: 200,
@@ -134,14 +134,14 @@ const deleteAttempt = async (req, res, next) => {
 };
 
 const getUserAttempts = async (req, res, next) => {
-  const userEmail = req.userEmail;
+  const userId = req.userId;
 
   try {
-    if (!userEmail) {
-      throw new BadRequestError("userEmail is required");
+    if (!userId) {
+      throw new BadRequestError("userId is required");
     }
 
-    const attempts = await ormGetUserAttempts(userEmail);
+    const attempts = await ormGetUserAttempts(userId);
 
     // NO EXISTING ATTEMPT BY USER
     if (attempts.length === 0) {

@@ -10,7 +10,7 @@ const router = express.Router();
 router.post('/', validateAttempt, createAttempt);
 
 // GET ATTEMPT BASED ON USERID AND ROOMID
-router.route("/").get(getUser, getAttempt);
+router.route("/:roomId").get(getUser, getAttempt);
 
 // DELETE ATTEMPT BASED ON USERID AND ROOMID
 router.route("/:roomId").delete(getUser, deleteAttempt);
