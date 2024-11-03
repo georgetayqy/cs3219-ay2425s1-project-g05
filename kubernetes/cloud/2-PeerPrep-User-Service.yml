@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: user-service
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - image: asdfghjklxd/peerprep-user-service:IMAGE_TAG
+        imagePullPolicy: Always
+        name: user-service
+        ports:
+        - containerPort: 8001
+        resources:
+        env:
+        - name: PORT
+          valueFrom:
+            secretKeyRef:
+              key: USER_SERVICE_PORT
+              name: peerprep-secrets
+        - name: ACCESS_TOKEN_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: ACCESS_TOKEN_SECRET
+              name: peerprep-secrets
+        - name: MONGO_PROD_URI
+          valueFrom:
+            secretKeyRef:
+              key: USER_SERVICE_MONGO_PROD_URI
+              name: peerprep-secrets
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: user-service
+  ports:
+    - name: user-service
+      protocol: TCP
+      port: 8001
+      targetPort: 8001

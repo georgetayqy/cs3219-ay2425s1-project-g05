@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: communication-service
+  name: communication-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: communication-service
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: communication-service
+    spec:
+      containers:
+      - image: asdfghjklxd/peerprep-communication-service:latest
+        imagePullPolicy: Always
+        name: communication-service
+        ports:
+          - containerPort: 8005
+        resources:
+        env:
+        - name: PORT
+          valueFrom:
+            secretKeyRef:
+              key: COMMUNICATION_SERVICE_PORT
+              name: peerprep-secrets
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: communication-service
+spec:
+  selector:
+    app: communication-service
+  ports:
+    - name: communication-service
+      protocol: TCP
+      port: 8005
+      targetPort: 8005
+
+---
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: communication-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: communication-service
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+

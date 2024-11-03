@@ -17,7 +17,7 @@ spec:
         app: matching-service
     spec:
       containers:
-      - image: asdfghjklxd/peerprep-matching-service:IMAGE_TAG
+      - image: asdfghjklxd/peerprep-matching-service:latest
         imagePullPolicy: Always
         name: matching-service
         ports:
@@ -39,3 +39,18 @@ spec:
             secretKeyRef:
               key: MATCHING_SERVICE_TARGET_ORIGIN
               name: peerprep-secrets
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: matching-service
+spec:
+  selector:
+    app: matching-service
+  ports:
+    - name: matching-service
+      protocol: TCP
+      port: 8002
+      targetPort: 8002

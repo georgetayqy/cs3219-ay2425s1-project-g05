@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: matching-service
+  name: matching-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-service
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: matching-service
+    spec:
+      containers:
+      - image: asdfghjklxd/peerprep-matching-service:IMAGE_TAG
+        imagePullPolicy: Always
+        name: matching-service
+        ports:
+        - containerPort: 8002
+        resources:
+        env:
+        - name: PORT
+          valueFrom:
+            secretKeyRef:
+              key: MATCHING_SERVICE_PORT
+              name: peerprep-secrets
+        - name: MONGO_TEST_URI
+          valueFrom:
+            secretKeyRef:
+              key: MATCHING_SERVICE_MONGO_TEST_URI
+              name: peerprep-secrets
+        - name: TARGET_ORIGIN
+          valueFrom:
+            secretKeyRef:
+              key: MATCHING_SERVICE_TARGET_ORIGIN
+              name: peerprep-secrets
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: matching-service
+spec:
+  selector:
+    app: matching-service
+  ports:
+    - name: matching-service
+      protocol: TCP
+      port: 8002
+      targetPort: 8002

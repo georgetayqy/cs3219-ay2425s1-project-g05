@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: frontend
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: asdfghjklxd/peerprep-frontend:latest
+        imagePullPolicy: Always
+        name: frontend
+        ports:
+        - containerPort: 5173
+        resources:
+        env:
+        - name: VITE_API_URL
+          valueFrom:
+            secretKeyRef:
+              key: FRONTEND_VITE_API_URL
+              name: peerprep-secrets
+        - name: VITE_API_URL_USER
+          valueFrom:
+            secretKeyRef:
+              key: FRONTEND_VITE_API_URL_USER
+              name: peerprep-secrets
+        - name: VITE_API_URL_QUESTION
+          valueFrom:
+            secretKeyRef:
+              key: FRONTEND_VITE_API_QUESTION
+              name: peerprep-secrets
+        - name: VITE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: FRONTEND_VITE_API_KEY
+              name: peerprep-secrets
+        - name: VITE_SOCKET_URL
+          valueFrom:
+            secretKeyRef:
+              key: FRONTEND_SOCKET_URL
+              name: peerprep-secrets
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: frontend
+      protocol: TCP
+      port: 5173
+      targetPort: 5173
+
+---
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50

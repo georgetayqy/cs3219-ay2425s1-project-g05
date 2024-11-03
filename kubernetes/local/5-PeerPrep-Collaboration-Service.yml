@@ -49,3 +49,18 @@ spec:
             secretKeyRef:
               key: COLLABORATION_SERVICE_QUESTION_SERVICE_ENDPOINT
               name: peerprep-secrets
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: collaboration-service
+spec:
+  selector:
+    app: collaboration-service
+  ports:
+    - name: collaboration-service
+      protocol: TCP
+      port: 8004
+      targetPort: 8004

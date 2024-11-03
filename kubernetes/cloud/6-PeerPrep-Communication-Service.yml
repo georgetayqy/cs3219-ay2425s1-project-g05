@@ -21,7 +21,7 @@ spec:
         imagePullPolicy: Always
         name: communication-service
         ports:
-          - containerPort: 8004
+          - containerPort: 8005
         resources:
         env:
         - name: PORT
@@ -29,3 +29,18 @@ spec:
             secretKeyRef:
               key: COMMUNICATION_SERVICE_PORT
               name: peerprep-secrets
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: communication-service
+spec:
+  selector:
+    app: communication-service
+  ports:
+    - name: communication-service
+      protocol: TCP
+      port: 8005
+      targetPort: 8005
