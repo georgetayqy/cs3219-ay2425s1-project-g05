@@ -137,7 +137,7 @@ async function runTestcase(testcase, code) {
 
     // Send POST request to the external API
     const response = await axios.post(
-      "http://PeerPrepALB-705702575.ap-southeast-1.elb.amazonaws.com:2358/xx/submissions/?wait=true",
+      "http://PeerPrepALB-705702575.ap-southeast-1.elb.amazonaws.com:2358/submissions/?wait=true",
       requestBody,
       { headers }
     );
