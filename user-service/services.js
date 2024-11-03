@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { connect } from 'mongoose';
+import mongoose, { connect } from 'mongoose';
 
 export async function connectToDB() {
     let mongoDBUri = process.env.MONGO_PROD_URI;
@@ -21,8 +21,8 @@ export function hashPassword(password) {
     return bcrypt.hashSync(password, salt);
 }
 
-export function generateAccessToken({ email, displayName, isAdmin }) {
-    return jwt.sign({ email: email, displayName: displayName, isAdmin: isAdmin }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+export function generateAccessToken({ email, displayName, isAdmin, isDeleted }) {
+    return jwt.sign({ email: email, displayName: displayName, isAdmin: isAdmin, isDeleted }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
 }
 
 export function verifyAccessToken(token) {
@@ -32,4 +32,8 @@ export function verifyAccessToken(token) {
         }
         return user;
     });
+}
+
+export function isValidUserId(id) {
+    return mongoose.isValidObjectId(id)
 }
