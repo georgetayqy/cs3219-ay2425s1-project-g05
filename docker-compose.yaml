@@ -5,38 +5,31 @@ services:
       dockerfile: Dockerfile.public
     ports:
       - '8001:8001'
-    networks:
-      - app-network  # Ensure this matches for all services
+      
   matching-service:
     build:
       context: ./matching-service
       dockerfile: Dockerfile.public
     ports:
       - '8002:8002'
-    network_mode: bridge
+      
   question-service:
     build:
       context: ./question-service
       dockerfile: Dockerfile.public
     ports:
       - '8003:8003'
-    network_mode: bridge
+      
   frontend:
     build:
       context: ./peer-prep
       dockerfile: Dockerfile.public
     ports:
       - '5173:5173'
-    network_mode: bridge
+      
   redis:
     build:
       context: ./redis-server
       dockerfile: Dockerfile    
     ports:
       - "6379:6379"  # Expose Redis port to the host
-    networks:
-      - app-network  # Ensure this matches for all services
-
-networks:
-  app-network:
-    driver: bridge
