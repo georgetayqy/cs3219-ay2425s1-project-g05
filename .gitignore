@@ -2,5 +2,6 @@ node_modules/
 .env
 
 # k8s
+0-Kubernetes-Secrets.yml
 1-Kubernetes-Secrets.yml
 .old
