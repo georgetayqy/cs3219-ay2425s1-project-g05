@@ -76,6 +76,13 @@ function cleanupRoom(roomId) {
  */
 function onJoinRoom(io, socket, data) {
   const { roomId, user } = data;
+  // if there are already two people in this room, reject the request
+  if (io.sockets.adapter.rooms.get(roomId)?.size >= 2) {
+
+    console.log(`INFO: Room { ${roomId} } is full, rejecting user { ${user.userId} }`);
+    socket.emit('room-full');
+    return
+  }
   onSetUsername(io, socket, user);
 
   socket.join(roomId); // User joins the specified room

@@ -276,6 +276,16 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       setMessages(chatHistory);
     }
 
+    function onRoomFull() {
+      notifications.show({
+        title: "Room is full",
+        message: "This room is full, please try again later",
+        color: "red",
+      });
+
+      socket.disconnect();
+    }
+
     socket.on("connect", onConnected);
     socket.on("disconnect", onDisconnected);
     socket.on("message-sent", onMessageSent); // for ack
@@ -283,6 +293,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     socket.on("user-joined", onUserJoinedChat); // unused
     socket.on("room-people-update", onRoomPeopleUpdate);
     socket.on("chat-history", onReceiveChatHistory);
+    socket.on("room-full", onRoomFull);
 
     return () => {
       socket.disconnect();
@@ -291,6 +302,9 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       socket.off("message-sent", onMessageSent);
       socket.off("chat-message", onReceivedChatMessage);
       socket.off("user-joined", onUserJoinedChat);
+      socket.off("room-people-update", onRoomPeopleUpdate);
+      socket.off("chat-history", onReceiveChatHistory);
+      socket.off("room-full", onRoomFull);
     };
   }, [roomId]);
 
