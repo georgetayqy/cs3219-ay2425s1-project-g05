@@ -27,7 +27,11 @@ import {
 } from "../../../utils/utils";
 import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
-import { Category, CategoryResponseData, Question } from "../../../types/question";
+import {
+  Category,
+  CategoryResponseData,
+  Question,
+} from "../../../types/question";
 import { socket } from "../../../websockets/socket";
 import { useAuth } from "../../../hooks/useAuth";
 import { displayName } from "react-quill";
@@ -162,7 +166,7 @@ export default function CreateSessionPage() {
 
     async function onFoundMatch(data) {
       console.log("found a match", data);
-      
+
       setStatus(Status.MATCH_FOUND);
       setActive(2);
 
@@ -178,34 +182,34 @@ export default function CreateSessionPage() {
             },
             body: JSON.stringify({
               users: data.userIds,
-              question: data.question
+              question: data.question,
             }),
           }
-        ).then((response) => {
-          // console.log("response from collab service", response.data);
-          const roomId = response.data['roomId'];
-          const question = response.data['question'];
+        )
+          .then((response) => {
+            // console.log("response from collab service", response.data);
+            const roomId = response.data["roomId"];
+            const question = response.data["question"];
 
-          console.log("room id after creating room ", roomId);
-          console.log("question after creating room", question);
-          
-          setMatchFound(true); // Display the success component when a match is found
+            console.log("room id after creating room ", roomId);
+            console.log("question after creating room", question);
 
-          // Start countdown timer
-          const interval = setInterval(() => {
-            setRedirectCountdown((prevCountdown) => {
-              if (prevCountdown <= 1) {
-                clearInterval(interval);
-                goToRoom(question, roomId, response.data); // Redirect to room
-              }
-              return prevCountdown - 1;
-            });
-          }, 1000);
+            setMatchFound(true); // Display the success component when a match is found
 
-        })
-        .catch((error) => {
-          console.error("Error creating room", error);
-        });
+            // Start countdown timer
+            const interval = setInterval(() => {
+              setRedirectCountdown((prevCountdown) => {
+                if (prevCountdown <= 1) {
+                  clearInterval(interval);
+                  goToRoom(question, roomId, response.data); // Redirect to room
+                }
+                return prevCountdown - 1;
+              });
+            }, 1000);
+          })
+          .catch((error) => {
+            console.error("Error creating room", error);
+          });
 
         // stop the timer
         if (timer) {
@@ -296,7 +300,9 @@ export default function CreateSessionPage() {
   }
 
   function goToRoom(question, roomId, matchData) {
-    navigate(`/session/${roomId}`, { state: { questionReceived: question, roomIdReceived: roomId, matchData } });
+    navigate(`/session/${roomId}`, {
+      state: { questionReceived: question, roomIdReceived: roomId, matchData },
+    });
   }
 
   const CREATE_COMPONENT = (

@@ -146,20 +146,20 @@ export async function onCreateMatch(socket, data, io) {
 
             // get question first
             const resp = await axios.get(
-              process.env.QUESTION_SERVICE_ENDPOINT ??
-                'http://question-service:8003/api/question-service/random',
-              {
-                params: {
-                  categoriesId: commonCategories,
-                  difficulty: commonDifficulties,
-                },
-              }
+                process.env.QUESTION_SERVICE_ENDPOINT ??
+                'http://localhost:8003/api/question-service/random',
+                {
+                    params: {
+                        categoriesId: commonCategories,
+                        difficulty: commonDifficulties,
+                    },
+                }
             );
 
             const questionInResponse = resp.data['data']['question'];
             if (questionInResponse === null || questionInResponse === undefined) {
-              console.log('Quesiton is missing');
-              throw new Error('Unable to query for question')
+                console.log('Quesiton is missing');
+                throw new Error('Unable to query for question')
             }
 
             // Create match object
