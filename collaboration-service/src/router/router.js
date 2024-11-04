@@ -18,7 +18,7 @@ const router = express.Router();
 router.route('/users/').get(getUserDetails);
 
 // retrieve details about the user
-router.route('/rooms/').get(getRoomDetails);
+router.route('/rooms/:roomId').get(getRoomDetails);
 
 // create a room
 router.route('/create-room').post(createRoom);

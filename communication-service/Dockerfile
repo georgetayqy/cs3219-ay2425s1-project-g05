@@ -1,19 +1,15 @@
-# PeerPrep User Service Dockerfile
-# 
-# This file is used for creating a PUBLIC container using PUBLICY
-# available images.
+# PeerPrep Communication Service Dockerfile
 # 
 # References:
 # https://github.com/awslabs/aws-lambda-web-adapter/tree/main/examples/expressjs
 
 FROM node:20
 
-# expose 8001 port for access to the container
-ENV PORT=8001
-EXPOSE 8001
+# expose 8005 port for access to the container
+EXPOSE 8005
 
 # Set work dir to prevent retarts
-WORKDIR /user-service
+WORKDIR /communication-service
 
 # copy all files into the Docker container
 COPY . .
@@ -22,4 +18,4 @@ COPY . .
 RUN npm install
 
 # execute the server
-CMD ["npm", "run", "dev"]
+CMD ["node", "server.js"]
