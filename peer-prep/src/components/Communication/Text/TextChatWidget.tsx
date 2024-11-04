@@ -646,6 +646,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
             )}
           </Box>
         </Collapse>
+        <div id="video-chat-widget"> </div>
       </Box>
     </Box>
   );

@@ -17,6 +17,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { IconPhone, IconPhoneEnd, IconVideo } from "@tabler/icons-react";
 import { useHover } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
+import { createPortal } from "react-dom";
 
 const servers = {
   iceServers: [
@@ -364,71 +365,75 @@ export default function VideoChatWidget({
         </ActionIcon>
       </Group>
 
-      <Box
-        className={classes.videoContainer}
-        ref={containerRef}
-        display={callStatus === CALL_STATUS.CONNECTED ? "block" : "none"}
-      >
-        {/* <h1>Video Chat Widget</h1> */}
-
+      {/* Portal to outside of the Collapse element */}
+      {createPortal(
         <Box
-          className={classes.selfVideoContainer}
-          key={"self"}
-          style={{ display: showSelf ? "block" : "none" }}
+          className={classes.videoContainer}
+          ref={containerRef}
+          display={callStatus === CALL_STATUS.CONNECTED ? "block" : "none"}
         >
-          <Text className={classes.selfVideoDescriptor}>
-            {" "}
-            {user.displayName} (You)
-          </Text>
-          <AspectRatio
-            ratio={1080 / 720}
-            maw={300}
-            mx="auto"
-            className={classes.selfVideo}
-          >
-            <video ref={selfVideoRef} autoPlay />
-          </AspectRatio>
-          <Button
-            size="xs"
-            variant="filled"
-            color="dark"
-            className={classes.selfEndCallButton}
-            onClick={onCallButtonPress}
-          >
-            {" "}
-            End call{" "}
-          </Button>
-        </Box>
+          {/* <h1>Video Chat Widget</h1> */}
 
-        <Box
-          className={classes.otherVideoContainer}
-          key="other"
-          style={{ display: !showSelf ? "block" : "none" }}
-        >
-          <Text className={classes.otherVideoDescriptor}>
-            {" "}
-            {otherUser?.name}
-          </Text>
-          <AspectRatio
-            ratio={1080 / 720}
-            maw={300}
-            mx="auto"
-            className={classes.otherVideo}
+          <Box
+            className={classes.selfVideoContainer}
+            key={"self"}
+            style={{ display: showSelf ? "block" : "none" }}
           >
-            <video ref={remoteVideoRef} autoPlay />
-          </AspectRatio>
-          <Button
-            size="xs"
-            variant="filled"
-            color="dark"
-            className={classes.otherEndCallButton}
-            onClick={onCallButtonPress}
+            <Text className={classes.selfVideoDescriptor}>
+              {" "}
+              {user.displayName} (You)
+            </Text>
+            <AspectRatio
+              ratio={1080 / 720}
+              maw={300}
+              mx="auto"
+              className={classes.selfVideo}
+            >
+              <video ref={selfVideoRef} autoPlay />
+            </AspectRatio>
+            <Button
+              size="xs"
+              variant="filled"
+              color="dark"
+              className={classes.selfEndCallButton}
+              onClick={onCallButtonPress}
+            >
+              {" "}
+              End call{" "}
+            </Button>
+          </Box>
+
+          <Box
+            className={classes.otherVideoContainer}
+            key="other"
+            style={{ display: !showSelf ? "block" : "none" }}
           >
-            {" "}
-            End call{" "}
-          </Button>
-        </Box>
-      </Box>
+            <Text className={classes.otherVideoDescriptor}>
+              {" "}
+              {otherUser?.name}
+            </Text>
+            <AspectRatio
+              ratio={1080 / 720}
+              maw={300}
+              mx="auto"
+              className={classes.otherVideo}
+            >
+              <video ref={remoteVideoRef} autoPlay />
+            </AspectRatio>
+            <Button
+              size="xs"
+              variant="filled"
+              color="dark"
+              className={classes.otherEndCallButton}
+              onClick={onCallButtonPress}
+            >
+              {" "}
+              End call{" "}
+            </Button>
+          </Box>
+        </Box>,
+        document.getElementById("video-chat-widget")
+      )}
     </Box>
   );
 }
