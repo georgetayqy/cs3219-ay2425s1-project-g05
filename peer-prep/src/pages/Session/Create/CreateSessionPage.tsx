@@ -64,6 +64,7 @@ enum Status {
   SEARCHING,
   MATCH_FOUND,
   NO_MATCH,
+  WAITING_FOR_REPLY,
 }
 
 interface CollabResponse {
@@ -271,6 +272,8 @@ export default function CreateSessionPage() {
     // fire a socket event
     socket.emit("create-match", query);
     console.log("searching for a match");
+
+    setStatus(Status.WAITING_FOR_REPLY);
   }
 
   function goToStart() {
@@ -420,6 +423,7 @@ export default function CreateSessionPage() {
           disabled={!canSearch}
           style={{ pointerEvents: !canSearch ? "none" : "unset" }}
           onClick={() => search()}
+          loading={status === Status.WAITING_FOR_REPLY}
         >
           Begin search
         </Button>
