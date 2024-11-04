@@ -31,11 +31,13 @@ const createAttempt = async (req, res, next) => {
     ) {
       throw new ConflictError("Attempt already exists");
     }
-    const newAttempt = await ormCreateAttempt(attempt);
+    const newAttemptWithId = { ...attempt, userId };
+    const newAttempt = await ormCreateAttempt(newAttemptWithId);
     return res
       .status(201)
       .json({ statusCode: 201, data: { attempt: newAttempt } });
   } catch (err) {
+    console.log(err);
     next(
       err instanceof BaseError
         ? err
@@ -58,7 +60,7 @@ const getAttempt = async (req, res, next) => {
     if (attempt.length === 0) {
       throw new NotFoundError("Attempt not found");
     }
-    return res.status(200).json({ statusCode: 200, data: { attempt, hello: "hello" } });
+    return res.status(200).json({ statusCode: 200, data: { attempt } });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -133,9 +135,7 @@ const deleteAttempt = async (req, res, next) => {
     );
   }
 };
-const hello = async (req, res, next) => {
-  return res.status(200).json({ statusCode: 200, message: "Hello" });
-}
+
 
 const getUserAttempts = async (req, res, next) => {
   try {
@@ -164,6 +164,5 @@ export {
   getAttempt,
   updateAttempt,
   deleteAttempt,
-  getUserAttempts,
-  hello
+  getUserAttempts
 };

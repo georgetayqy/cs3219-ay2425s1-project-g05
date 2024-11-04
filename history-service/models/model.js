@@ -79,12 +79,12 @@ const testCaseResultSchema = new Schema({
 const attemptSchema = new Schema({
   userId: {
     type: String,
-    required: [true, "User's email is required"],
+    required: [true, "userId is required"],
   },
 
   otherUserId: {
     type: String,
-    required: [true, "Other user email is required"],
+    required: [true, "otherUserId is required"],
   },
   question: {
     type: questionSchema,
