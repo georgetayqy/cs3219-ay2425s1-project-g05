@@ -1,7 +1,8 @@
-import BadRequestError from "../../question-service/errors/BadRequestError.js";
-import BaseError from "../../question-service/errors/BaseError.js";
-import ConflictError from "../../question-service/errors/ConflictError.js";
-import NotFoundError from "../../question-service/errors/NotFoundError.js";
+import BadRequestError from "../errors/BadRequestError.js";
+import BaseError from "../errors/BaseError.js";
+import ConflictError from "../errors/ConflictError.js";
+import NotFoundError from "../errors/NotFoundError.js";
+import UnauthorisedError from "../errors/UnauthorisedError.js";
 import {
   ormCreateAttempt,
   ormGetAttempt,
@@ -17,6 +18,9 @@ const createAttempt = async (req, res, next) => {
 
   try {
     // check for duplicate attempt
+    if (!userId) {
+      throw new UnauthorisedError("No user found");
+    }
     if (
       await ormIsDuplicateAttempt(
         userId,
@@ -48,8 +52,6 @@ const getAttempt = async (req, res, next) => {
     if (!userId || !roomId) {
       throw new BadRequestError("userId and roomId are required");
     }
-
-    console.log(userId, roomId);
 
     const attempt = await ormGetAttempt(userId, roomId);
     // NO EXISTING ATTEMPT TO GET
@@ -132,13 +134,16 @@ const deleteAttempt = async (req, res, next) => {
     );
   }
 };
+const hello = async (req, res, next) => {
+  res.status(200).json({ message: "Hello" });
+}
 
 const getUserAttempts = async (req, res, next) => {
   const userId = req.userId;
-
+  console.log("fejwnfjew")
   try {
     if (!userId) {
-      throw new BadRequestError("userId is required");
+      throw new UnauthorisedError("No user found, no attempts to get.")
     }
 
     const attempts = await ormGetUserAttempts(userId);
@@ -163,4 +168,5 @@ export {
   updateAttempt,
   deleteAttempt,
   getUserAttempts,
+  hello
 };

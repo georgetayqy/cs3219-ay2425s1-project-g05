@@ -38,15 +38,15 @@ const getUserAttempts = async (userId) => {
   });
 };
 
-const isDuplicateAttempt = async (userId, otherUserId, questionId, roomId) => {
-  const attempt = await Attempt.findOne({
+const isDuplicateAttempt = async (userId, otherUserId, roomId) => {
+  const attempt = await Attempt.find({
     userId: { $eq: userId },
     otherUserId: { $eq: otherUserId },
-    questionId: { $eq: questionId },
     roomId: { $eq: roomId },
-    isDeleted: false,
   });
-  return !!attempt;
+  console.log(attempt);
+
+  return attempt.length > 0;
 };
 
 export {

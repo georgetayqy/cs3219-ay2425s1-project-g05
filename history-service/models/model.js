@@ -1,40 +1,5 @@
-import { time } from "console";
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
-
-const testCaseSchema = new Schema({
-  input: {
-    type: String,
-    required: [true, "Input is required"],
-  },
-  isPublic: {
-    type: Boolean,
-    required: [true, "isPublic status is required"],
-  },
-  meta: {
-    type: Schema.Types.Mixed,
-    // required: [true, "Meta is required"], -- Assuming optional for now
-  },
-  expectedOutput: {
-    type: String,
-    required: [true, "Expected output is required"],
-  },
-});
-
-const metaSchema = new Schema({
-  publicTestCaseCount: {
-    type: Number,
-    required: [true, "Public test case count is required"],
-  },
-  privateTestCaseCount: {
-    type: Number,
-    required: [true, "Private test case count is required"],
-  },
-  totalTestCaseCount: {
-    type: Number,
-    required: [true, "Total test case count is required"],
-  },
-});
 
 const questionSchema = new Schema({
   title: {
@@ -61,18 +26,6 @@ const questionSchema = new Schema({
     },
     required: true,
   },
-  testCases: {
-    type: [testCaseSchema],
-    required: [true, "Test cases are required"],
-    validate: {
-      validator: (value) => {
-        return value.length > 0;
-      },
-    },
-  },
-  templateCode: {
-    type: String,
-  },
   solutionCode: {
     type: String,
     required: [true, "Solution code is required"],
@@ -80,20 +33,20 @@ const questionSchema = new Schema({
   link: {
     type: String,
   },
-  meta: {
-    type: metaSchema,
-    required: [true, "Meta is required"],
-  },
-  isDeleted: {
-    type: Boolean,
-    default: false,
-  },
 });
 
 const testCaseResultSchema = new Schema({
   testCaseId: {
     type: String,
     required: [true, "Test case ID is required"],
+  },
+  expectedOutput: {
+    type: String,
+    required: [true, "Expected output is required"],
+  },
+  input: {
+    type: String,
+    required: [true, "Input is required"],
   },
   isPassed: {
     type: Boolean,
@@ -113,12 +66,14 @@ const testCaseResultSchema = new Schema({
       return this.isPassed === false;
     },
   },
-  memory: {
-    type: Number
-  },
-  time: {
-    type: String,
-  },
+  meta: {
+    memory: {
+      type: Number,
+    },
+    time: {
+      type: String,
+    },
+  }
 });
 
 const attemptSchema = new Schema({
@@ -147,7 +102,7 @@ const attemptSchema = new Schema({
     type: String,
     required: [true, "Attempt code is required"],
   },
-  testCasesResults: {
+  testCaseResults: {
     type: [testCaseResultSchema],
     required: [true, "Test cases results are required"],
     validate: {

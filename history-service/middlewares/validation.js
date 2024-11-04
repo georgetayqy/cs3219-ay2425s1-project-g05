@@ -1,8 +1,23 @@
 import Joi from "joi";
-import BadRequestError from "../../question-service/errors/BadRequestError.js";
+import BadRequestError from "../errors/BadRequestError.js";
 
-const joiTestCaseSchema = Joi.object({
-  testCode: Joi.string()
+
+const joiTestCaseMetaSchema = Joi.object({
+  memory: Joi.number().required().messages({
+    "number.base": "Memory must be a number",
+    "any.required": "Memory is required",
+  }),
+  time: Joi.string().required().messages({
+    "string.empty": "Time cannot be empty",
+    "any.required": "Time is required",
+  }),
+}).messages({
+  "object.base": "Meta is required as an object with memory and time",
+  "any.required": "Meta is required with memory and time",
+}).optional();
+
+const joiTestCaseResultSchema = Joi.object({
+  testCaseId: Joi.string()
     .trim()
     .min(1)
     .messages({
@@ -14,11 +29,11 @@ const joiTestCaseSchema = Joi.object({
       "string.empty": "Test code cannot be empty",
       "any.required": "Test code is required",
     }),
-  isPublic: Joi.boolean().required().messages({
-    "boolean.base": "isPublic must be a boolean",
-    "any.required": "isPublic is required",
+  isPassed: Joi.boolean().required().messages({
+    "boolean.base": "isPassed must be a boolean",
+    "any.required": "isPassed is required",
   }),
-  meta: Joi.any().optional(), // assuming optional for now
+  meta: joiTestCaseMetaSchema, // assuming optional for now
   expectedOutput: Joi.string()
     .trim()
     .min(1)
@@ -31,9 +46,35 @@ const joiTestCaseSchema = Joi.object({
       "string.empty": "Expected output cannot be empty",
       "any.required": "Expected output is required",
     }),
+    input: Joi.string().trim().min(1).required().messages({
+      "string.empty": "Input cannot be empty",
+      "string.min": "Input must be at least 1 character long",
+      "any.required": "Input is required",
+    }),
+    output: Joi.string().required().messages({
+      "any.required": "Output is required",
+    }),
 }).messages({
   "object.base":
-    "Each test case should have testCode, isPublic, and expectedOutput",
+    "Each testcase results should have testCaseId, isPassed, and expectedOutput",
+});
+
+const joiDescriptionSchema = Joi.object(
+  {
+    descriptionHtml: Joi.string().trim().min(1).required().messages({
+      "string.empty": "DescriptionHtml is required in description",
+      "string.min": "DescriptionHtml must be at least 1 character long",
+      "any.required": "DescriptionHtml is required in description",
+    }),
+    descriptionText: Joi.string().trim().min(1).required().messages({
+      "string.empty": "DescriptionText is required in description",
+      "string.min": "DescriptionText must be at least 1 character long",
+      "any.required": "DescriptionText is required in description",
+    }),
+  }
+).messages({
+  "object.base": "Description is required as an object with descriptionHtml and descriptionText",
+  "any.required": "Description is required with descriptionHtml and descriptionText",
 });
 
 
@@ -53,35 +94,44 @@ const joiAttemptSchema = Joi.object({
       "string.empty": "Title is required",
       "any.required": "Title is required",
     }),
-    description: Joi.object().required().messages({
-      "object.base": "Description is required as an object",
-      "any.required": "Description is required",
+    description: joiDescriptionSchema.required().messages({
+      "object.base": "Description must be an object",
+      "any.required": "Description is required with descriptionHtml and descriptionText",
     }),
-    categories: Joi.array()
-      .items(
-        Joi.string().trim().min(1).messages({
-          "string.empty": "Each category cannot be empty",
-          "string.min": "Each category must be at least 1 character long",
-        })
-      )
-      .min(1)
-      .required()
-      .messages({
-        "array.base": "Categories must be an array",
-        "array.min": "At least one topic is required",
-        "any.required": "Categories are required",
-      }),
+    categoriesId: Joi.array()
+    .items(
+      Joi.number().min(0).max(7).messages({
+        "number.base": "Each category must be a number",
+        "number.min": "Category must be between 0 and 7",
+        "number.max": "Category must be between 0 and 7",
+      })
+    )
+    .required()
+    .min(1)
+    .messages({
+      "array.base": "Categories must be an array",
+      "array.min": "At least one category is required if specified",
+    }),
     difficulty: Joi.string().valid("HARD", "MEDIUM", "EASY").required().messages({
       "any.only": "Difficulty must be either HARD, MEDIUM, or EASY",
       "any.required": "Difficulty is required",
     }),
-    testCases: Joi.array().items(joiTestCaseSchema).min(1).required().messages({
-      "array.base": "Test cases must be an array",
-      "array.min": "At least one test case is required",
-      "any.required":
-        "Test cases are required and should have testCode, isPublic, and expectedOutput",
+    link: Joi.string().trim().min(1).required().messages({
+      "string.empty": "Link cannot be empty",
+      "string.min": "Link must be at least 1 character long",
+      "any.required": "Link is required",
     }),
-    isDeleted: Joi.boolean().default(false),
+    solutionCode: Joi.string().trim().min(1).required().messages({
+      "string.empty": "Solution code cannot be empty",
+      "string.min": "Solution code must be at least 1 character long",
+      "any.required": "Solution code is required",
+    }),
+  }),
+  testCaseResults: Joi.array().items(joiTestCaseResultSchema).min(1).required().messages({
+    "array.base": "testCaseResults must be an array",
+    "array.min": "At least one testCaseResult is required",
+    "any.required":
+      "testCaseResults are required and should have testCaseId, input, isPassed, and expectedOutput",
   }),
   roomId: Joi.string().trim().min(1).required().messages({
     "string.empty": "Room ID cannot be empty",
@@ -93,34 +143,7 @@ const joiAttemptSchema = Joi.object({
   }),
   attemptCode: Joi.string().allow("").required().messages({
     "any.required": "Code is required",
-  }),
-  testCasesResults: Joi.array()
-    .items(
-      Joi.object({
-        isPassed: Joi.boolean().required().messages({
-          "any.required": "isPassed is required",
-        }),
-        output: Joi.string().when("isPassed", {
-          is: true,
-          then: Joi.string().required().messages({
-            "any.required": "Output is required",
-          }),
-        }),
-        error: Joi.string().when("isPassed", {
-          is: false,
-          then: Joi.string().required().messages({
-            "any.required": "Error is required",
-          }),
-        }),
-      })
-    )
-    .min(1)
-    .required()
-    .messages({
-      "array.base": "Test cases results must be an array",
-      "array.min": "At least one test case result is required",
-      "any.required": "Test cases results are required",
-    }),
+  })
 }).custom((value, helpers) => {
   // Check if userId and otherUserId are the same
   if (value.userId === value.otherUserId) {
@@ -130,6 +153,7 @@ const joiAttemptSchema = Joi.object({
 }, "Custom validation for userId and otherUserId");
 
 const validateAttempt = (req, res, next) => {
+  console.log(req.body);
   const { error } = joiAttemptSchema.validate(req.body);
   if (error) {
     throw new BadRequestError(error.details[0].message);

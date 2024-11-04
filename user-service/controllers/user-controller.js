@@ -27,6 +27,7 @@ export async function loginUser(req, res) {
             return res.status(401).json({ statusCode: 401, message: "Incorrect email or password" })
         }
 
+        console.log(user)
         // Generate access token
         const accessToken = generateAccessToken(user);
         console.log(accessToken)

@@ -7,7 +7,7 @@ import getUser from "../middlewares/userMiddleware.js";
 const router = express.Router();
 
 // CREATE NEW ATTEMPT
-router.post('/', validateAttempt, createAttempt);
+router.post('/', validateAttempt, getUser, createAttempt);
 
 // GET ATTEMPT BASED ON USERID AND ROOMID
 router.route("/:roomId").get(getUser, getAttempt);
