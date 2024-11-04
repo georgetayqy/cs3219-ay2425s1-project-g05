@@ -3,6 +3,7 @@ import LocalClient from '../src/session/client.js';
 import UserAlreadyFoundInRoomError from '../src/errors/UserAlreadyFoundInRoomError.js';
 import UserNotFoundInRoomError from '../src/errors/UserNotFoundInRoomError.js';
 import RoomNotFoundError from '../src/errors/RoomNotFoundError.js';
+import RoomCapacityError from '../src/errors/RoomCapacityError.js';
 
 describe('Collaboration Service LocalClient', () => {
   describe('#purge(void)', () => {
@@ -53,10 +54,11 @@ describe('Collaboration Service LocalClient', () => {
 
     it('one user is in a room', () => {
       // user 1 is already in the room
-      const [innerRoomId, isDupe] = LocalClient.createRoom(['user1', 'user3']);
+      const [rid1, _] = LocalClient.createRoom(['user22']);
+      const [rid2, isDupe] = LocalClient.createRoom(['user22', 'user3']);
       assert.ok(isDupe);
-      assert.ok(LocalClient.getUserByDoc(innerRoomId).length > 0);
-      assert.equal(roomId, innerRoomId);
+      assert.equal(rid1, rid2);
+      assert.equal(LocalClient.getUserByDoc(rid2).length, 2);
     });
 
     it('both users are in the same room', () => {
@@ -65,6 +67,8 @@ describe('Collaboration Service LocalClient', () => {
       assert.ok(isDupe);
       assert.ok(LocalClient.getUserByDoc(innerRoomId).length > 0);
       assert.equal(roomId, innerRoomId);
+
+      LocalClient.purge();
     });
 
     it('both users are in the different rooms, throws', () => {
@@ -83,10 +87,24 @@ describe('Collaboration Service LocalClient', () => {
         () => LocalClient.createRoom(['user1New', 'user2Old']),
         UserAlreadyFoundInRoomError
       );
+
+      LocalClient.purge();
+    });
+
+    it('more than 2 users in room, throws', () => {
+      assert.throws(
+        () =>
+          LocalClient.createRoom(['user123123', 'user112233', 'user111222']),
+        RoomCapacityError
+      );
+
+      LocalClient.purge();
     });
 
     it('userId not of type string, throws', () => {
       assert.throws(() => LocalClient.createRoom([123, ['user2Old']]), Error);
+
+      LocalClient.purge();
     });
   });
 
@@ -218,11 +236,11 @@ describe('Collaboration Service LocalClient', () => {
       LocalClient.purge();
     });
 
-    it('user does not exists in room', () => {
+    it('user does not exists in room, throws as too many user', () => {
       const [roomId, _] = LocalClient.createRoom(['123', '1234']);
-      assert.doesNotThrow(() => LocalClient.add('321', roomId));
-      assert.ok(LocalClient.getDocByUser('321') === roomId);
-      assert.ok(LocalClient.getUserByDoc(roomId).length === 3);
+      assert.throws(() => LocalClient.add('321', roomId), RoomCapacityError);
+      assert.ok(LocalClient.getDocByUser('321') === null);
+      assert.ok(LocalClient.getUserByDoc(roomId).length === 2);
       LocalClient.purge();
     });
   });

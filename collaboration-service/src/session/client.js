@@ -2,6 +2,7 @@ import RoomNotFoundError from '../errors/RoomNotFoundError.js';
 import UserNotFoundInRoomError from '../errors/UserNotFoundInRoomError.js';
 import UserAlreadyFoundInRoomError from '../errors/UserAlreadyFoundInRoomError.js';
 import { v7 } from 'uuid';
+import RoomCapacityError from '../errors/RoomCapacityError.js';
 
 /**
  * Interface to track the current users connected to yjs
@@ -75,6 +76,11 @@ class LocalClient {
    * Creates a unique room ID
    */
   static createRoom(users) {
+    // matching service or anyone else from creating a room with too many users
+    if (users.length > 2) {
+      throw new RoomCapacityError('Room has too many users');
+    }
+
     // likely O(1) operation, since hash collisions are rare
     let uuid = v7();
 
@@ -145,10 +151,17 @@ class LocalClient {
       return;
     }
 
+    const users = LocalClient.getUserByDoc(doc) ?? [];
+
+    // block attempts to add user to room if it already has too many users
+    if (users.length >= 2) {
+      throw new RoomCapacityError(
+        'Unable to add users to room as too many users in room'
+      );
+    }
+
     // overwrites the existing doc
     LocalClient.userToDoc.set(user, doc);
-
-    const users = LocalClient.getUserByDoc(doc) ?? [];
 
     if (!users.includes(user)) {
       users.push(user);

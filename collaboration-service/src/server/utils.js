@@ -333,11 +333,16 @@ const setupWSConnection = (
 
   let doc = null;
 
+  if (LocalClient.getUserByDoc(LocalClient.getDocByUser(userId)).length >= 2) {
+    // close the connection
+    console.error('Unable to add user to room as it is full');
+    req.close();
+  }
+
   if (question === null) {
     // if no extra params provided, then we can just ignore it
     doc = getYDoc(docName, gc);
   } else {
-    // otherwise, question service here to get a random question
     try {
       doc = getYDoc(docName, question, gc);
       LocalClient.putQuestion(docName, question);
