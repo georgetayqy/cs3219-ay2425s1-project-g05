@@ -473,8 +473,10 @@ export default function CreateSessionPage() {
                 </ThemeIcon>
               }
             >
-              {selectedCategoriesId.map((categories, index) => (
-                <List.Item key={index}>{categories}</List.Item>
+              {selectedCategoriesId.map((categoryId, index) => (
+                <List.Item key={index}>
+                  {categories.find((c) => c.value === categoryId).label}
+                </List.Item>
               ))}
             </List>
           </Stack>
