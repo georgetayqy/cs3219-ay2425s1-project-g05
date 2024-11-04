@@ -1,6 +1,4 @@
-import axios from 'axios';
 import BaseError from '../errors/BaseError.js';
-import RoomCreationError from '../errors/RoomCreationError.js';
 import RoomNotFoundError from '../errors/RoomNotFoundError.js';
 import UserDeregistrationError from '../errors/UserDeregistrationError.js';
 import UserNotFoundError from '../errors/UserNotFoundError.js';
