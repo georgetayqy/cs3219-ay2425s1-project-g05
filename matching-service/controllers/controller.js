@@ -189,7 +189,7 @@ export async function onCreateMatch(socket, data, io) {
 
             } catch (e) {
                 // no question found :(
-
+                console.log(e)
                 onNoMatch()
             }
 
