@@ -20,7 +20,7 @@ import {
 } from "@mantine/core";
 import classes from "./SessionPage.module.css";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import CodeEditor from "../../../components/CollabCodeEditor/CollabCodeEditor";
 import AvatarWithDetailsButton from "../../../components/AvatarIcon/AvatarWithDetailsButton";
@@ -29,6 +29,7 @@ import { Question } from "../../../types/question";
 import { useLocalStorage, useSessionStorage } from "@mantine/hooks";
 import { modals, ModalsProvider } from "@mantine/modals";
 import TextChatWidget from "../../../components/Communication/Text/TextChatWidget";
+import { notifications } from "@mantine/notifications";
 
 type QuestionCategory =
   | "ALGORITHMS"
@@ -81,6 +82,11 @@ export default function SessionPage() {
 
   const [templateCode, setTemplateCode] = useState("");
 
+  // when true, don't show modal when # users in room < 2
+  // const [isWaitingForRejoin, setIsWaitingForRejoin] = useState(false);
+  const isWaitingForRejoinRef = useRef(false);
+  console.log("???? ", isWaitingForRejoinRef.current);
+
   interface CheckRoomDetailsResponse {
     [roomId: string]: {
       users: String[];
@@ -121,9 +127,24 @@ export default function SessionPage() {
 
       const users = response.data[roomId].users;
 
-      if (users.length < 2) {
+      console.log({ isWaitingForRejoinRef });
+      if (users.length < 2 && !isWaitingForRejoinRef.current) {
         // other user has left the room
         openSessionEndedModal();
+      }
+      if (users.length === 2) {
+        // other user has joined the room
+        if (isWaitingForRejoinRef.current) {
+          isWaitingForRejoinRef.current = false;
+
+          // notify that the other user has joined back
+          notifications.show({
+            title: "User has joined back",
+            message:
+              "The other user has joined back. You can now continue the session.",
+            color: "green",
+          });
+        }
       }
     } catch (error: any) {
       console.error("Error checking room status", error);
@@ -166,18 +187,45 @@ export default function SessionPage() {
           <Text>
             This session has ended as the other user has left the room.
           </Text>
-          <Button fullWidth onClick={handleEndSession} mt="md">
-            Go back to dashboard
-          </Button>
+          <Text mt="lg">
+            You can choose to wait for the other user to join back, or end the
+            session.
+          </Text>
+          <Text mt="sm">
+            You'll be notified when the other user joins back.
+          </Text>
+          <SimpleGrid cols={2} mt={"lg"}>
+            <Button fullWidth variant="light" onClick={handleWait}>
+              Wait for the other user
+            </Button>
+            <Button
+              fullWidth
+              onClick={handleEndSession}
+              variant="light"
+              color="red"
+            >
+              End session
+            </Button>
+          </SimpleGrid>
         </>
       ),
       withCloseButton: false,
+      size: "lg",
+      closeOnClickOutside: false,
+      closeOnEscape: false,
     });
   };
 
   const handleEndSession = () => {
     modals.closeAll();
     navigate("/dashboard");
+  };
+
+  const handleWait = () => {
+    console.log("LOG: we're waiting");
+    // just close the modal
+    modals.closeAll();
+    isWaitingForRejoinRef.current = true;
   };
 
   return (
