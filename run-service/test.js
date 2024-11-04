@@ -2,7 +2,7 @@ import axios from "axios";
 import EventSource from "eventsource";
 
 const QUESTION_SERVICE_URL = "http://localhost:8003/api/question-service";
-const RUN_SERVICE_URL = "http://localhost:8009/api/run-service";
+const RUN_SERVICE_URL = "http://localhost:8007/api/run-service";
 
 async function getRandomQuestion() {
   try {
@@ -90,11 +90,7 @@ async function subscribeToResults(jobId) {
 
     // Step 3: Subscribe to results
     subscribeToResults(jobId);
-          // add code to wait for 10 seconds before ending the process
-          setTimeout(() => {
-            console.log("Ending process");
-            process.exit(0);
-        }, 50000);
+
   } catch (error) {
     console.error("An error occurred during testing:", error);
   }

@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import router from "./router.js";
 
 const app = express();
-const port = 8009;
+const port = process.env.PORT || 8007;
 dotenv.config();
 app.use(express.json());
 
