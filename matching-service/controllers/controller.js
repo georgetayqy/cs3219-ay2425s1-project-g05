@@ -147,7 +147,7 @@ export async function onCreateMatch(socket, data, io) {
             // get question first
             const resp = await axios.get(
               process.env.QUESTION_SERVICE_ENDPOINT ??
-                'http://localhost:8003/api/question-service/random',
+                'http://question-service:8003/api/question-service/random',
               {
                 params: {
                   categoriesId: commonCategories,
