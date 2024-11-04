@@ -3,7 +3,6 @@ import axios from "axios";
 import printRedisMemory from "./redis.js";
 import { questionServiceUrl, redisClient } from "./server.js";
 import UnauthorizedError from "./errors/UnauthorisedError.js";
-import NotFoundError from "./errors/NotFoundError.js";
 import ServiceUnavailableError from "./errors/ServiceUnavailable.js";
 
 const executeTest = async (req, res) => {
@@ -27,6 +26,7 @@ const executeTest = async (req, res) => {
       codeAttempt,
       data: JSON.stringify([]),
     });
+    await redisClient.expire(`job:${jobId}`, 180);
 
     // Respond to client with jobId
     res.json({ data: { jobId: jobId } });
@@ -46,14 +46,15 @@ const getResults = async (req, res) => {
   await subscriber.connect();
 
   let isCompleted = false;
-  const timeoutDuration = 120000;
+  const timeoutDuration = 10000;
   let timeoutHandle;
 
-  // Function to reset timeout
+  // Function to reset timeout -- handle pub sub failure(?)
   const resetTimeout = () => {
     clearTimeout(timeoutHandle);
     timeoutHandle = setTimeout(() => {
       if (!isCompleted) {
+        console.log("Timeout occurred: No response from server");
         sendErrorAndClose(res, subscriber);
       }
     }, timeoutDuration);
@@ -73,7 +74,6 @@ const getResults = async (req, res) => {
   subscriber.subscribe(`job-update:${jobId}`, (message) => {
     const update = JSON.parse(message);
 
-    console.log("Received update (in sub):", update);
     if (update.status === "complete") {
       isCompleted = true;
       res.write(`data: ${JSON.stringify(update)}\n\n`);
@@ -123,7 +123,6 @@ async function runTestcase(testcase, code) {
 
     // Combine the normalized code and test code
     const sourceCode = `${normalizedCode}\n\n${testCode}`;
-    console.log(sourceCode);
     const requestBody = {
       source_code: sourceCode,
       language_id: 71,
@@ -137,7 +136,7 @@ async function runTestcase(testcase, code) {
 
     // Send POST request to the external API
     const response = await axios.post(
-      "http://PeerPrepALB-705702575.ap-southeast-1.elb.amazonaws.com:2358/submissions/?wait=true",
+      process.env.JUDGE0_API_URL,
       requestBody,
       { headers }
     );
@@ -170,11 +169,11 @@ async function runTestcase(testcase, code) {
         switch (error.response.status) {
           case 404:
             // Service not found error -> means not available?
-            throw new ServiceUnavailableError("Execution Service not found. Test execution halted.");
+            throw new ServiceUnavailableError("Execution Service not found. Testcase execution halted.");
           case 401:
-            throw new UnauthorizedError("Authentication failed. Test execution halted.");
+            throw new UnauthorizedError("Authentication failed. Testcase failed to execute.");
           case 503:
-            throw new ServiceUnavailableError(503, "Queue is full. Test execution halted.");
+            throw new ServiceUnavailableError(503, "Queue is full. Testcase execution halted.");
           default:
             throw new BaseError(error.response.status, "Error executing test case.");
         }
@@ -244,8 +243,8 @@ async function getTestcases(questionId) {
 const sendErrorAndClose = (res, subscriber) => {
   const errorMessage = JSON.stringify({
     status: "error",
-    statusCode: 499,
-    message: "Timeout occurred: No response from server",
+    statusCode: 504,
+    result: "Gateway Timeout: No response from execution server",
   });
 
   res.write(`data: ${errorMessage}\n\n`);

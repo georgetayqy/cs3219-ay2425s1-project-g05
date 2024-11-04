@@ -37,10 +37,10 @@ async function subscribeToResults(jobId) {
   const eventSource = new EventSource(`${RUN_SERVICE_URL}/result/${jobId}`);
 
   // Uncomment this code to disconnect eventsource after 2 seconds to see how disconnect from client is handled
-  setTimeout(() => {
-    eventSource.close();
-    console.log("EventSource closed after x seconds");
-  }, 10);
+  //   setTimeout(() => {
+  //     eventSource.close();
+  //     console.log("EventSource closed after x seconds");
+  //   }, 10);
 
   eventSource.onmessage = (event) => {
     const message = JSON.parse(event.data);
@@ -60,6 +60,9 @@ async function subscribeToResults(jobId) {
         console.log(`  Question Details: ${questionDetails.expectedOutput}`);
       }
       eventSource.close();
+      console.log("closing")
+
+
     }
     console.log("Received message:", message);
   };
@@ -77,9 +80,9 @@ async function subscribeToResults(jobId) {
     console.log("Random Question:", randomQuestion);
 
     // Step 2: Execute the question with some code attempt
-    const questionId = randomQuestion.data.question._id; 
+    const questionId = randomQuestion.data.question._id;
     // Runs solution code as code attempt
-    const codeAttempt = randomQuestion.data.question.solutionCode; 
+    const codeAttempt = randomQuestion.data.question.solutionCode;
 
     const executeResponse = await executeQuestion(questionId, codeAttempt);
     const jobId = executeResponse.data.jobId;
@@ -87,6 +90,11 @@ async function subscribeToResults(jobId) {
 
     // Step 3: Subscribe to results
     subscribeToResults(jobId);
+          // add code to wait for 10 seconds before ending the process
+          setTimeout(() => {
+            console.log("Ending process");
+            process.exit(0);
+        }, 50000);
   } catch (error) {
     console.error("An error occurred during testing:", error);
   }
