@@ -16,6 +16,7 @@ import { socket } from "../../../websockets/communication/socket";
 import { useAuth } from "../../../hooks/useAuth";
 import { IconPhone, IconPhoneEnd, IconVideo } from "@tabler/icons-react";
 import { useHover } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
 
 const servers = {
   iceServers: [
@@ -110,64 +111,76 @@ export default function VideoChatWidget({
   async function init() {
     console.log("LOG: initializing!");
 
-    if (!pc.current) pc.current = new RTCPeerConnection(servers);
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-
-    console.log("LOG: Got MediaStream:", stream);
-    setLocalStream(stream);
-    stream.getTracks().forEach((track) => pc.current.addTrack(track, stream));
-
-    // show stream in HTML video
-    if (selfVideoRef.current) {
-      selfVideoRef.current.srcObject = stream;
-    }
-
-    pc.current.ontrack = (event) => {
-      console.log("LOG: ontrack event:", event);
-      event.streams[0].getTracks().forEach((track) => {
-        console.log("LOG: Adding track to remoteStream:", track);
-        remoteStream?.addTrack(track);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
       });
-    };
 
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
+      if (!pc.current) pc.current = new RTCPeerConnection(servers);
 
-    pc.current.onconnectionstatechange = (event) => {
-      console.log("LOG: onconnectionstatechange event:", event);
-      console.log(pc.current.connectionState);
-      // alert(" break ! ");
-      if (pc.current.connectionState === "connected") {
-        console.log("LOG: Connected");
+      console.log("LOG: Got MediaStream:", stream);
+      setLocalStream(stream);
+      stream.getTracks().forEach((track) => pc.current.addTrack(track, stream));
 
-        setCallStatus(CALL_STATUS.CONNECTED);
+      // show stream in HTML video
+      if (selfVideoRef.current) {
+        selfVideoRef.current.srcObject = stream;
       }
 
-      if (pc.current.connectionState === "disconnected") {
-        // ps: I choose not to listen to video-cleanup event and instead clean up the event automatically.
-        // this is better as in the case of no internet, the event will not be received
-        socket.emit("video-cleanup", { roomId, selfId: user._id });
-        // pc.current.restartIce();
+      pc.current.ontrack = (event) => {
+        console.log("LOG: ontrack event:", event);
+        event.streams[0].getTracks().forEach((track) => {
+          console.log("LOG: Adding track to remoteStream:", track);
+          remoteStream?.addTrack(track);
+        });
+      };
 
-        setCallStatus(CALL_STATUS.IDLE);
+      if (remoteVideoRef.current)
+        remoteVideoRef.current.srcObject = remoteStream;
 
+      pc.current.onconnectionstatechange = (event) => {
+        console.log("LOG: onconnectionstatechange event:", event);
+        console.log(pc.current.connectionState);
+        // alert(" break ! ");
+        if (pc.current.connectionState === "connected") {
+          console.log("LOG: Connected");
+
+          setCallStatus(CALL_STATUS.CONNECTED);
+        }
+
+        if (pc.current.connectionState === "disconnected") {
+          // ps: I choose not to listen to video-cleanup event and instead clean up the event automatically.
+          // this is better as in the case of no internet, the event will not be received
+          socket.emit("video-cleanup", { roomId, selfId: user._id });
+          // pc.current.restartIce();
+
+          setCallStatus(CALL_STATUS.IDLE);
+
+          cleanup();
+        }
+      };
+
+      // listen for response for checking if there is another user in the video call
+      socket.on("video-check", onVideoCheck);
+
+      // listen for end call event
+      socket.on("video-cleanup", (data: { selfId: string }) => {
+        console.log("LOG: receive { video-cleanup } data:", data);
+
+        // cleanup
         cleanup();
-      }
-    };
+      });
+    } catch (e) {
+      notifications.show({
+        message:
+          "Please allow camera and microphone access in order to make a video call.",
+        title: "Permission Error",
+        color: "red",
+      });
 
-    // listen for response for checking if there is another user in the video call
-    socket.on("video-check", onVideoCheck);
-
-    // listen for end call event
-    socket.on("video-cleanup", (data: { selfId: string }) => {
-      console.log("LOG: receive { video-cleanup } data:", data);
-
-      // cleanup
-      cleanup();
-    });
+      throw e;
+    }
   }
 
   useEffect(() => {
@@ -190,12 +203,17 @@ export default function VideoChatWidget({
       socket.emit("video-cleanup", { roomId, selfId: user._id });
       cleanup();
     } else {
-      setCallStatus(CALL_STATUS.CALLING);
-      // send video-check event to server to check if there is another user in the video call
-      // NOTE:TODO: should not allow pressing after connected
-      if (!pc.current) await init();
-      console.log("LOG: emit { video-check }");
-      socket.emit("video-check", { roomId });
+      try {
+        setCallStatus(CALL_STATUS.CALLING);
+        // send video-check event to server to check if there is another user in the video call
+        // NOTE:TODO: should not allow pressing after connected
+        if (!pc.current) await init();
+        console.log("LOG: emit { video-check }");
+        socket.emit("video-check", { roomId });
+      } catch (e) {
+        console.log("LOG: Error:", e);
+        setCallStatus(CALL_STATUS.IDLE);
+      }
     }
   }
 
@@ -314,7 +332,6 @@ export default function VideoChatWidget({
 
   const { hovered, ref: containerRef } = useHover();
   const showSelf = hovered || callStatus === CALL_STATUS.CALLING;
-  console.log("LOG: hovered", hovered);
 
   return (
     <Box>
