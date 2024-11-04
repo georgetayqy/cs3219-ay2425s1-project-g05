@@ -50,6 +50,9 @@ export async function onCancelMatch(socket) {
 
 export async function onCreateMatch(socket, data, io) {
     try {
+        console.log("ONCREATEMATCH: ")
+        console.log(data)
+        console.log('----------------')
         const { difficulties, categoriesId, userId } = data;
         const socketId = socket.id;
         const priority = categoriesId.length; // Priority based on number of categories selected
