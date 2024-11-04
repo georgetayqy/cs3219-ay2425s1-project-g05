@@ -50,10 +50,6 @@ export default function DashboardPage() {
         </Box>
         {/* </Container> */}
       </section>
-
-      <section>
-        <TextChatWidget roomId="room1" />
-      </section>
     </>
   );
 }
