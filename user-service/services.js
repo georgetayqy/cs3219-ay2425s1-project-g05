@@ -21,8 +21,8 @@ export function hashPassword(password) {
     return bcrypt.hashSync(password, salt);
 }
 
-export function generateAccessToken({ email, displayName, isAdmin }) {
-    return jwt.sign({ email: email, displayName: displayName, isAdmin: isAdmin }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1m' });
+export function generateAccessToken({ _id, email, displayName, isAdmin, isDeleted }) {
+    return jwt.sign({ userId: _id.toString(), email: email, displayName: displayName, isAdmin: isAdmin, isDeleted }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1m' });
 }
 
 export function verifyAccessToken(token) {
@@ -34,8 +34,8 @@ export function verifyAccessToken(token) {
     });
 }
 
-export function generateRefreshToken({ email, displayName, isAdmin, isDeleted }) {
-    return jwt.sign({ email: email, displayName: displayName, isAdmin: isAdmin, isDeleted }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '2m' });
+export function generateRefreshToken({ _id, email, displayName, isAdmin, isDeleted }) {
+    return jwt.sign({ userId: _id.toString(), email: email, displayName: displayName, isAdmin: isAdmin, isDeleted }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '2m' });
 }
 
 export function verifyRefreshToken(token) {
