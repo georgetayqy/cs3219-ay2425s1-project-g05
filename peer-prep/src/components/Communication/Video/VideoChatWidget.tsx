@@ -53,10 +53,13 @@ export default function VideoChatWidget({
   onVideoCallDisconnect: () => void;
 }) {
   const { user } = useAuth();
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(
-    new MediaStream()
-  );
+
+  const localStream = useRef<MediaStream | null>(null);
+  const remoteStream = useRef<MediaStream | null>(new MediaStream());
+  // const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  // const [remoteStream, setRemoteStream] = useState<MediaStream | null>(
+  //   new MediaStream()
+  // );
 
   const selfVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -88,13 +91,12 @@ export default function VideoChatWidget({
     }
 
     if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
-      setLocalStream(null);
+      localStream.current.getTracks().forEach((track) => track.stop());
+      localStream.current = null;
     }
 
     if (remoteStream) {
-      remoteStream.getTracks().forEach((track) => track.stop());
-      setRemoteStream(null);
+      remoteStream.current.getTracks().forEach((track) => track.stop());
     }
 
     if (selfVideoRef.current) selfVideoRef.current.srcObject = null;
@@ -120,24 +122,28 @@ export default function VideoChatWidget({
       if (!pc.current) pc.current = new RTCPeerConnection(servers);
 
       console.log("LOG: Got MediaStream:", stream);
-      setLocalStream(stream);
-      stream.getTracks().forEach((track) => pc.current.addTrack(track, stream));
+      localStream.current = stream;
+      localStream.current
+        .getTracks()
+        .forEach((track) => pc.current.addTrack(track, localStream.current));
 
       // show stream in HTML video
       if (selfVideoRef.current) {
-        selfVideoRef.current.srcObject = stream;
+        selfVideoRef.current.srcObject = localStream.current;
+        selfVideoRef.current.muted = true;
       }
 
       pc.current.ontrack = (event) => {
         console.log("LOG: ontrack event:", event);
         event.streams[0].getTracks().forEach((track) => {
           console.log("LOG: Adding track to remoteStream:", track);
-          remoteStream?.addTrack(track);
+          if (!remoteStream.current) remoteStream.current = new MediaStream();
+          remoteStream.current.addTrack(track);
         });
       };
 
       if (remoteVideoRef.current)
-        remoteVideoRef.current.srcObject = remoteStream;
+        remoteVideoRef.current.srcObject = remoteStream.current;
 
       pc.current.onconnectionstatechange = (event) => {
         console.log("LOG: onconnectionstatechange event:", event);
@@ -364,57 +370,64 @@ export default function VideoChatWidget({
         display={callStatus === CALL_STATUS.CONNECTED ? "block" : "none"}
       >
         {/* <h1>Video Chat Widget</h1> */}
-        {showSelf ? (
-          <Box className={classes.selfVideoContainer}>
-            <Text className={classes.selfVideoDescriptor}>
-              {" "}
-              {user.displayName} (You)
-            </Text>
-            <AspectRatio
-              ratio={1080 / 720}
-              maw={300}
-              mx="auto"
-              className={classes.selfVideo}
-            >
-              <video ref={selfVideoRef} autoPlay />
-            </AspectRatio>
-            <Button
-              size="xs"
-              variant="filled"
-              color="dark"
-              className={classes.selfEndCallButton}
-              onClick={onCallButtonPress}
-            >
-              {" "}
-              End call{" "}
-            </Button>
-          </Box>
-        ) : (
-          <Box className={classes.otherVideoContainer}>
-            <Text className={classes.otherVideoDescriptor}>
-              {" "}
-              {otherUser?.name}
-            </Text>
-            <AspectRatio
-              ratio={1080 / 720}
-              maw={300}
-              mx="auto"
-              className={classes.otherVideo}
-            >
-              <video ref={remoteVideoRef} autoPlay />
-            </AspectRatio>
-            <Button
-              size="xs"
-              variant="filled"
-              color="dark"
-              className={classes.otherEndCallButton}
-              onClick={onCallButtonPress}
-            >
-              {" "}
-              End call{" "}
-            </Button>
-          </Box>
-        )}
+
+        <Box
+          className={classes.selfVideoContainer}
+          key={"self"}
+          style={{ display: showSelf ? "block" : "none" }}
+        >
+          <Text className={classes.selfVideoDescriptor}>
+            {" "}
+            {user.displayName} (You)
+          </Text>
+          <AspectRatio
+            ratio={1080 / 720}
+            maw={300}
+            mx="auto"
+            className={classes.selfVideo}
+          >
+            <video ref={selfVideoRef} autoPlay />
+          </AspectRatio>
+          <Button
+            size="xs"
+            variant="filled"
+            color="dark"
+            className={classes.selfEndCallButton}
+            onClick={onCallButtonPress}
+          >
+            {" "}
+            End call{" "}
+          </Button>
+        </Box>
+
+        <Box
+          className={classes.otherVideoContainer}
+          key="other"
+          style={{ display: !showSelf ? "block" : "none" }}
+        >
+          <Text className={classes.otherVideoDescriptor}>
+            {" "}
+            {otherUser?.name}
+          </Text>
+          <AspectRatio
+            ratio={1080 / 720}
+            maw={300}
+            mx="auto"
+            className={classes.otherVideo}
+          >
+            <video ref={remoteVideoRef} autoPlay />
+          </AspectRatio>
+          <Button
+            size="xs"
+            variant="filled"
+            color="dark"
+            className={classes.otherEndCallButton}
+            onClick={onCallButtonPress}
+          >
+            {" "}
+            End call{" "}
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

@@ -23,6 +23,7 @@
     color: white;
     padding: 4px;
     font-size: 12px;
+    z-index: 1;
   }
 
   .selfEndCallButton {
@@ -43,6 +44,7 @@
     color: white;
     padding: 4px;
     font-size: 12px;
+    z-index: 1;
   }
   .otherEndCallButton {
     position: absolute;
