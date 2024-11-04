@@ -9,10 +9,11 @@ import {
   ormIsDuplicateAttempt,
   ormUpdateAttempt,
   ormDeleteAttempt,
-  ormGetUserAttempts,
+  ormGetUserAttempts
 } from "../models/orm.js";
 
 const createAttempt = async (req, res, next) => {
+  console.log("createAttempt")
   const userId = req.userId;
   const attempt = req.body;
 
@@ -25,7 +26,6 @@ const createAttempt = async (req, res, next) => {
       await ormIsDuplicateAttempt(
         userId,
         attempt.otherUserId,
-        attempt.questionId,
         attempt.roomId
       )
     ) {
@@ -55,10 +55,10 @@ const getAttempt = async (req, res, next) => {
 
     const attempt = await ormGetAttempt(userId, roomId);
     // NO EXISTING ATTEMPT TO GET
-    if (!attempt) {
+    if (attempt.length === 0) {
       throw new NotFoundError("Attempt not found");
     }
-    return res.status(200).json({ statusCode: 200, data: { attempt } });
+    return res.status(200).json({ statusCode: 200, data: { attempt, hello: "hello" } });
   } catch (err) {
     next(
       err instanceof BaseError
@@ -116,11 +116,10 @@ const deleteAttempt = async (req, res, next) => {
     console.log(userId, roomId);
     // NO EXISTING ATTEMPT TO DELETE
     const existingAttempt = await ormGetAttempt(userId, roomId);
-    if (!existingAttempt) {
+    if (existingAttempt.length === 0) {
       throw new NotFoundError("Attempt not found");
     }
     const deletedAttempt = await ormDeleteAttempt(userId, roomId);
-    console.log(deletedAttempt);
     return res.status(200).json({
       statusCode: 200,
       message: "Attempt deleted successfully",
@@ -135,24 +134,22 @@ const deleteAttempt = async (req, res, next) => {
   }
 };
 const hello = async (req, res, next) => {
-  res.status(200).json({ message: "Hello" });
+  return res.status(200).json({ statusCode: 200, message: "Hello" });
 }
 
 const getUserAttempts = async (req, res, next) => {
-  const userId = req.userId;
-  console.log("fejwnfjew")
   try {
+    const userId = req.userId;
     if (!userId) {
       throw new UnauthorisedError("No user found, no attempts to get.")
     }
 
     const attempts = await ormGetUserAttempts(userId);
-
     // NO EXISTING ATTEMPT BY USER
     if (attempts.length === 0) {
       throw new NotFoundError("No attempts found");
     }
-    return res.status(200).json({ statusCode: 200, data: { attempts } });
+    return res.status(200).json({ statusCode: 200, data: { attempts,  } });
   } catch (error) {
     next(
       error instanceof BaseError

@@ -39,6 +39,7 @@ const getUserAttempts = async (userId) => {
 };
 
 const isDuplicateAttempt = async (userId, otherUserId, roomId) => {
+  console.log(userId, otherUserId, roomId);
   const attempt = await Attempt.find({
     userId: { $eq: userId },
     otherUserId: { $eq: otherUserId },
@@ -46,6 +47,11 @@ const isDuplicateAttempt = async (userId, otherUserId, roomId) => {
   });
   console.log(attempt);
 
+  const attemptCheck = await Attempt.find({
+    roomId: { $eq: roomId },
+  });
+
+  console.log(attemptCheck);
   return attempt.length > 0;
 };
 

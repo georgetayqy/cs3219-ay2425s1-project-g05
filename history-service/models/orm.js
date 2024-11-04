@@ -30,10 +30,9 @@ const ormGetUserAttempts = async (userId) => {
 const ormIsDuplicateAttempt = async (
   userId,
   otherUserId,
-  questionId,
   roomId
 ) => {
-  return isDuplicateAttempt(userId, otherUserId, questionId, roomId);
+  return isDuplicateAttempt(userId, otherUserId, roomId);
 };
 
 export {

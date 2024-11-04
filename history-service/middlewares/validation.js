@@ -131,7 +131,7 @@ const joiAttemptSchema = Joi.object({
     "array.base": "testCaseResults must be an array",
     "array.min": "At least one testCaseResult is required",
     "any.required":
-      "testCaseResults are required and should have testCaseId, input, isPassed, and expectedOutput",
+      "testCaseResults are required",
   }),
   roomId: Joi.string().trim().min(1).required().messages({
     "string.empty": "Room ID cannot be empty",
