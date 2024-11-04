@@ -2,6 +2,7 @@ import express from "express";
 import { createClient } from "redis";
 import dotenv from "dotenv";
 import router from "./router.js";
+import corsMiddleware from "./middleware/cors.js";
 
 const app = express();
 const port = process.env.PORT || 8007;
@@ -21,7 +22,7 @@ redisClient.on("connect", () => console.log("Connected to Redis"));
 redisClient.on("ready", () => console.log("Redis Client Ready"));
 await redisClient.connect();
 
-//TODO: Add cors middleware
+app.use(corsMiddleware);
 app.use("/api/run-service", router);
 
 // Test Route for Health Checks

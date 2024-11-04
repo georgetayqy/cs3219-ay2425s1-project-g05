@@ -8,6 +8,9 @@ const allowedOrigins = [
   "http://localhost:8001",
   "http://localhost:8002",
   "http://localhost:8004",
+  "http://localhost:8005",
+  "http://localhost:8006",
+  "http://localhost:8007",
 ];
 
 // PORT 8000 - FRONTEND
@@ -16,6 +19,9 @@ const allowedOrigins = [
 // PORT 8002 - MATCHING SERVICE
 // PORT 8003 - QUESTION SERVICE
 // PORT 8004 - COLLABORATION SERVICE
+// PORT 8005 - COMMUNICATION SERVICE
+// PORT 8006 - HISTORY SERVICE
+// PORT 8007 - RUN SERVICE
 
 
 const corsOptions = {
