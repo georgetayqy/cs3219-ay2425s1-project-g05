@@ -1,13 +1,13 @@
 
 import express from "express";
 import { validateAttempt } from "../middlewares/validation.js";
-import { createAttempt, deleteAttempt, getAttempt, getUserAttempts, hello, updateAttempt } from "../controller/history-controller.js";
+import { createAttempt, deleteAttempt, getAttempt, getUserAttempts, updateAttempt } from "../controller/history-controller.js";
 import getUser from "../middlewares/userMiddleware.js";
 
 const router = express.Router();
 
 // CREATE NEW ATTEMPT
-router.post('/attempt/', validateAttempt, getUser, createAttempt);
+router.post('/attempt', validateAttempt, getUser, createAttempt);
 
 // GET ATTEMPT BASED ON USERID AND ROOMID
 router.route("/attempt/:roomId").get(getUser, getAttempt);

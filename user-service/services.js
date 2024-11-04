@@ -21,9 +21,9 @@ export function hashPassword(password) {
   return bcrypt.hashSync(password, salt);
 }
 
-export function generateAccessToken({ _id, email, displayName, isAdmin }) {
+export function generateAccessToken({ email, displayName, isAdmin }) {
   return jwt.sign(
-    { userId: _id, email: email, displayName: displayName, isAdmin: isAdmin },
+    { email: email, displayName: displayName, isAdmin: isAdmin },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: "15m" }
   );
