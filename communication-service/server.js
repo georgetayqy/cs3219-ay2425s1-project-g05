@@ -56,6 +56,7 @@ function storeMessage(roomId, message) {
 
 function cleanupRoom(roomId) {
   delete rooms[roomId]
+  delete calls[roomId]
 }
 
 
@@ -233,6 +234,154 @@ function onBeforeDisconnect(io, socket) {
   });
 }
 
+/**
+ * @type {{
+ * [roomId: string]: {
+ *  offer: RTCSessionDescriptionInit,
+ *  answer: RTCSessionDescriptionInit,
+ *  offerCandidates: RTCIceCandidateInit[], 
+ *  answerCandidates: RTCIceCandidateInit[]
+ *  }
+ * }} 
+ */
+const calls = {}
+
+
+/**
+ * Check if there is already a user waiting for video call in the room
+ * 
+ * @param {*} io 
+ * @param {*} socket 
+ * @param {{ roomId: string }} data 
+ */
+function onVideoCheck(io, socket, data) {
+  if (!calls[data.roomId]) {
+    console.log("LOG(VIDEO): No user waiting for video call in room { " + data.roomId + " }")
+    socket.emit('video-check', null)
+  } else {
+    const { offer } = calls[data.roomId]
+
+    // send the offer to the user who is checking
+    console.log("LOG(VIDEO): User found waiting for video call in room { " + data.roomId + " }")
+    socket.emit('video-check', { offer })
+  }
+}
+
+/**
+ * Initalize the first user in the room to start the video call.
+ * Note that there should not be any other user in the room
+ * 
+ * @param {*} io 
+ * @param {*} socket 
+ * @param {{
+ *  roomId: string,
+ *  offer: RTCSessionDescriptionInit
+ * }} data 
+ */
+function onVideoOffer(io, socket, data) {
+  console.log("LOG(VIDEO): Received video offer")
+  const { roomId, offer } = data;
+
+  if (!calls[roomId]) {
+    calls[roomId] = {
+      offer,
+      offerCandidates: [],
+      answer: null,
+      answerCandidates: []
+    }
+
+    // nothing to do here
+  } else {
+    console.log("ERROR: unreachable case was reached")
+  }
+
+}
+
+/**
+ * Answer the video cal.
+ * Note that there should always be an offer before an answer.
+ * 
+ * @param {*} io 
+ * @param {*} socket 
+ * @param {{
+ *  roomId: string, 
+ *  answer: RTCSessionDescriptionInit 
+ * }} data 
+ */
+function onVideoAnswer(io, socket, data) {
+  console.log("LOG(VIDEO): Received video answer")
+  const { roomId, answer } = data;
+
+  if (!calls[roomId]) {
+    console.log("ERROR: unreachable case was reached")
+  } else {
+    calls[roomId].answer = answer
+
+    // forward the answer to the user who initiated the call
+    // socket.emit('video-answer', { answer })
+    io.to(roomId).emit('video-answer', { answer })
+  }
+}
+
+/**
+ * Forward the ICE candidate to the second user
+ * 
+ * @param {*} io 
+ * @param {*} socket 
+ * @param {{ 
+ *  roomId: string,
+ *  candidate: RTCIceCandidateInit
+ * }} data 
+ */
+function onVideoOfferIceCandidate(io, socket, data) {
+  console.log("LOG(VIDEO): Received video offer ICE candidate")
+  const { roomId, candidate } = data;
+
+  if (!calls[roomId]) {
+    console.log("ERROR: unreachable case was reached")
+  } else {
+    calls[roomId].offerCandidates.push(candidate)
+
+    // forward the candidate to the user who initiated the call (basically the other user in the room)
+    io.to(roomId).emit('video-offer-ice-candidate', { candidate })
+
+  }
+}
+
+/**
+ * Forward the ICE candidate to the first user
+ * 
+ * @param {*} io 
+ * @param {*} socket 
+ * @param {{
+ *  roomId: string,
+ * candidate: RTCIceCandidateInit
+ * }} data 
+ */
+function onVideoAnswerIceCandidate(io, socket, data) {
+  console.log("LOG(VIDEO): Received video answer ICE candidate")
+  const { roomId, candidate } = data;
+
+  if (!calls[roomId]) {
+    console.log("ERROR: unreachable case was reached")
+  } else {
+    calls[roomId].answerCandidates.push(candidate)
+
+    // forward the candidate to the user who initiated the call
+    io.to(roomId).emit('video-answer-ice-candidate', { candidate })
+  }
+}
+
+function onVideoPartnerDisconnected(io, socket, data) {
+  console.log("LOG(VIDEO): Partner disconnected")
+  const { roomId } = data;
+
+  // cleanup the call
+  delete calls[roomId]
+
+  io.to(roomId).emit('video-cleanup')
+}
+
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
@@ -248,8 +397,27 @@ io.on('connection', (socket) => {
   // set user details
   socket.on('set-details', (data) => onSetUsername(io, socket, data));
 
+
+  // ---- video chat ----
+  // socket.on('video-offer', (data) => onVideoOffer(io, socket, data));
+
+  socket.on('video-check', (data) => onVideoCheck(io, socket, data));
+
+  socket.on('video-offer', (data) => onVideoOffer(io, socket, data));
+
+  socket.on('video-answer', (data) => onVideoAnswer(io, socket, data))
+
+  socket.on('video-offer-ice-candidate', data => onVideoOfferIceCandidate(io, socket, data))
+
+  socket.on('video-answer-ice-candidate', data => onVideoAnswerIceCandidate(io, socket, data))
+
+  socket.on('video-cleanup', (data) => onVideoPartnerDisconnected(io, socket, data))
+
+
   socket.on('disconnect', () => {
     console.log(`INFO: User disconnected with socket id { ${socket.id} }`);
+
+    // remember to update the video call data
   });
 });
 

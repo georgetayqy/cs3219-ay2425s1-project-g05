@@ -1,3 +1,14 @@
+.container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  top: 0;
+}
+
+.videoContainer {
+}
+
 .chatContainer {
   width: 500px;
   /* height: 150px; */

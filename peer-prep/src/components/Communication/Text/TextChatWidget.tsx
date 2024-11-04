@@ -47,6 +47,7 @@ import {
 import { useInViewport, useTimeout } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { formatTime } from "../../../utils/utils";
+import VideoChatWidget from "../Video/VideoChatWidget";
 
 enum ChatState {
   DISCONNECTED,
@@ -312,8 +313,22 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   }, [messages.length]);
   const otherUser = usersInRoom.find((u) => u.userId !== user._id);
 
+  const [renderVideo, setRenderVideo] = useState(true);
+  function onVideoCallDisconnect() {
+    setRenderVideo(false);
+    setTimeout(() => {
+      setRenderVideo(true);
+    }, 100);
+  }
+
   return (
-    <>
+    <Box className={classes.container}>
+      {renderVideo && (
+        <VideoChatWidget
+          roomId={roomId}
+          onVideoCallDisconnect={onVideoCallDisconnect}
+        />
+      )}
       <Box className={classes.chatContainer}>
         <Flex
           className={classes.chatHeader}
@@ -620,6 +635,6 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
           </Box>
         </Collapse>
       </Box>
-    </>
+    </Box>
   );
 }
