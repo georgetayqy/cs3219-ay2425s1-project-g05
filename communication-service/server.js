@@ -263,6 +263,7 @@ function onVideoCheck(io, socket, data) {
 
     // send the offer to the user who is checking
     console.log("LOG(VIDEO): User found waiting for video call in room { " + data.roomId + " }")
+
     socket.emit('video-check', { offer })
   }
 }

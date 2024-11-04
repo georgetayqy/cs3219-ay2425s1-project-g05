@@ -101,6 +101,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   );
   const [chatState, setChatState] = useState<ChatState>(ChatState.DISCONNECTED);
   const [usersInRoom, setUsersInRoom] = useState<ChatRoomUser[]>([]);
+  const [usersSeenSoFar, setUsersSeenSoFar] = useState<ChatRoomUser[]>([]);
   const [socketUserId, setSocketUserId] = useState("");
   const [draftMessage, setDraftMessage] = useState("");
 
@@ -260,6 +261,12 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       console.log("INFO: Room now has: ", evt.users);
 
       setUsersInRoom(evt.users);
+      // add to users seen so far if not already
+      evt.users.forEach((user) => {
+        if (!usersSeenSoFar.find((u) => u.userId === user.userId)) {
+          setUsersSeenSoFar((prev) => [...prev, user]);
+        }
+      });
     }
 
     // this function gets called whenever a room is joined
@@ -311,7 +318,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       }
     }
   }, [messages.length]);
-  const otherUser = usersInRoom.find((u) => u.userId !== user._id);
+  const otherUser = usersSeenSoFar.find((u) => u.userId !== user._id);
 
   const [renderVideo, setRenderVideo] = useState(true);
   function onVideoCallDisconnect() {
@@ -323,12 +330,6 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
 
   return (
     <Box className={classes.container}>
-      {renderVideo && (
-        <VideoChatWidget
-          roomId={roomId}
-          onVideoCallDisconnect={onVideoCallDisconnect}
-        />
-      )}
       <Box className={classes.chatContainer}>
         <Flex
           className={classes.chatHeader}
@@ -358,7 +359,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
 
         <Collapse in={isChatOpen}>
           <Group className={classes.chatContentColored}>
-            {otherUser ? (
+            {usersInRoom.length > 1 ? (
               <>
                 <Avatar
                   src={""}
@@ -371,16 +372,13 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                 <Text style={{ color: "white" }}>{otherUser?.name}</Text>
 
                 <Space flex={1} />
-                <Group gap="xs">
-                  <ActionIcon variant="subtle" color="white">
-                    {" "}
-                    <IconPhone size={"20px"} />
-                  </ActionIcon>
-                  <ActionIcon variant="subtle" color="white">
-                    {" "}
-                    <IconVideo size="20px" />
-                  </ActionIcon>
-                </Group>
+                {renderVideo && (
+                  <VideoChatWidget
+                    roomId={roomId}
+                    onVideoCallDisconnect={onVideoCallDisconnect}
+                    otherUser={otherUser}
+                  />
+                )}
               </>
             ) : (
               <Text style={{ color: "white" }}>

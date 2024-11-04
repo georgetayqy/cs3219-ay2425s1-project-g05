@@ -1,12 +1,21 @@
 // This component will be rendered when the user clicks on the "Video call" button.
 // It will not be de-rendered until the user clicks on the "End call" button.
 
-import { AspectRatio, Box, Button, Group } from "@mantine/core";
+import {
+  ActionIcon,
+  AspectRatio,
+  Box,
+  Button,
+  Group,
+  Text,
+} from "@mantine/core";
 
 import classes from "./VideoChatWidget.module.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { socket } from "../../../websockets/communication/socket";
 import { useAuth } from "../../../hooks/useAuth";
+import { IconPhone, IconPhoneEnd, IconVideo } from "@tabler/icons-react";
+import { useHover } from "@mantine/hooks";
 
 const servers = {
   iceServers: [
@@ -19,11 +28,27 @@ const servers = {
 
 type Offer = RTCSessionDescriptionInit;
 
+enum CALL_STATUS {
+  IDLE,
+  CALLING,
+  CONNECTED,
+}
+
+// same as TextChatWidget
+type ChatRoomUser = {
+  userId: string;
+  userSocketId: string;
+  name: string;
+  email: string;
+};
+
 export default function VideoChatWidget({
   roomId,
+  otherUser,
   onVideoCallDisconnect,
 }: {
   roomId: string;
+  otherUser?: ChatRoomUser;
   onVideoCallDisconnect: () => void;
 }) {
   const { user } = useAuth();
@@ -42,6 +67,8 @@ export default function VideoChatWidget({
   const [answerCandidates, setAnswerCandidates] = useState<
     RTCIceCandidateInit[]
   >([]);
+
+  const [callStatus, setCallStatus] = useState<CALL_STATUS>(CALL_STATUS.IDLE);
 
   // let pc = useMemo<RTCPeerConnection | null>(() => null, []);
 
@@ -115,6 +142,8 @@ export default function VideoChatWidget({
       // alert(" break ! ");
       if (pc.current.connectionState === "connected") {
         console.log("LOG: Connected");
+
+        setCallStatus(CALL_STATUS.CONNECTED);
       }
 
       if (pc.current.connectionState === "disconnected") {
@@ -122,16 +151,24 @@ export default function VideoChatWidget({
         // this is better as in the case of no internet, the event will not be received
         socket.emit("video-cleanup", { roomId, selfId: user._id });
         // pc.current.restartIce();
+
+        setCallStatus(CALL_STATUS.IDLE);
+
         cleanup();
       }
     };
 
+    // listen for response for checking if there is another user in the video call
     socket.on("video-check", onVideoCheck);
+
+    // listen for end call event
+    socket.on("video-cleanup", (data: { selfId: string }) => {
+      console.log("LOG: receive { video-cleanup } data:", data);
+
+      // cleanup
+      cleanup();
+    });
   }
-  useEffect(() => {
-    // init();
-    // return cleanup;
-  }, []);
 
   useEffect(() => {
     // register the video-check event
@@ -142,15 +179,24 @@ export default function VideoChatWidget({
       socket.off("video-answer");
       socket.off("video-offer-ice-candidate");
       socket.off("video-answer-ice-candidate");
+      socket.off("video-cleanup");
     };
   }, []);
 
   async function onCallButtonPress() {
-    // send video-check event to server to check if there is another user in the video call
-    // NOTE:TODO: should not allow pressing after connected
-    if (!pc.current) await init();
-    console.log("LOG: emit { video-check }");
-    socket.emit("video-check", { roomId });
+    if (callStatus === CALL_STATUS.CONNECTED) {
+      // disconnect
+      // emit video-cleanup event
+      socket.emit("video-cleanup", { roomId, selfId: user._id });
+      cleanup();
+    } else {
+      setCallStatus(CALL_STATUS.CALLING);
+      // send video-check event to server to check if there is another user in the video call
+      // NOTE:TODO: should not allow pressing after connected
+      if (!pc.current) await init();
+      console.log("LOG: emit { video-check }");
+      socket.emit("video-check", { roomId });
+    }
   }
 
   async function onVideoCheck(data: null | { offer: Offer }) {
@@ -261,17 +307,98 @@ export default function VideoChatWidget({
     }
   }
 
+  // behaviour of the video chat widget:
+  // when waiting for user: show self video
+  // when connected: show remote video
+  // when mouseover: show self video
+
+  const { hovered, ref: containerRef } = useHover();
+  const showSelf = hovered || callStatus === CALL_STATUS.CALLING;
+  console.log("LOG: hovered", hovered);
+
   return (
-    <Box className={classes.videoContainer}>
-      {/* <h1>Video Chat Widget</h1> */}
-      <Group>
-        <Button onClick={onCallButtonPress}>Call</Button>
-        <Button> Answer</Button>
+    <Box>
+      <Group gap="xs">
+        {/* <ActionIcon variant="subtle" color="white">
+          {" "}
+          <IconPhone size={"20px"} />
+        </ActionIcon> */}
+        {callStatus === CALL_STATUS.CALLING && (
+          <Text style={{ color: "white" }}> Waiting for answer... </Text>
+        )}
+        <ActionIcon
+          variant="subtle"
+          color="white"
+          onClick={onCallButtonPress}
+          loading={callStatus === CALL_STATUS.CALLING}
+        >
+          {" "}
+          {callStatus === CALL_STATUS.IDLE ? (
+            <IconVideo size="20px" />
+          ) : (
+            <IconPhoneEnd size="20px" />
+          )}
+        </ActionIcon>
       </Group>
-      <AspectRatio ratio={1080 / 720} maw={300} mx="auto">
-        <video ref={remoteVideoRef} autoPlay />
-        <video ref={selfVideoRef} autoPlay />
-      </AspectRatio>
+
+      <Box
+        className={classes.videoContainer}
+        ref={containerRef}
+        display={callStatus === CALL_STATUS.CONNECTED ? "block" : "none"}
+      >
+        {/* <h1>Video Chat Widget</h1> */}
+        {showSelf ? (
+          <Box className={classes.selfVideoContainer}>
+            <Text className={classes.selfVideoDescriptor}>
+              {" "}
+              {user.displayName} (You)
+            </Text>
+            <AspectRatio
+              ratio={1080 / 720}
+              maw={300}
+              mx="auto"
+              className={classes.selfVideo}
+            >
+              <video ref={selfVideoRef} autoPlay />
+            </AspectRatio>
+            <Button
+              size="xs"
+              variant="filled"
+              color="dark"
+              className={classes.selfEndCallButton}
+              onClick={onCallButtonPress}
+            >
+              {" "}
+              End call{" "}
+            </Button>
+          </Box>
+        ) : (
+          <Box className={classes.otherVideoContainer}>
+            <Text className={classes.otherVideoDescriptor}>
+              {" "}
+              {otherUser?.name}
+            </Text>
+            <AspectRatio
+              ratio={1080 / 720}
+              maw={300}
+              mx="auto"
+              className={classes.otherVideo}
+            >
+              <video ref={remoteVideoRef} autoPlay />
+            </AspectRatio>
+            <Button
+              size="xs"
+              variant="filled"
+              color="dark"
+              className={classes.otherEndCallButton}
+              onClick={onCallButtonPress}
+            >
+              {" "}
+              End call{" "}
+            </Button>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }
