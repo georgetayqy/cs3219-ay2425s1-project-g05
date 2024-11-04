@@ -32,7 +32,7 @@ import {
   CategoryResponseData,
   Question,
 } from "../../../types/question";
-import { socket } from "../../../websockets/socket";
+import { socket } from "../../../websockets/matching/socket";
 import { useAuth } from "../../../hooks/useAuth";
 import { displayName } from "react-quill";
 import SearchingPage from "../Search/SearchingPage";
