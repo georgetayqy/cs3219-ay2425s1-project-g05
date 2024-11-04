@@ -2,7 +2,9 @@ import {
   Accordion,
   Avatar,
   Badge,
+  Box,
   Button,
+  Center,
   Container,
   Flex,
   Group,
@@ -181,7 +183,7 @@ export default function SessionPage() {
   return (
     <ModalsProvider>
       <TextChatWidget roomId={roomId} />
-      <Container size="lg" className={classes.wrapper}>
+      <Box className={classes.wrapper}>
         {/* Collaborator Details */}
         {/* <Group mb="md" style={{ alignItems: "center" }}>
           <Group>
@@ -253,6 +255,18 @@ export default function SessionPage() {
             >
               View on LeetCode
             </Button>
+
+            <Center>
+              <Button
+                // variant="light"
+                color="red"
+                size="md"
+                style={{ marginTop: "1rem" }}
+                onClick={openEndSessionModal}
+              >
+                End Session
+              </Button>
+            </Center>
           </Paper>
 
           <Stack style={{ flex: 1, gap: "1 rem" }}>
@@ -283,19 +297,7 @@ export default function SessionPage() {
             </Stack>
           </Stack>
         </Flex>
-
-        <Flex style={{ justifyContent: "center" }}>
-          <Button
-            variant="light"
-            color="red"
-            size="lg"
-            style={{ width: "100%", marginTop: "1rem" }}
-            onClick={openEndSessionModal}
-          >
-            End Session
-          </Button>
-        </Flex>
-      </Container>
+      </Box>
     </ModalsProvider>
   );
 }
