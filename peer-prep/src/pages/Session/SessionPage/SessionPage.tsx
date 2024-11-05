@@ -51,7 +51,11 @@ const categoryColorMap: { [key in QuestionCategory]: string } = {
   RECURSION: "teal",
 };
 
+const LOCAL_WEBSOCKET = import.meta.env.VITE_COLLAB_WS_URL_LOCAL;
+
 export default function SessionPage() {
+  const WEBSOCKET_URL = import.meta.env.VITE_COLLAB_WS_URL || LOCAL_WEBSOCKET;
+
   const { fetchData } = useApi();
   const navigate = useNavigate();
 
@@ -323,7 +327,8 @@ export default function SessionPage() {
               style={{ flex: 1, minHeight: "100%" }}
             >
               <CodeEditor
-                endpoint={"ws://localhost:8004"}
+                // endpoint={"ws://localhost:8004"}
+                endpoint={WEBSOCKET_URL}
                 room={roomId}
                 user={userId}
                 theme="dark"
