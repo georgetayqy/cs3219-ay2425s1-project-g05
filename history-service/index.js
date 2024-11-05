@@ -10,7 +10,7 @@ import corsMiddleware from "./middlewares/cors.js";
 
 dotenv.config();
 const app = express();
-const port = process.env.DEV_PORT || 8005;
+const port = process.env.DEV_PORT || 8006;
 
 app.use(corsMiddleware);
 app.use(cookieParser());

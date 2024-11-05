@@ -7,18 +7,18 @@ import getUser from "../middlewares/userMiddleware.js";
 const router = express.Router();
 
 // CREATE NEW ATTEMPT
-router.post('/', validateAttempt, createAttempt);
+router.post('/attempt', validateAttempt, getUser, createAttempt);
 
 // GET ATTEMPT BASED ON USERID AND ROOMID
-router.route("/").get(getUser, getAttempt);
+router.route("/attempt/:roomId").get(getUser, getAttempt);
 
 // DELETE ATTEMPT BASED ON USERID AND ROOMID
-router.route("/:roomId").delete(getUser, deleteAttempt);
+router.route("/attempt/:roomId").delete(getUser, deleteAttempt);
 
 // UPDATE ATTEMPT BY ID
-router.route("/:roomId").put(getUser, updateAttempt);
+router.route("/attempt/:roomId").put(getUser, updateAttempt);
 
 // GET ALL ATTEMPTS BY USERID
-router.route("/user").get(getUser, getUserAttempts);
+router.route("/user/attempts").get(getUser, getUserAttempts);
 
  export default router;

@@ -6,47 +6,53 @@ const createAttempt = async (attempt) => {
   return savedAttempt;
 };
 
-const getAttempt = async (userEmail, roomId) => {
+const getAttempt = async (userId, roomId) => {
   return Attempt.find({
-    userEmail: { $eq: userEmail },
+    userId: { $eq: userId },
     roomId: { $eq: roomId },
     isDeleted: false,
   });
 };
 
-const updateAttempt = async (userEmail, roomId, attempt) => {
+const updateAttempt = async (userId, roomId, attempt) => {
   return Attempt.findOneAndUpdate(
-    { userEmail: { $eq: userEmail }, roomId: { $eq: roomId }, isDeleted: false },
+    { userId: { $eq: userId }, roomId: { $eq: roomId }, isDeleted: false },
     attempt,
     { new: true }
   );
 };
 
-const deleteAttempt = async (userEmail, roomId) => {
+const deleteAttempt = async (userId, roomId) => {
   // soft delete
   return Attempt.findOneAndUpdate(
-    { userEmail: { $eq: userEmail }, roomId: { $eq: roomId }, isDeleted: false },
+    { userId: { $eq: userId }, roomId: { $eq: roomId }, isDeleted: false },
     { isDeleted: true },
     { new: true }
   );
 };
 
-const getUserAttempts = async (userEmail) => {
+const getUserAttempts = async (userId) => {
   return Attempt.find({
-    userEmail: { $eq: userEmail },
+    userId: { $eq: userId },
     isDeleted: false,
   });
 };
 
-const isDuplicateAttempt = async (userEmail, otherUserEmail, questionId, roomId) => {
-  const attempt = Attempt.findOne({
-    userEmail: { $eq: userEmail },
-    otherUserEmail: { $eq: otherUserEmail },
-    questionId: { $eq: questionId },
+const isDuplicateAttempt = async (userId, otherUserId, roomId) => {
+  console.log(userId, otherUserId, roomId);
+  const attempt = await Attempt.find({
+    userId: { $eq: userId },
+    otherUserId: { $eq: otherUserId },
     roomId: { $eq: roomId },
-    isDeleted: false,
   });
-  return !!attempt;
+  console.log(attempt);
+
+  const attemptCheck = await Attempt.find({
+    roomId: { $eq: roomId },
+  });
+
+  console.log(attemptCheck);
+  return attempt.length > 0;
 };
 
 export {

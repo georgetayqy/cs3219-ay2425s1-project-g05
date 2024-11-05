@@ -22,7 +22,8 @@ const getUser = (req, res, next) => {
   }
 
   if (user) {
-    req.userEmail = user.email;
+    console.log(user);
+    req.userId = user.userId;
     next()
   } else {
     throw new ForbiddenError("Error getting user");
