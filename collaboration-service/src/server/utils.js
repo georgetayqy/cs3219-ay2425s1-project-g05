@@ -62,7 +62,7 @@ if (typeof persistenceDir === 'string') {
         ldb.storeUpdate(docName, update);
       });
     },
-    writeState: async (_docName, _ydoc) => {},
+    writeState: async (_docName, _ydoc) => { },
   };
 }
 
@@ -174,12 +174,12 @@ class WSSharedDoc extends Doc {
     };
 
     this.awareness.on('update', awarenessChangeHandler);
-    this.on('update', /** @type {any} */ (updateHandler));
+    this.on('update', /** @type {any} */(updateHandler));
 
     if (isCallbackSet) {
       this.on(
         'update',
-        /** @type {any} */ (
+        /** @type {any} */(
           debounce(callbackHandler, CALLBACK_DEBOUNCE_WAIT, {
             maxWait: CALLBACK_DEBOUNCE_MAXWAIT,
           })
@@ -301,6 +301,7 @@ const closeConn = (doc, userId, conn) => {
  * @param {Uint8Array} m
  */
 const send = (doc, conn, m) => {
+  console.log("in send")
   if (
     conn.readyState !== wsReadyStateConnecting &&
     conn.readyState !== wsReadyStateOpen
@@ -309,6 +310,7 @@ const send = (doc, conn, m) => {
   }
   try {
     conn.send(m, {}, (err) => {
+      console.log("ERROR HERE??? (in server#send", err)
       err != null && closeConn(doc, conn);
     });
   } catch (e) {
@@ -361,7 +363,7 @@ const setupWSConnection = (
   // listen and reply to events
   conn.on(
     'message',
-    /** @param {ArrayBuffer} message */ (message) => {
+    /** @param {ArrayBuffer} message */(message) => {
       return messageListener(conn, doc, new Uint8Array(message));
     }
   );
