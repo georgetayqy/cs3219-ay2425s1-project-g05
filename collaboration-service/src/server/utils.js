@@ -255,6 +255,8 @@ const messageListener = (conn, doc, message) => {
  * @param {any} conn
  */
 const closeConn = (doc, userId, conn) => {
+  console.log('State before CLOSING CONNECTION', LocalClient.getState());
+
   if (doc.conns.has(conn)) {
     /**
      * @type {Set<number>}
@@ -300,6 +302,8 @@ const closeConn = (doc, userId, conn) => {
       }
     }
   }
+
+  console.log('State AFTER CLOSING CONNECTION', LocalClient.getState());
 };
 
 /**
@@ -335,6 +339,8 @@ const setupWSConnection = (
   req,
   { docName = (req.url || '').slice(1).split('?')[0], gc = true } = {}
 ) => {
+  console.log('State BEFORE OPENING CONNECTION', LocalClient.getState());
+
   conn.binaryType = 'arraybuffer';
   // get the difficulties and categories
   // const { userId, splitResults } = getTemplateQuestion(req.url);
@@ -400,6 +406,8 @@ const setupWSConnection = (
   conn.on('pong', () => {
     pongReceived = true;
   });
+
+  console.log('State AFTER OPENING CONNECTION', LocalClient.getState());
 
   // put the following in a variables in a block so the interval handlers don't keep in in
   // scope

@@ -23,16 +23,17 @@ class LocalClient {
   static docToQuestion = new Map();
 
   static getDocByUser(userId) {
-    console.log(userId);
-    console.log(LocalClient.userToDoc.get(userId));
+    console.log('Remove Doc by user ', userId);
     return LocalClient.userToDoc.get(userId) ?? null;
   }
 
   static getUserByDoc(doc) {
+    console.log('Get User by doc ', doc);
     return LocalClient.docToUser.get(doc) ?? null;
   }
 
   static getQuestion(doc) {
+    console.log('Remove Questions from ', doc);
     if (LocalClient.docToQuestion.has(doc)) {
       return LocalClient.docToQuestion.get(doc);
     }
@@ -41,6 +42,7 @@ class LocalClient {
   }
 
   static putQuestion(doc, question) {
+    console.log('Put Questions from ', doc);
     if (LocalClient.docToQuestion.has(doc)) {
       return LocalClient.docToQuestion.get(doc);
     }
@@ -50,6 +52,7 @@ class LocalClient {
   }
 
   static removeQuestion(doc) {
+    console.log('Remove Questions from ', doc);
     if (!LocalClient.docToQuestion.has(doc)) {
       return;
     }
@@ -61,6 +64,7 @@ class LocalClient {
    * Creates a unique room ID
    */
   static createRoom(users) {
+    console.log('Create room with', users);
     // likely O(1) operation, since hash collisions are rare
     let uuid = v7();
 
@@ -93,6 +97,9 @@ class LocalClient {
 
     // if userRoom is null, means that all users are not in a room
     if (userRoom === undefined) {
+      // create the room
+      LocalClient.docToUser.set(uuid, users);
+
       // add to predefined UUID room name
       for (const user of users) {
         LocalClient.add(user, uuid);
@@ -117,6 +124,8 @@ class LocalClient {
    * @param {string} doc Room Id
    */
   static add(user, doc) {
+    console.log('Add', user, 'to', doc);
+
     if (LocalClient.userToDoc.has(user)) {
       // ignore if user is already in the room
       return;
@@ -138,12 +147,15 @@ class LocalClient {
    * Deletes a user from a room
    */
   static delete(user, doc) {
+    console.log('Delete', user, 'from', doc);
+
     const docs = LocalClient.userToDoc.get(user);
 
-    if (docs === undefined || docs !== doc) {
-      throw new UserNotFoundInRoomError(
-        'Unable to delete user as user is not found in the correct room'
-      );
+    if (docs === undefined) {
+      console.error('Unable to delete user as user is not found in room');
+      // throw new UserNotFoundInRoomError(
+      //   'Unable to delete user as user is not found in the correct room'
+      // );
     }
 
     // delete the user from the userToDoc mapping
@@ -153,7 +165,9 @@ class LocalClient {
     const users = LocalClient.docToUser.get(docs);
 
     if (users === undefined) {
-      throw new RoomNotFoundError('Unable to find requested room in database');
+      console.error('Unable to find requested room in database');
+      // throw new RoomNotFoundError('Unable to find requested room in database');
+      return;
     }
 
     // remove user from the list of users in the doc
@@ -206,10 +220,12 @@ class LocalClient {
    * @returns
    */
   static deleteRoom(room) {
+    console.log('Delete room', room);
     const users = LocalClient.getUserByDoc(room);
 
     if (users === null) {
-      throw new RoomNotFoundError('No room found');
+      console.log('Room is not found when deleting room');
+      // throw new RoomNotFoundError('No room found');
     }
 
     for (const user of users) {
@@ -222,8 +238,11 @@ class LocalClient {
 
   static getState() {
     return [
+      'user2doc',
       Array.from(LocalClient.userToDoc.entries()),
+      'doc2User',
       Array.from(LocalClient.docToUser.entries()),
+      'doc2Qns',
       Array.from(LocalClient.docToQuestion.entries()),
     ];
   }
