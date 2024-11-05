@@ -5,6 +5,7 @@ import { questionServiceUrl, redisClient } from "./server.js";
 import UnauthorizedError from "./errors/UnauthorisedError.js";
 import ConflictError from "./errors/ConflictError.js";
 import ServiceUnavailableError from "./errors/ServiceUnavailable.js";
+import NotFoundError from "./errors/NotFoundError.js";
 import BaseError from "./errors/BaseError.js";
 
 // Add function to create channelId connection when session starts
@@ -114,36 +115,32 @@ const subscribeToChannel = async (req, res) => {
 };
 
 const executeTest = async (req, res) => {
-  const questionId = req.params.questionId;
-  const { codeAttempt, channelId } = req.body;
+  try {
+    const questionId = req.params.questionId;
+    const { codeAttempt, channelId } = req.body;
 
-  const existingJob = await redisClient.hGetAll(`channel:${channelId}`);
-  console.log("Existing job data:", existingJob);
+    // Check if another execution is in progress
+    const existingJob = await redisClient.hGetAll(`channel:${channelId}`); 
+    console.log("Existing job data:", existingJob);
     if (existingJob && existingJob.status === "processing") {
-      console.log("Another execution is already in progress. Try again later error thrown");
-      res
-        .status(409)
-        .json({
-          statusCode: 409,
-          message: "Another execution is already in progress. Try again later.",
-        });
+      console.log(
+        "Another execution is already in progress. Try again later error thrown"
+      );
+      throw new ConflictError(
+        "Another execution is already in progress. Try again later."
+      );
       return;
     }
-
-
-  console.log("Executing test cases for questionId:", questionId);
-  try {
-    // Retrieve test cases for the questionId
+    
+    // Retrieve testcases for the question
+    console.log("Executing test cases for questionId:", questionId);
     const testcases = await getTestcases(questionId);
     if (!testcases) {
-      return res
-        .status(404)
-        .json({ error: `No question found for ID ${questionId}` });
+      throw new NotFoundError("Testcases not found for the question");
     }
     console.log("Testcases retrieved sucessfully");
-    // Find whether theres already a job in progress
-    
-    // Initialize job data in Redis
+
+    // Indicate that the test cases are being processed - initial message to indicate start of execution
     await redisClient.hSet(`channel:${channelId}`, {
       status: "processing",
       questionId,
@@ -153,7 +150,7 @@ const executeTest = async (req, res) => {
 
     const testCaseCount = testcases.length;
 
-    // Respond to client with jobId
+    // Respond to client with test case count
     res.status(200).json({
       statusCode: 200,
       message: `Executing test cases for questionId: ${questionId}`,
@@ -163,6 +160,9 @@ const executeTest = async (req, res) => {
     // Start processing test cases
     processTestcases(channelId, testcases, codeAttempt);
   } catch (error) {
+    if (error instanceof BaseError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({ error: "Failed to execute test cases" });
   }
 };
@@ -188,7 +188,7 @@ async function runTestcase(testcase, code) {
       "X-Auth-User": process.env.X_AUTH_USER,
     };
 
-    // Send POST request to the external API
+    // Send POST request to the judge0 API
     const response = await axios.post(process.env.JUDGE0_API_URL, requestBody, {
       headers,
     });
@@ -222,7 +222,7 @@ async function runTestcase(testcase, code) {
         case 404:
           // Service not found error -> means not available?
           throw new ServiceUnavailableError(
-            "Execution Service not found. Testcase execution halted."
+            "Execution Service not found. Testcase execution failed."
           );
         case 401:
           throw new UnauthorizedError(
@@ -231,7 +231,7 @@ async function runTestcase(testcase, code) {
         case 503:
           throw new ServiceUnavailableError(
             503,
-            "Queue is full. Testcase execution halted."
+            "Queue is full. Testcase execution failed."
           );
         default:
           throw new BaseError(
@@ -247,7 +247,9 @@ async function runTestcase(testcase, code) {
 
 async function processTestcases(channelId, testcases, code) {
   const results = [];
+  let hasError = false;
   console.log("============Starting testcases execution==========");
+
   for (let i = 0; i < testcases.length; i++) {
     try {
       const result = await runTestcase(testcases[i], code);
@@ -267,6 +269,7 @@ async function processTestcases(channelId, testcases, code) {
         error: error.message,
       };
       results.push(errorMessage);
+      hasError = true; // Set error flag to true
 
       console.log(
         "==========Error while executing testcase:",
@@ -281,26 +284,37 @@ async function processTestcases(channelId, testcases, code) {
       break;
     }
   }
+
   console.log("Completed testcases execution");
 
-  // After all test cases, publish the full results array
+  // Store results in Redis
   await redisClient.hSet(`channel:${channelId}`, {
-    status: "completed",
+    status: hasError ? "error" : "completed",
     data: JSON.stringify(results),
   });
-  await redisClient.publish(
-    `channel:${channelId}`,
-    JSON.stringify({ status: "complete", data: { results: results } })
-  );
+
+  // Publish the "complete" status only if no errors occurred
+  if (!hasError) {
+    await redisClient.publish(
+      `channel:${channelId}`,
+      JSON.stringify({ status: "complete", data: { results: results } })
+    );
+  }
   printRedisMemory();
 }
 
 // TODO: Refactor this function
 async function getTestcases(questionId) {
-  // GET request to question-service to retrieve test cases
-  const response = await axios.get(`${questionServiceUrl}/${questionId}`);
-  const testcases = response.data.data.testCase;
-  return testcases;
+  try {
+    const response = await axios.get(`${questionServiceUrl}/${questionId}`);
+    const testcases = response.data.data.testCase;
+    return testcases;
+  } catch (error) {
+    console.error("Error retrieving testcases:", error.message);
+    throw new ServiceUnavailableError(
+      "Connection to question service failed. Testcase execution failed."
+    );
+  }
 }
 
 const sendErrorAndClose = (res, subscriber) => {
