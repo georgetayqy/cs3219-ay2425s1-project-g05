@@ -17,47 +17,51 @@ import {
   Textarea,
   Title,
   TypographyStylesProvider,
-} from '@mantine/core';
-import classes from './SessionPage.module.css';
-import useApi, { ServerResponse, SERVICE } from '../../../hooks/useApi';
-import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import CodeEditor from '../../../components/CollabCodeEditor/CollabCodeEditor';
-import AvatarWithDetailsButton from '../../../components/AvatarIcon/AvatarWithDetailsButton';
-import { IconChevronRight } from '@tabler/icons-react';
-import { Question } from '../../../types/question';
-import { useLocalStorage, useSessionStorage } from '@mantine/hooks';
-import { modals, ModalsProvider } from '@mantine/modals';
-import TextChatWidget from '../../../components/Communication/Text/TextChatWidget';
-import { notifications } from '@mantine/notifications';
+} from "@mantine/core";
+import classes from "./SessionPage.module.css";
+import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import CodeEditor from "../../../components/CollabCodeEditor/CollabCodeEditor";
+import AvatarWithDetailsButton from "../../../components/AvatarIcon/AvatarWithDetailsButton";
+import { IconChevronRight } from "@tabler/icons-react";
+import { Question } from "../../../types/question";
+import { useLocalStorage, useSessionStorage } from "@mantine/hooks";
+import { modals, ModalsProvider } from "@mantine/modals";
+import TextChatWidget from "../../../components/Communication/Text/TextChatWidget";
+import { notifications } from "@mantine/notifications";
 
 type QuestionCategory =
-  | 'ALGORITHMS'
-  | 'DATABASES'
-  | 'DATA STRUCTURES'
-  | 'BRAINTEASER'
-  | 'STRINGS'
-  | 'BIT MANIPULATION'
-  | 'RECURSION';
+  | "ALGORITHMS"
+  | "DATABASES"
+  | "DATA STRUCTURES"
+  | "BRAINTEASER"
+  | "STRINGS"
+  | "BIT MANIPULATION"
+  | "RECURSION";
 
 // Map of category to color for badges
 const categoryColorMap: { [key in QuestionCategory]: string } = {
-  ALGORITHMS: 'blue',
-  DATABASES: 'green',
-  'DATA STRUCTURES': 'orange',
-  BRAINTEASER: 'red',
-  STRINGS: 'purple',
-  'BIT MANIPULATION': 'cyan',
-  RECURSION: 'teal',
+  ALGORITHMS: "blue",
+  DATABASES: "green",
+  "DATA STRUCTURES": "orange",
+  BRAINTEASER: "red",
+  STRINGS: "purple",
+  "BIT MANIPULATION": "cyan",
+  RECURSION: "teal",
 };
 
+const LOCAL_WEBSOCKET = import.meta.env.VITE_COLLAB_WS_URL_LOCAL;
+
 export default function SessionPage() {
+  const WEBSOCKET_URL = import.meta.env.VITE_COLLAB_WS_URL || LOCAL_WEBSOCKET;
+
   const { fetchData } = useApi();
   const navigate = useNavigate();
 
   const [user, setUser] = useState(
-    localStorage.getItem('user')
-      ? JSON.parse(localStorage.getItem('user') as string)
+    localStorage.getItem("user")
+      ? JSON.parse(localStorage.getItem("user") as string)
       : null
   );
   const [userId, setUserId] = useState(user?._id);
@@ -73,14 +77,14 @@ export default function SessionPage() {
   const [questionCategories, setQuestionCategories] = useState<
     QuestionCategory[]
   >([]);
-  const [questionDifficulty, setQuestionDifficulty] = useState('');
+  const [questionDifficulty, setQuestionDifficulty] = useState("");
   // const [otherUserName, setOtherUserName] = useState('pei1232')
   // const [otherUserEmail, setOtherUserEmail] = useState('pei1232@gmail.com')
-  const [questionTitle, setQuestionTitle] = useState('');
-  const [questionDescription, setQuestionDescription] = useState('');
-  const [leetCodeLink, setLeetCodeLink] = useState('');
+  const [questionTitle, setQuestionTitle] = useState("");
+  const [questionDescription, setQuestionDescription] = useState("");
+  const [leetCodeLink, setLeetCodeLink] = useState("");
 
-  const [templateCode, setTemplateCode] = useState('');
+  const [templateCode, setTemplateCode] = useState("");
 
   // when true, don't show modal when # users in room < 2
   // const [isWaitingForRejoin, setIsWaitingForRejoin] = useState(false);
@@ -93,8 +97,8 @@ export default function SessionPage() {
   }
 
   useEffect(() => {
-    console.log('Question Received: ', question);
-    console.log('Room ID Received: ', roomId);
+    console.log("Question Received: ", question);
+    console.log("Room ID Received: ", roomId);
     // setQuestion(questionReceived)
     // setRoomId(roomIdReceived)
 
@@ -108,13 +112,13 @@ export default function SessionPage() {
 
   const renderComplexity = () => {
     const difficultyRating =
-      questionDifficulty === 'EASY'
+      questionDifficulty === "EASY"
         ? 1
-        : questionDifficulty === 'MEDIUM'
+        : questionDifficulty === "MEDIUM"
         ? 2
         : 3;
     return (
-      <Rating mt='xs' defaultValue={difficultyRating} count={3} readOnly />
+      <Rating mt="xs" defaultValue={difficultyRating} count={3} readOnly />
     );
   };
 
@@ -138,19 +142,19 @@ export default function SessionPage() {
 
           // notify that the other user has joined back
           notifications.show({
-            title: 'User has joined back',
+            title: "User has joined back",
             message:
-              'The other user has joined back. You can now continue the session.',
-            color: 'green',
+              "The other user has joined back. You can now continue the session.",
+            color: "green",
           });
         }
       }
     } catch (error: any) {
-      console.error('Error checking room status', error);
+      console.error("Error checking room status", error);
       notifications.show({
         message: error.message,
-        color: 'red'
-      })
+        color: "red",
+      });
     }
   };
 
@@ -167,45 +171,45 @@ export default function SessionPage() {
   }, []);
 
   const openEndSessionModal = () => {
-    console.log('End Session');
+    console.log("End Session");
     modals.openConfirmModal({
-      title: 'Would you like to end the session?',
+      title: "Would you like to end the session?",
       labels: {
-        confirm: 'End Session',
-        cancel: 'Cancel',
+        confirm: "End Session",
+        cancel: "Cancel",
       },
       onConfirm: () => {
         // navigate to the dashboard
-        navigate('/dashboard');
+        navigate("/dashboard");
       },
     });
   };
 
   const openSessionEndedModal = () => {
-    console.log('Session Ended');
+    console.log("Session Ended");
     modals.open({
-      title: 'Session has ended',
+      title: "Session has ended",
       children: (
         <>
           <Text>
             This session has ended as the other user has left the room.
           </Text>
-          <Text mt='lg'>
+          <Text mt="lg">
             You can choose to wait for the other user to join back, or end the
             session.
           </Text>
-          <Text mt='sm'>
+          <Text mt="sm">
             You'll be notified when the other user joins back.
           </Text>
-          <SimpleGrid cols={2} mt={'lg'}>
-            <Button fullWidth variant='light' onClick={handleWait}>
+          <SimpleGrid cols={2} mt={"lg"}>
+            <Button fullWidth variant="light" onClick={handleWait}>
               Wait for the other user
             </Button>
             <Button
               fullWidth
               onClick={handleEndSession}
-              variant='light'
-              color='red'
+              variant="light"
+              color="red"
             >
               End session
             </Button>
@@ -213,7 +217,7 @@ export default function SessionPage() {
         </>
       ),
       withCloseButton: false,
-      size: 'lg',
+      size: "lg",
       closeOnClickOutside: false,
       closeOnEscape: false,
     });
@@ -221,7 +225,7 @@ export default function SessionPage() {
 
   const handleEndSession = () => {
     modals.closeAll();
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   const handleWait = () => {
@@ -252,21 +256,21 @@ export default function SessionPage() {
           <IconChevronRight size="1rem" color="dimmed" />
         </Group> */}
 
-        <Flex gap='md' className={classes.mainContent}>
+        <Flex gap="md" className={classes.mainContent}>
           <Paper
-            radius='md'
+            radius="md"
             withBorder
             style={{
               flex: 1,
-              minHeight: '100%',
-              maxWidth: '50%',
-              overflow: 'auto',
+              minHeight: "100%",
+              maxWidth: "50%",
+              overflow: "auto",
             }}
             className={classes.paper}
           >
             <Title
               order={3}
-              style={{ fontSize: '1.5rem', marginRight: '1rem' }}
+              style={{ fontSize: "1.5rem", marginRight: "1rem" }}
             >
               {questionTitle}
             </Title>
@@ -274,9 +278,9 @@ export default function SessionPage() {
               {questionCategories.map((category, index) => (
                 <Badge
                   key={index}
-                  color={categoryColorMap[category] || 'cyan'}
-                  size='sm'
-                  variant='filled'
+                  color={categoryColorMap[category] || "cyan"}
+                  size="sm"
+                  variant="filled"
                 >
                   {category}
                 </Badge>
@@ -284,25 +288,25 @@ export default function SessionPage() {
             </Group>
             {renderComplexity()}
 
-            <ScrollArea type='hover' h={700} mt={10}>
+            <ScrollArea type="hover" h={700} mt={10}>
               <TypographyStylesProvider>
                 <div
                   style={{
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
+                    overflowWrap: "break-word",
+                    wordBreak: "break-word",
                   }}
                   dangerouslySetInnerHTML={{ __html: questionDescription }}
                 ></div>
               </TypographyStylesProvider>
             </ScrollArea>
             <Button
-              variant='light'
-              color='blue'
-              component='a'
+              variant="light"
+              color="blue"
+              component="a"
               href={leetCodeLink}
-              target='_blank'
-              mt='sm'
-              size='xs'
+              target="_blank"
+              mt="sm"
+              size="xs"
             >
               View on LeetCode
             </Button>
@@ -310,9 +314,9 @@ export default function SessionPage() {
             <Center>
               <Button
                 // variant="light"
-                color='red'
-                size='md'
-                style={{ marginTop: '1rem' }}
+                color="red"
+                size="md"
+                style={{ marginTop: "1rem" }}
                 onClick={openEndSessionModal}
               >
                 End Session
@@ -320,29 +324,30 @@ export default function SessionPage() {
             </Center>
           </Paper>
 
-          <Stack style={{ flex: 1, gap: '1 rem' }}>
+          <Stack style={{ flex: 1, gap: "1 rem" }}>
             <Paper
-              radius='md'
+              radius="md"
               withBorder
-              style={{ flex: 1, minHeight: '100%' }}
+              style={{ flex: 1, minHeight: "100%" }}
             >
               <CodeEditor
-                endpoint={'ws://localhost:8004'}
+                // endpoint={"ws://localhost:8004"}
+                endpoint={WEBSOCKET_URL}
                 room={roomId}
                 user={userId}
-                theme='dark'
-                height={'500px'}
+                theme="dark"
+                height={"500px"}
                 defaultValue={question.templateCode}
               />
             </Paper>
             <Stack>
               <Paper
-                style={{ height: '200px', backgroundColor: '#f0f0f0' }}
+                style={{ height: "200px", backgroundColor: "#f0f0f0" }}
                 className={classes.paper}
               >
                 {/* Placeholder for Test Cases */}
                 <Title order={4}>Test Cases</Title>
-                <Text size='lg' color='dimmed'>
+                <Text size="lg" color="dimmed">
                   Test Cases Placeholder
                 </Text>
               </Paper>
