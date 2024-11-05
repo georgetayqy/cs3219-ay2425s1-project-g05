@@ -62,3 +62,5 @@ httpServer.on('upgrade', (req, sock, head) => {
 httpServer.listen(port, host, () => {
   console.log('Collaboration Service listening at port', port);
 });
+
+export { app };

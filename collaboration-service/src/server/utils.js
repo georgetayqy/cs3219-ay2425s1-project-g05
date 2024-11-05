@@ -255,6 +255,8 @@ const messageListener = (conn, doc, message) => {
  * @param {any} conn
  */
 const closeConn = (doc, userId, conn) => {
+  console.log('State before CLOSING CONNECTION', LocalClient.getState());
+
   if (doc.conns.has(conn)) {
     /**
      * @type {Set<number>}
@@ -268,17 +270,6 @@ const closeConn = (doc, userId, conn) => {
 
     // delete room
     LocalClient.delete(userId, doc.name);
-
-    // // remove the doc
-    // if (user2Doc.has(userId)) {
-    //   user2Doc.delete(userId);
-    // }
-
-    // // remove the users
-    // const currUsers = doc2User.get(doc);
-    // if (currUsers.includes(userId)) {
-    //   currUsers.splice(currUsers.indexOf(userId));
-    // }
 
     if (doc.conns.size === 0 && persistence !== null) {
       // if persisted, we store state and destroy ydocument
@@ -300,6 +291,8 @@ const closeConn = (doc, userId, conn) => {
       }
     }
   }
+
+  console.log('State AFTER CLOSING CONNECTION', LocalClient.getState());
 };
 
 /**
@@ -335,6 +328,8 @@ const setupWSConnection = (
   req,
   { docName = (req.url || '').slice(1).split('?')[0], gc = true } = {}
 ) => {
+  console.log('State BEFORE OPENING CONNECTION', LocalClient.getState());
+
   conn.binaryType = 'arraybuffer';
   // get the difficulties and categories
   // const { userId, splitResults } = getTemplateQuestion(req.url);
@@ -348,7 +343,6 @@ const setupWSConnection = (
     // if no extra params provided, then we can just ignore it
     doc = getYDoc(docName, gc);
   } else {
-    // otherwise, question service here to get a random question
     try {
       doc = getYDoc(docName, question, gc);
       LocalClient.putQuestion(docName, question);
@@ -400,6 +394,8 @@ const setupWSConnection = (
   conn.on('pong', () => {
     pongReceived = true;
   });
+
+  console.log('State AFTER OPENING CONNECTION', LocalClient.getState());
 
   // put the following in a variables in a block so the interval handlers don't keep in in
   // scope
