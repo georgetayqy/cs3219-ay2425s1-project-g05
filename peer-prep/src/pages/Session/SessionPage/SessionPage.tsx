@@ -85,7 +85,6 @@ export default function SessionPage() {
   // when true, don't show modal when # users in room < 2
   // const [isWaitingForRejoin, setIsWaitingForRejoin] = useState(false);
   const isWaitingForRejoinRef = useRef(false);
-  console.log("???? ", isWaitingForRejoinRef.current);
 
   interface CheckRoomDetailsResponse {
     [roomId: string]: {

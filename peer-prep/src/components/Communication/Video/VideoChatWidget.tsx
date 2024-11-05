@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { socket } from "../../../websockets/communication/socket";
 import { useAuth } from "../../../hooks/useAuth";
 import { IconPhone, IconPhoneEnd, IconVideo } from "@tabler/icons-react";
-import { useHover } from "@mantine/hooks";
+import { useHover, useViewportSize } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { createPortal } from "react-dom";
 
@@ -340,6 +340,61 @@ export default function VideoChatWidget({
   const { hovered, ref: containerRef } = useHover();
   const showSelf = hovered || callStatus === CALL_STATUS.CALLING;
 
+  // when clicked: drag to follow cursor (snap to edges within 16px)
+
+  const [position, setPosition] = useState({ bottom: 8, right: 8 });
+  const [dragging, setDragging] = useState(false);
+  const [start, setStart] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e) => {
+    setDragging(true);
+    setStart({
+      x: e.clientX + position.right,
+      y: e.clientY + position.bottom,
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragging) return;
+
+    setPosition({
+      bottom: start.y - e.clientY,
+      right: start.x - e.clientX,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setDragging(false);
+
+    // snap bottom to max(bottom, 16) and right to max(right, 16)
+    setPosition((prev) => {
+      let bottom = Math.max(prev.bottom, 8);
+      let right = Math.max(prev.right, 8);
+
+      if (right > window.innerWidth - 8 - 300) {
+        right = window.innerWidth - 16 - 300; // account for scrollbar
+      }
+
+      if (bottom > window.innerHeight - 8 - 200) {
+        bottom = window.innerHeight - 8 - 200;
+      }
+
+      return {
+        bottom,
+        right,
+      };
+    });
+
+    // if mousex > window.innerWidth - 16, set right to window.innerWidth - 16 - 300 (width of video, fixed)
+    // if mousey > window.innerHeight - 16, set bottom to window.innerHeight - 16 - 200 (height of video, fixed)
+  };
+
+  // listen to viewport size changes so that we can adjust the position of the video chat widget
+  const { height, width } = useViewportSize();
+
+  useEffect(() => {
+    handleMouseUp();
+  }, [height, width]);
   return (
     <Box>
       <Group gap="xs">
@@ -371,6 +426,14 @@ export default function VideoChatWidget({
           className={classes.videoContainer}
           ref={containerRef}
           display={callStatus === CALL_STATUS.CONNECTED ? "block" : "none"}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          style={{
+            bottom: `${position.bottom}px`,
+            right: `${position.right}px`,
+          }}
         >
           {/* <h1>Video Chat Widget</h1> */}
 

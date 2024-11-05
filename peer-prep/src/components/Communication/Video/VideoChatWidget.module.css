@@ -1,15 +1,18 @@
 .videoContainer {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
+  /* bottom: 16px;
+  right: 16px; */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  width: 300px !important;
+  height: 200px !important;
   /* width: 320px;
   height: 240px; */
   /* background-color: black; */
   z-index: 20;
+  cursor: grab;
 }
 
 .selfVideoContainer {
