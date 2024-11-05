@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Editor from '@monaco-editor/react';
 
 import './CollabCodeEditor.module.css';
+import { Button, Flex, Select } from '@mantine/core';
 
 /**
  * Generate a random colour. Adapted from https://css-tricks.com/snippets/javascript/random-hex-color/
@@ -23,6 +24,13 @@ interface CodeEditorProps {
   defaultValue?: string;
   language?: string;
 }
+
+const languageOptions = [
+  { value: 'python', label: 'Python' },
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'sql', label: 'SQL' },
+];
 
 /**
  * Adapted from https://github.com/yjs/yjs-demos/blob/main/monaco-react/src/App.tsx
@@ -49,6 +57,7 @@ export default function CodeEditor({
   const [provider, setProvider] = useState(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [binding, setBinding] = useState(null);
+  const [selectedLanguage, setSelectedLanguage] = useState(language);
 
   useEffect(() => {
     // create the params
@@ -99,16 +108,25 @@ export default function CodeEditor({
   }, [doc, provider, editor]);
 
   return (
-    <Editor
-      height={height}
-      theme={theme}
-      defaultValue={defaultValue}
-      defaultLanguage='python'
-      language={language}
-      onMount={(editor) => {
-        setEditor(editor);
-      }}
-      options={{padding: {top: 12, bottom: 12}, scrollBeyondLastLine: false, minimap: {enabled: false}}}
-    />
+    <>
+      <Select
+        data={languageOptions}
+        value={selectedLanguage}
+        onChange={(value) => setSelectedLanguage(value)}
+        placeholder="Select Language"
+        mb="sm"
+      />
+      <Editor
+        height={height}
+        theme={theme}
+        defaultValue={defaultValue}
+        defaultLanguage='python'
+        language={selectedLanguage}
+        onMount={(editor) => {
+          setEditor(editor);
+        }}
+        options={{padding: {top: 12, bottom: 12}, scrollBeyondLastLine: false, minimap: {enabled: false}}}
+      />
+    </>
   );
 }
