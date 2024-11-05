@@ -1,6 +1,5 @@
 # References https://docs.docker.com/build/ci/github-actions/
 # https://stackoverflow.com/questions/77740410/github-docker-build-push-action-with-multiple-architectures-is-slow
-# https://dlmade.medium.com/ci-cd-with-github-action-and-aws-eks-5fd9714010cd
 
 name: 'Staging Environment CI/CD Pipeline'
 
@@ -40,10 +39,39 @@ jobs:
         working-directory: peer-prep
         run: npm run build
 
+      - name: Test User Service
+        working-directory: user-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test Question Service
+        working-directory: question-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test Matching Service
+        working-directory: matching-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test Collaboration Service
+        working-directory: collaboration-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test Communication Service
+        working-directory: communication-sevice
+        run: |
+          npm ci
+          npm run test
+
   build:
     # build container for both x86 and arm platforms
     needs: test
-    environment: staging
     name: Build Staging Containers and Push to Docker Hub
     runs-on: ubuntu-latest
     strategy:
@@ -70,7 +98,7 @@ jobs:
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:staging-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:staging-${{ github.sha }}
 
       - name: Build Question Service Image
@@ -81,7 +109,7 @@ jobs:
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:staging-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:staging-${{ github.sha }}
 
       - name: Build Matching Service Image
@@ -92,7 +120,7 @@ jobs:
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:staging-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:staging-${{ github.sha }}
 
       - name: Build Collaboration Service Image
@@ -103,8 +131,19 @@ jobs:
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:staging-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:staging-${{ github.sha }}
+
+      - name: Build Communication Service Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./communication-service
+          file: ./communication-service/Dockerfile
+          push: true
+          platforms: linux/${{ matrix.arch }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:staging-${{ github.sha }}
 
   deploy:
     needs: build
@@ -128,12 +167,14 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       # Frontend Deployment to S3
-      - name: Copy Frontend Secrets into Build Folder
+      # https://stackoverflow.com/questions/59481933/how-can-i-extract-secrets-using-github-actions
+      - name: Create Frontend .env File
         working-directory: peer-prep
         shell: bash
         env:
           FRONTEND_SECRETS: ${{ secrets.FRONTEND_SECRETS }}
-        run: 'echo "$FRONTEND_SECRETS" | base64 --decode > .env'
+        run: |
+          'echo "$FRONTEND_SECRETS" | base64 --decode > .env'
 
       - name: Build and Deploy Frontend on S3
         working-directory: peer-prep
@@ -144,10 +185,10 @@ jobs:
       - name: Upload to S3
         working-directory: peer-prep/dist
         run: |
-          aws s3 sync . s3://peerprep
+          aws s3 sync . s3://peerprep-frontend-bucket
 
       - name: Retrieve S3 Bucket URL
-        run: echo "http://peerprep.s3-website-ap-southeast-1.amazonaws.com/"
+        run: echo "http://peerprep-frontend-bucket.s3-website-ap-southeast-1.amazonaws.com/"
 
       # Backend Deployment to EKS
       - name: Get EKS kubectl Configs
@@ -156,7 +197,7 @@ jobs:
       # echo out string into file taken from
       # https://stackoverflow.com/questions/59481933/how-can-i-extract-secrets-using-github-actions
       - name: Create Secrets File
-        working-directory: kubernetes
+        working-directory: kubernetes/cloud
         shell: bash
         env:
           K8S_SECRETS: ${{ secrets.KUBERNETES_SECRETS }}
@@ -164,31 +205,58 @@ jobs:
 
       # kubectl apply the YML files to do a deployment
       - name: Apply Secrets YML File to EKS Cluster
-        working-directory: kubernetes
+        working-directory: kubernetes/cloud
         run: kubectl apply -f 1-Kubernetes-Secrets.yml
 
-      - name: Apply Services YML File to EKS Cluster
-        working-directory: kubernetes
-        run: kubectl apply -f 2-PeerPrep-Services.yml
-
       # replaces the placeholder text with the actual image
-      - name: Run sed on Compute Infrastructure YML File
-        working-directory: kubernetes
-        run: sed -i 's/IMAGE_TAG/staging-${{ vars.DOCKER_IMAGE_VERSION }}/' 3-PeerPrep-Staging-Compute-Infrastructure.yml
+      - name: Replace all IMAGE_TAG Placeholders
+        working-directory: kubernetes/cloud
+        run: |
+          sed -i 's/IMAGE_TAG/staging-${{ vars.DOCKER_IMAGE_VERSION }}/' 2-PeerPrep-User-Service.yml
+          sed -i 's/IMAGE_TAG/staging-${{ vars.DOCKER_IMAGE_VERSION }}/' 3-PeerPrep-Question-Service.yml
+          sed -i 's/IMAGE_TAG/staging-${{ vars.DOCKER_IMAGE_VERSION }}/' 4-PeerPrep-Matching-Service.yml
+          sed -i 's/IMAGE_TAG/staging-${{ vars.DOCKER_IMAGE_VERSION }}/' 5-PeerPrep-Collaboration-Service.yml
+          sed -i 's/IMAGE_TAG/staging-${{ vars.DOCKER_IMAGE_VERSION }}/' 6-PeerPrep-Communication-Service.yml
 
-      - name: Apply Compute Infrastructure YML File
-        working-directory: kubernetes
-        run: kubectl apply -f 3-PeerPrep-Compute-Infrastructure.yml
+      - name: Deploy User Service
+        working-directory: kubernetes/cloud
+        run: |
+          kubectl apply -f 2-PeerPrep-User-Service.yml
+
+      - name: Deploy Question Service
+        working-directory: kubernetes/cloud
+        run: |
+          kubectl apply -f 3-PeerPrep-Question-Service.yml
+
+      - name: Deploy Matching Service
+        working-directory: kubernetes/cloud
+        run: |
+          kubectl apply -f 4-PeerPrep-Matching-Service.yml
+
+      - name: Deploy Matching Service
+        working-directory: kubernetes/cloud
+        run: |
+          kubectl apply -f 5-PeerPrep-Collaboration-Service.yml
+
+      - name: Deploy Communication Service
+        working-directory: kubernetes/cloud
+        run: |
+          kubectl apply -f 6-PeerPrep-Communication-Service.yml
 
       - name: Apply Ingress YML File to EKS Cluster
-        working-directory: kubernetes
-        run: kubectl apply -f 4-PeerPrep-Ingress.yml
+        working-directory: kubernetes/cloud
+        run: kubectl apply -f 7-PeerPrep-Ingress.yml
 
       - name: Restart Deployment to Force Redeployment of Containers in EKS Cluster
-        working-directory: kubernetes
-        run: kubectl rollout restart deployment ${{ secrets.EKS_CLUSTER_NAME }}
+        working-directory: kubernetes/cloud
+        run: |
+          kubectl rollout restart deployment user-service
+          kubectl rollout restart deployment question-service
+          kubectl rollout restart deployment matching-service
+          kubectl rollout restart deployment collaboration-service
+          kubectl rollout restart deployment communication-service
 
       # Deploy changes to API Gateway
-      - name: Deploy Changes to API Gateway v1 Stage
+      - name: Deploy Changes to API Gateway staging Stage
         run: |
           aws apigatewayv2 create-deployment --api-id ${{ secrets.AWS_API_GATEWAY_ID }} --stage-name staging
