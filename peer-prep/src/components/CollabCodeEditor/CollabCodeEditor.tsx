@@ -64,11 +64,9 @@ export default function CodeEditor({
     setProvider(provider);
 
     return () => {
-      console.log("DESTROYIONG");
       provider?.destroy();
       provider?.disconnect();
       doc.destroy();
-      alert("before leave");
     };
   }, [doc]);
 
