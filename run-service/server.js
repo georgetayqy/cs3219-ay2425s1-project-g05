@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 import router from "./router.js";
 import corsMiddleware from "./middlewares/cors.js";
 import loggingMiddleware from "./middlewares/logging.js";
-import errorHandler from "./middlewares/errorHandler.js";
 
 const app = express();
 const port = process.env.PORT || 8007;
@@ -35,7 +34,6 @@ app.get("/healthz", (req, res) => {
     .json({ message: "Connected to /healthz route of run-service" });
 });
 
-app.use(errorHandler);
 app.listen(port, () => console.log(`run-service listening on port ${port}`));
 
 export { redisClient, questionServiceUrl };

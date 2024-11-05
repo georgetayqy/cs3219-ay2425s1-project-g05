@@ -3,7 +3,9 @@ import axios from "axios";
 import printRedisMemory from "./redis.js";
 import { questionServiceUrl, redisClient } from "./server.js";
 import UnauthorizedError from "./errors/UnauthorisedError.js";
+import ConflictError from "./errors/ConflictError.js";
 import ServiceUnavailableError from "./errors/ServiceUnavailable.js";
+import BaseError from "./errors/BaseError.js";
 
 // Add function to create channelId connection when session starts
 const startSession = async (req, res) => {
@@ -20,13 +22,11 @@ const startSession = async (req, res) => {
       console.log("Session data found in Redis:", channelData.channelId);
       // Remove channel data from Redis
       await redisClient.del(sessionKey);
-      return res
-        .status(200)
-        .json({
-          statusCode: 200,
-          message: `Unique channelId found for ${userA} and ${userB}`,
-          data: channelData.channelId,
-        });
+      return res.status(200).json({
+        statusCode: 200,
+        message: `Unique channelId found for ${userA} and ${userB}`,
+        data: { channelId: channelData.channelId, userA, userB },
+      });
     } else {
       // Create a new channelId
 
@@ -38,19 +38,17 @@ const startSession = async (req, res) => {
         userA,
         userB,
       });
-      console.log("stored session with sessionkey", sessionKey)
+      console.log("stored session with sessionkey", sessionKey);
       // delete session data after 10 minutes
       // NOTE: Maybe both users have to join session within 10 minutes, otherwise this will fail
       await redisClient.expire(sessionKey, 600);
       // TODO: test expiry
-      console.log("created session")
-      return res
-        .status(200)
-        .json({
-          statusCode: 200,
-          message: `New channelId created for ${userA} and ${userB}`,
-          data: { channelId, userA, userB },
-        });
+      console.log("created session");
+      return res.status(200).json({
+        statusCode: 200,
+        message: `New channelId created for ${userA} and ${userB}`,
+        data: { channelId, userA, userB },
+      });
     }
   } catch (error) {
     console.error("Error creating sessionId:", error.message);
@@ -78,18 +76,17 @@ const subscribeToChannel = async (req, res) => {
   );
 
   // NOTE: EXECUTING RESPONSES WILL BE SENT TO BOTH USERS
-  // TODO: will executing two testcases overwrite each other? HANDLE IN EXECUTE FUNCTION
 
   subscriber.subscribe(`channel:${channelId}`, (message) => {
     const update = JSON.parse(message);
 
     if (update.status === "complete") {
-      //TODO: check if data a result array of all testcases
+      // remove the channel data from Redis
+      (async () => {
+        await redisClient.del(`channel:${channelId}`);
+      })();
       res.write(`data: ${JSON.stringify(update)}\n\n`);
-      subscriber.unsubscribe();
-      // Will not end response here, as we need to keep connection open for both users until session ends
     } else if (update.status === "error") {
-      // Should already include questionId when executeTest is called
       res.write(
         `data: ${JSON.stringify({
           status: "error",
@@ -97,7 +94,6 @@ const subscribeToChannel = async (req, res) => {
         })}\n\n`
       );
     } else {
-      console.log("Sending update to client");
       res.write(
         `data: ${JSON.stringify({
           status: "processing",
@@ -117,10 +113,23 @@ const subscribeToChannel = async (req, res) => {
   });
 };
 
-
 const executeTest = async (req, res) => {
   const questionId = req.params.questionId;
   const { codeAttempt, channelId } = req.body;
+
+  const existingJob = await redisClient.hGetAll(`channel:${channelId}`);
+  console.log("Existing job data:", existingJob);
+    if (existingJob && existingJob.status === "processing") {
+      console.log("Another execution is already in progress. Try again later error thrown");
+      res
+        .status(409)
+        .json({
+          statusCode: 409,
+          message: "Another execution is already in progress. Try again later.",
+        });
+      return;
+    }
+
 
   console.log("Executing test cases for questionId:", questionId);
   try {
@@ -133,11 +142,7 @@ const executeTest = async (req, res) => {
     }
     console.log("Testcases retrieved sucessfully");
     // Find whether theres already a job in progress
-    const existingJob = await redisClient.hGetAll(`channel:${channelId}`);
-    if (existingJob && existingJob.status === "processing") {
-      return res.status(409).json({ statusCode: 409, message: "There is a test exexcution already in progress. Please wait for it to complete" });
-    }
-
+    
     // Initialize job data in Redis
     await redisClient.hSet(`channel:${channelId}`, {
       status: "processing",
@@ -146,93 +151,21 @@ const executeTest = async (req, res) => {
       data: JSON.stringify([]),
     });
 
-    // TODO: Get testcases count and return to client
+    const testCaseCount = testcases.length;
 
     // Respond to client with jobId
-    res.status(200).json({ statusCode: 200, message:"Executing test cases now", data: { questionId: questionId } });
+    res.status(200).json({
+      statusCode: 200,
+      message: `Executing test cases for questionId: ${questionId}`,
+      data: { testCaseCount: testCaseCount },
+    });
 
     // Start processing test cases
     processTestcases(channelId, testcases, codeAttempt);
   } catch (error) {
-    console.error("Error executing test cases:", error.message);
     res.status(500).json({ error: "Failed to execute test cases" });
   }
 };
-
-//TODO: remove the function below (keeping for now for reference)
-// // SSE route for incremental updates
-// const getResults = async (req, res) => {
-//   const { jobId } = req.params;
-//   const subscriber = redisClient.duplicate();
-//   await subscriber.connect();
-
-//   let isCompleted = false;
-//   const timeoutDuration = 10000;
-//   let timeoutHandle;
-
-//   // Function to reset timeout -- handle pub sub failure(?)
-//   const resetTimeout = () => {
-//     clearTimeout(timeoutHandle);
-//     timeoutHandle = setTimeout(() => {
-//       if (!isCompleted) {
-//         console.log("Timeout occurred: No response from server");
-//         sendErrorAndClose(res, subscriber);
-//       }
-//     }, timeoutDuration);
-//   };
-
-//   // Initial response
-//   res.write(
-//     `data: ${JSON.stringify({
-//       status: "processing",
-//       message: "Starting test cases...",
-//     })}\n\n`
-//   );
-
-//   // Start timeout
-//   resetTimeout();
-
-//   subscriber.subscribe(`job-update:${jobId}`, (message) => {
-//     const update = JSON.parse(message);
-
-//     if (update.status === "complete") {
-//       isCompleted = true;
-//       res.write(`data: ${JSON.stringify(update)}\n\n`);
-//       subscriber.unsubscribe();
-//       res.end();
-//     } else if (update.status === "error") {
-//       update.message = {
-//         ...update.message,
-//         questionId: jobId,
-//       };
-//       res.write(
-//         `data: ${JSON.stringify({
-//           status: "error",
-//           result: update.message,
-//         })}\n\n`
-//       );
-//     } else {
-//       res.write(
-//         `data: ${JSON.stringify({
-//           status: "processing",
-//           result: update.result,
-//         })}\n\n`
-//       );
-//       resetTimeout(); // Reset timeout on each message
-//     }
-//   });
-
-//   req.on("close", async () => {
-//     console.log("Receiving client's closing connection response");
-//     // delete job data from Redis
-//     // TODO: check whether connection disconnect is due to completion of testcases
-//     // If not, then do not job data from Redis & implement fault tolerance mechanism
-//     await redisClient.del(`job:${jobId}`);
-//     await subscriber.unsubscribe();
-//     await subscriber.disconnect();
-//     res.end();
-//   });
-// };
 
 // TODO: Refactor code below
 // Function to execute a single test case
@@ -260,7 +193,7 @@ async function runTestcase(testcase, code) {
       headers,
     });
 
-    console.log("Response from API:", response.data);
+    //console.log("Response from API:", response.data);
     const responseData = response.data;
     const testCaseResult = {
       statusCode: 200,
@@ -327,6 +260,7 @@ async function processTestcases(channelId, testcases, code) {
         JSON.stringify({ status: "processing", result })
       );
     } catch (error) {
+      console.log("Error while executing testcase:", testcases[i]._id);
       const errorMessage = {
         testcaseId: testcases[i]._id,
         statusCode: error.statusCode,
@@ -368,7 +302,6 @@ async function getTestcases(questionId) {
   const testcases = response.data.data.testCase;
   return testcases;
 }
-
 
 const sendErrorAndClose = (res, subscriber) => {
   const errorMessage = JSON.stringify({
