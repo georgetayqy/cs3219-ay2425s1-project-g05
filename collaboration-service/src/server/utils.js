@@ -301,7 +301,6 @@ const closeConn = (doc, userId, conn) => {
  * @param {Uint8Array} m
  */
 const send = (doc, conn, m) => {
-  console.log("in send")
   if (
     conn.readyState !== wsReadyStateConnecting &&
     conn.readyState !== wsReadyStateOpen
@@ -310,7 +309,6 @@ const send = (doc, conn, m) => {
   }
   try {
     conn.send(m, {}, (err) => {
-      console.log("ERROR HERE??? (in server#send", err)
       err != null && closeConn(doc, conn);
     });
   } catch (e) {
