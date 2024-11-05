@@ -20,6 +20,7 @@ const allowedOrigins = [
 // PORT 8003 - QUESTION SERVICE
 // PORT 8004 - COLLABORATION SERVICE
 
+
 const corsOptions = {
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

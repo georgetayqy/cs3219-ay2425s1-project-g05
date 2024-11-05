@@ -5,6 +5,8 @@ services:
     command: redis-server --save 1 1 --loglevel warning
     volumes:
       - redis:/data
+    ports:
+      - '6379:6379'
 
   user-service:
     build:
@@ -34,12 +36,19 @@ services:
     ports:
       - '8004:8004'
 
-  communication-service: 
+  communication-service:
     build:
       context: ./communication-service
       dockerfile: Dockerfile
     ports:
       - '8005:8005'
+
+  run-service:
+    build:
+      context: ./run-service
+      dockerfile: Dockerfile
+    ports:
+      - '8007:8007'
 
   frontend:
     build:

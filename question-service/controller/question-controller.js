@@ -92,6 +92,9 @@ const getAllQuestions = async (req, res, next) => {
         categories,
       };
     });
+    // for all questions, add testcase ids to question.meta
+    allQuestions = allQuestions.map((question) => addTestcaseIdToQuestion(question));
+    
 
     return res.status(200).json({
       statusCode: 200,
@@ -139,6 +142,9 @@ const getQuestionById = async (req, res, next) => {
       ...foundQuestion[0].toObject(),
       categories,
     };
+   
+    // add testcase ids to question.meta
+    foundQuestion = addTestcaseIdToQuestion(foundQuestion);
 
     return res.status(200).json({
       statusCode: 200,
@@ -173,6 +179,8 @@ const deleteQuestionById = async (req, res, next) => {
       ...result.toObject(),
       categories: getCategoriesWithId(result.categoriesId),
     };
+    // add testcase ids to question.meta
+    result = addTestcaseIdToQuestion(result);
 
     return res.status(200).json({
       statusCode: 200,
@@ -267,6 +275,9 @@ const updateQuestionById = async (req, res, next) => {
       categories: getCategoriesWithId(updatedQuestion.categoriesId),
     };
 
+    // add testcase ids to question.meta
+    updatedQuestion = addTestcaseIdToQuestion(updatedQuestion);
+
     return res
       .status(200)
       .json({ success: true, status: 200, data: updatedQuestion });
@@ -340,6 +351,9 @@ const getFilteredQuestions = async (req, res, next) => {
       };
     });
 
+    // add testcase ids to question.meta
+    filteredQuestions = filteredQuestions.map((question) => addTestcaseIdToQuestion(question));
+
     return res.status(200).json({
       statusCode: 200,
       message: "Questions found successfully",
@@ -357,27 +371,6 @@ const getFilteredQuestions = async (req, res, next) => {
 const findQuestion = async (req, res, next) => {
   try {
     const { categoriesId, difficulty } = req.query;
-
-    // CHECK THAT BOTH CATEGORIES AND CATEGORIESID ARE NOT PROVIDED
-    // if (categories && categoriesId) {
-    //   throw new BadRequestError(
-    //     "Only categories or categoriesId should be provided, not both!"
-    //   );
-    // }
-
-    // let categoriesString = [];
-    // if (categoriesId) {
-    //   if (!Array.isArray(categoriesId)) {
-    //     throw new BadRequestError("CategoriesId should be an array!");
-    //   }
-    //   categoriesString = categoriesId.map((id) => {
-    //     const category = categoriesIdToCategories[id];
-    //     if (!category) {
-    //       throw new BadRequestError(`Category with id ${id} does not exist!`);
-    //     }
-    //     return category;
-    //   });
-    // }
 
     let categoriesIdInt = null;
 
@@ -399,7 +392,6 @@ const findQuestion = async (req, res, next) => {
         );
       }
     }
-
 
     if (difficulty) {
       if (!Array.isArray(difficulty)) {
@@ -432,6 +424,8 @@ const findQuestion = async (req, res, next) => {
       ...foundQuestion.toObject(),
       categories: getCategoriesWithId(foundQuestion.categoriesId),
     };
+    // add testcase ids to question.meta
+    foundQuestion = addTestcaseIdToQuestion(foundQuestion);
 
     return res.status(200).json({
       statusCode: 200,
@@ -477,9 +471,62 @@ const getDistinctCategoriesId = async (req, res, next) => {
   }
 };
 
+const getTestCasesWithId = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    let foundQuestion = await _getQuestionById(id);
+
+    if (foundQuestion.length === 0) {
+      throw new NotFoundError("Question not found");
+    }
+
+    if(!foundQuestion[0].testCases || foundQuestion[0].testCases.length === 0) {
+      throw new NotFoundError("No testcases found for this question");
+    }
+    
+    // get all testCases from foundQuestion
+    const testCases = foundQuestion[0].testCases;
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Testcases for question found successfully",
+      data: { testCase: testCases},
+    });
+  } catch (err) {
+    console.log(err);
+    next(
+      err instanceof BaseError
+        ? err
+        : new BaseError(500, "Error retrieving question")
+    );
+  }
+}
+
+// move to utils
 const getCategoriesWithId = (categoriesId) => {
   return categoriesId.map((id) => categoriesIdToCategories[id]);
 };
+
+const addTestcaseIdToQuestion = (question) => {
+  const testCases = question.testCases;
+  const publicTestCases = testCases.filter((testCase) => testCase.isPublic);
+  const privateTestCases = testCases.filter((testCase) => !testCase.isPublic);
+  const publicTestCaseIds = publicTestCases.map((testCase) => testCase._id);
+  const privateTestCaseIds = privateTestCases.map((testCase) => testCase._id);
+  const totalTestCaseIds = testCases.map((testCase) => testCase._id);
+  const meta = {
+    ...question.meta,
+    publicTestCaseIds,
+    privateTestCaseIds,
+    totalTestCaseIds,
+  };
+  return {
+    ...question,
+    meta,
+  };
+}
+
 
 export {
   createQuestion,
@@ -490,4 +537,5 @@ export {
   getFilteredQuestions,
   findQuestion,
   getDistinctCategoriesId,
+  getTestCasesWithId
 };
