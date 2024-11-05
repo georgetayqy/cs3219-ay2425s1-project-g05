@@ -118,7 +118,7 @@ export default function ReadQuestionPage() {
                   <IconEdit style={{ width: rem(16), height: rem(16) }} />
                 }
                 size="sm"
-                variant="light"
+                // variant="light"
                 component={Link}
                 to={`/questions/edit/${question._id}`}
               >
@@ -130,7 +130,7 @@ export default function ReadQuestionPage() {
                 }
                 size="sm"
                 color="red"
-                variant="light"
+                // variant="light"
                 onClick={open}
               >
                 Delete
@@ -173,7 +173,7 @@ export default function ReadQuestionPage() {
           </SimpleGrid>
 
           <Text className={classes.description}>
-            {question.description.testDescription}
+            {question.description.descriptionText}
           </Text>
         </Stack>
       </Container>

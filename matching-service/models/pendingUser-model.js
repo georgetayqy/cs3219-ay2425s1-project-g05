@@ -1,15 +1,11 @@
 import mongoose from "mongoose";
 
 const difficulties = ['EASY', 'MEDIUM', 'HARD']
-const categories = ['STRINGS', 'ALGORITHMS', 'DATA STRUCTURES', 'BIT MANIPULATION', 'RECURSION', 'DATABASES', 'ARRAYS', 'BRAINTEASER']
+const categories = [0, 1, 2, 3, 4, 5, 6, 7]
 
 const pendingUserSchema = mongoose.Schema(
     {
-        email: {
-            type: String,
-            required: true
-        },
-        displayName: {
+        userId: {
             type: String,
             required: true
         },
@@ -28,22 +24,26 @@ const pendingUserSchema = mongoose.Schema(
                 message: props => `${props.value} contains invalid difficulty level`
             }
         },
-        categories: {
-            type: [String],
+        categoriesId: {
+            type: [Number],
             enum: categories,
             required: true,
             validate: {
                 validator: function (value) {
                     return value.every(v => categories.includes(v));
                 },
-                message: props => `${props.value} contains invalid difficulty level`
+                message: props => `${props.value} contains invalid category`
             }
+        },
+        priority: {
+            type: Number,
+            required: true
         }
     },
     {
         timestamps: true
     }
 );
-
+pendingUserSchema.index({ "createdAt": 1 }, { expireAfterSeconds: 60 });
 const PendingUserModel = mongoose.model("PendingUser", pendingUserSchema)
 export default PendingUserModel;

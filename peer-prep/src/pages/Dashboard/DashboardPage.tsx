@@ -21,6 +21,7 @@ import useApi, { ServerResponse, SERVICE } from "../../hooks/useApi";
 import { AttemptData, UserAttempt } from "../../types/attempts";
 import { useEffect, useState } from "react";
 import { notifications } from "@mantine/notifications";
+import TextChatWidget from "../../components/Communication/Text/TextChatWidget";
 export default function DashboardPage() {
   const { user } = useAuth();
   const { fetchData } = useApi();

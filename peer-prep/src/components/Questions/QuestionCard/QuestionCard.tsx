@@ -95,7 +95,8 @@ const QuestionCard = memo(function QuestionCard({
         >
           <Flex className={classes.accordionTopHeader}>
             <Title order={4}>{question.title}</Title>
-            <Text lineClamp={2}>{question.description.testDescription} </Text>
+            {/* <Text lineClamp={2}>{question.description.testDescription} </Text> */}
+            <Text lineClamp={2}>{question.description.descriptionText} </Text>
           </Flex>
 
           <Group className={classes.accordionTopCategories}>
@@ -140,7 +141,7 @@ const QuestionCard = memo(function QuestionCard({
             )}
 
             <Text className={classes.accordionBodyDescription} lineClamp={64}>
-              {question.description.testDescription}
+              {question.description.descriptionText}
             </Text>
             {/* </SimpleGrid> */}
           </Flex>

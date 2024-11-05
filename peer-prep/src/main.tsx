@@ -12,7 +12,7 @@ import LoginOrRegisterPage from "./pages/Login/LoginPage.tsx";
 import { Button, createTheme, MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
-import '@mantine/tiptap/styles.css';
+import "@mantine/tiptap/styles.css";
 
 import ApplicationWrapper from "./components/ApplicationWrapper.tsx";
 import ProtectedRouteWrapper from "./pages/ProtectedRouteWrapper.tsx";
@@ -27,6 +27,11 @@ import { Notifications } from "@mantine/notifications";
 import AdminRouteWrapper from "./pages/AdminRouteWrapper.tsx";
 import SessionSummaryPage from "./pages/Session/Summary/SessionSummaryPage.tsx";
 import ReadQuestionPage from "./pages/Questions/ReadQuestionPage/ReadQuestionPage.tsx";
+import SessionPage from "./pages/Session/SessionPage/SessionPage.tsx";
+
+import "@fontsource/inter";
+import TempSessionPage from "./pages/Session/Temp/TempSessionPage.tsx";
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -120,7 +125,11 @@ const router = createBrowserRouter([
                 element: <SearchingPage />,
               },
               {
-                path: "/session/summary",
+                path: "/session/:roomId",
+                element: <SessionPage />,
+              },
+              {
+                path: "/session/summary/:roomId",
                 element: <SessionSummaryPage />,
               },
             ],
@@ -132,7 +141,7 @@ const router = createBrowserRouter([
 ]);
 
 const theme = createTheme({
-  fontFamily: "Inter",
+  fontFamily: "Inter, sans-serif",
   defaultRadius: "md",
   cursorType: "pointer",
   primaryColor: "cyan",

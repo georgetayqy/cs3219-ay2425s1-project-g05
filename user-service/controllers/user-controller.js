@@ -1,5 +1,5 @@
-import { ormCreateUser, ormDeleteUser, ormFindUser, ormUpdateUser } from '../models/user-orm.js';
-import { comparePassword, hashPassword, generateAccessToken, checkPasswordStrength } from '../services.js';
+import { ormCreateUser, ormDeleteUser, ormFindUser, ormUpdateUser, ormFindUserById } from '../models/user-orm.js';
+import { comparePassword, hashPassword, generateAccessToken, checkPasswordStrength, isValidUserId } from '../services.js';
 
 export async function loginUser(req, res) {
     try {
@@ -10,9 +10,8 @@ export async function loginUser(req, res) {
             return res.status(400).json({ statusCode: 400, message: "Email and password are required" })
         }
 
-        // Check if user exists
+        // Check if user exists (isDeleted is false)
         const user = await ormFindUser(email);
-        console.log(user)
         if (!user) {
             return res.status(401).json({ statusCode: 401, message: "Incorrect email or password" })
         }
@@ -63,9 +62,8 @@ export async function createUser(req, res) {
             return res.status(400).json({ statusCode: 400, message: "Email, password and displayName are required" })
         }
 
-        // Check if user already exists
+        // Check if user already exists (isDeleted is false)
         const existingUser = await ormFindUser(email);
-        console.log(existingUser)
         if (existingUser) {
             return res.status(409).json({ statusCode: 409, message: "Email already exists" })
         }
@@ -96,7 +94,7 @@ export async function createUser(req, res) {
     }
 }
 
-export async function deleteUser(req, res) {
+export async function deleteUser(req, res) { // SOFT DELETE
     try {
         const email = req.user.email; // Delete the user specified from token
 
@@ -112,7 +110,7 @@ export async function deleteUser(req, res) {
             return res.status(404).json({ statusCode: 404, message: "User not found" })
         }
 
-        // Delete user
+        // Delete user (soft delete, only sets isDeleted to true)
         const user = await ormDeleteUser(email);
         if (!user) {
             return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
@@ -144,7 +142,6 @@ export async function changePassword(req, res) {
 
         // Check if user exists
         const existingUser = await ormFindUser(email);
-        console.log(existingUser)
         if (!existingUser) {
             return res.status(404).json({ statusCode: 404, message: "User not found" })
         }
@@ -192,7 +189,6 @@ export async function changeDisplayName(req, res) {
 
         // Check if user exists
         const existingUser = await ormFindUser(email);
-        console.log(existingUser)
         if (!existingUser) {
             return res.status(404).json({ statusCode: 404, message: "User not found" })
         }
@@ -207,6 +203,31 @@ export async function changeDisplayName(req, res) {
         delete returnedUser.password
 
         return res.status(200).json({ statusCode: 200, message: "User display name updated successfully", data: { user: returnedUser } })
+    } catch (error) {
+        return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
+    }
+}
+
+export async function getUser(req, res) {
+    try {
+        const { id } = req.params;
+
+        // Check if valid user Id
+        if (!isValidUserId(id)) {
+            return res.status(400).json({ statusCode: 400, message: "Invalid user Id given" })
+        }
+
+        // Check if user exists
+        const existingUser = await ormFindUserById(id);
+        if (!existingUser) {
+            return res.status(404).json({ statusCode: 404, message: "User not found" })
+        }
+
+        // Delete password field from user object
+        const returnedUser = { ...existingUser }
+        delete returnedUser.password
+
+        return res.status(200).json({ statusCode: 200, message: "User found by id", data: { user: returnedUser } })
     } catch (error) {
         return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
     }
