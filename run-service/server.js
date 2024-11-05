@@ -2,7 +2,9 @@ import express from "express";
 import { createClient } from "redis";
 import dotenv from "dotenv";
 import router from "./router.js";
-import corsMiddleware from "./middleware/cors.js";
+import corsMiddleware from "./middlewares/cors.js";
+import loggingMiddleware from "./middlewares/logging.js";
+import errorHandler from "./middlewares/errorHandler.js";
 
 const app = express();
 const port = process.env.PORT || 8007;
@@ -22,6 +24,7 @@ redisClient.on("connect", () => console.log("Connected to Redis"));
 redisClient.on("ready", () => console.log("Redis Client Ready"));
 await redisClient.connect();
 
+app.use(loggingMiddleware);
 app.use(corsMiddleware);
 app.use("/api/run-service", router);
 
@@ -32,6 +35,7 @@ app.get("/healthz", (req, res) => {
     .json({ message: "Connected to /healthz route of run-service" });
 });
 
+app.use(errorHandler);
 app.listen(port, () => console.log(`run-service listening on port ${port}`));
 
 export { redisClient, questionServiceUrl };

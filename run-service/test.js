@@ -4,94 +4,89 @@ import EventSource from "eventsource";
 const QUESTION_SERVICE_URL = "http://localhost:8003/api/question-service";
 const RUN_SERVICE_URL = "http://localhost:8007/api/run-service";
 
-async function getRandomQuestion() {
-  try {
-    const response = await axios.get(`${QUESTION_SERVICE_URL}/random`);
-    console.log("Random Question:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching random question:", error);
-    throw error;
-  }
+// find random question 
+async function findRandomQuestion() {
+  const response = await axios.get(`${QUESTION_SERVICE_URL}/random`);
+  console.log("response",response.data.data);
+  return response.data.data;
 }
-
-async function executeQuestion(questionId, codeAttempt) {
+async function test() {
   try {
-    console.log("Executing question with ID:", questionId);
-    console.log(codeAttempt);
-    const response = await axios.post(
-      `${RUN_SERVICE_URL}/execute/${questionId}`,
-      {
-        codeAttempt: codeAttempt,
-        language_id: 71, // TODO: Adjust based on the language ID
+    // Start a session between two users
+    const sessionResponse = await axios.post(`${RUN_SERVICE_URL}/session`, {
+      firstUserId: "user1",
+      secondUserId: "user2",
+    });
+
+
+    const secondSessionResponse = await axios.post(`${RUN_SERVICE_URL}/session`, {
+      firstUserId: "user2",
+      secondUserId: "user1",
+    });
+    const  channelId  = sessionResponse.data.data;
+    const secondChannelId  = secondSessionResponse.data.data;
+
+    console.log("Session started with channelId for first:", channelId);
+    console.log("Session started with channelId for second:", secondChannelId);
+
+    // Simulate two clients subscribing to the SSE channel
+    const client1 = new EventSource(`${RUN_SERVICE_URL}/subscribe/${channelId}`);
+    const client2 = new EventSource(`${RUN_SERVICE_URL}/subscribe/${channelId}`);
+
+    const handleMessage = (event, clientName) => {
+      const message = JSON.parse(event.data);
+
+      // Log message received
+      console.log(`${clientName} received message:`, message);
+
+      // Check if execution is complete and log each result
+      if (message.status === "complete") {
+        console.log("Test execution completed!");
+        for (const result of message.data.results) {
+          const resultData = result.data.result;
+          const { isPassed, stdout, stderr, memory, time, questionDetails, _id } =
+            resultData;
+
+          console.log(`Test Case ${_id}:`);
+          console.log(`  Passed: ${isPassed}`);
+          console.log(`  Output: ${stdout}`);
+          console.log(`  Error: ${stderr}`);
+          console.log(`  Memory: ${memory}`);
+          console.log(`  Time: ${time}`);
+          console.log(`  Expected Output: ${questionDetails.expectedOutput}`);
+        }
       }
-    );
-    return response.data;
+    };
+
+    // Set up event listeners for both clients
+    client1.onmessage = (event) => handleMessage(event, "Client 1", client1);
+    client2.onmessage = (event) => handleMessage(event, "Client 2", client2);
+
+    client1.onerror = (error) => {
+      console.error("Client 1 encountered an error:", error);
+      client1.close();
+    };
+
+    client2.onerror = (error) => {
+      console.error("Client 2 encountered an error:", error);
+      client2.close();
+    };
+
+    console.log("==================================================")
+    // Initiate a test execution
+    const question = await findRandomQuestion()
+    const questionId = question.question._id;
+    console.log("questionId",questionId);
+    const executeResponse = await axios.post(`${RUN_SERVICE_URL}/execute/${questionId}`, {
+      codeAttempt: question.question.solutionCode, 
+      channelId: channelId,
+    });
+    console.log("Execution started with response:", executeResponse.data);
+
+   
   } catch (error) {
-    console.error("Error executing question:", error);
-    throw error;
+    console.error("Error:", error.message);
   }
 }
 
-async function subscribeToResults(jobId) {
-  const eventSource = new EventSource(`${RUN_SERVICE_URL}/result/${jobId}`);
-
-  // Uncomment this code to disconnect eventsource after 2 seconds to see how disconnect from client is handled
-  //   setTimeout(() => {
-  //     eventSource.close();
-  //     console.log("EventSource closed after x seconds");
-  //   }, 10);
-
-  eventSource.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    if (message.status === "complete") {
-      console.log("Test execution completed!");
-      for (const result of message.data.results) {
-        const resultData = result.data.result;
-        const { isPassed, stdout, stderr, memory, time, questionDetails, _id } =
-          resultData;
-
-        console.log(`Test Case ${_id}:`);
-        console.log(`  Passed: ${isPassed}`);
-        console.log(`  Output: ${stdout}`);
-        console.log(`  Error: ${stderr}`);
-        console.log(`  Memory: ${memory}`);
-        console.log(`  Time: ${time}`);
-        console.log(`  Question Details: ${questionDetails.expectedOutput}`);
-      }
-      eventSource.close();
-      console.log("closing")
-
-
-    }
-    console.log("Received message:", message);
-  };
-
-  eventSource.onerror = (error) => {
-    console.error("EventSource failed:", error);
-    eventSource.close();
-  };
-}
-
-(async () => {
-  try {
-    // Step 1: Get a random question
-    const randomQuestion = await getRandomQuestion();
-    console.log("Random Question:", randomQuestion);
-
-    // Step 2: Execute the question with some code attempt
-    const questionId = randomQuestion.data.question._id;
-    // Runs solution code as code attempt
-    const codeAttempt = randomQuestion.data.question.solutionCode;
-
-    const executeResponse = await executeQuestion(questionId, codeAttempt);
-    const jobId = executeResponse.data.jobId;
-    console.log(`Execution started for jobId: ${jobId}`);
-
-    // Step 3: Subscribe to results
-    subscribeToResults(jobId);
-
-  } catch (error) {
-    console.error("An error occurred during testing:", error);
-  }
-})();
+test();
