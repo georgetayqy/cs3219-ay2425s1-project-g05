@@ -2,6 +2,7 @@ import RoomNotFoundError from '../errors/RoomNotFoundError.js';
 import UserNotFoundInRoomError from '../errors/UserNotFoundInRoomError.js';
 import UserAlreadyFoundInRoomError from '../errors/UserAlreadyFoundInRoomError.js';
 import { v7 } from 'uuid';
+import InvalidArgumentError from '../errors/InvalidArgumentError.js';
 
 /**
  * Interface to track the current users connected to yjs
@@ -86,7 +87,7 @@ class LocalClient {
         // if currRoom is not null and not equal to the userRoom,
         // we found a problem where one or more users have different rooms
         // this should not happen
-        if (!currRoom === undefined && !currRoom === userRoom) {
+        if (currRoom !== undefined && currRoom !== userRoom) {
           // conform those who dont belong to a room to the room of the first person
           throw new UserAlreadyFoundInRoomError(
             'Users belong in seperate rooms'
@@ -126,6 +127,12 @@ class LocalClient {
   static add(user, doc) {
     console.log('Add', user, 'to', doc);
 
+    if (typeof user !== 'string' || typeof doc !== 'string') {
+      throw new InvalidArgumentError(
+        'User ID or Room ID is not of the correct type'
+      );
+    }
+
     if (LocalClient.userToDoc.has(user)) {
       // ignore if user is already in the room
       return;
@@ -153,6 +160,7 @@ class LocalClient {
 
     if (docs === undefined) {
       console.error('Unable to delete user as user is not found in room');
+      return;
       // throw new UserNotFoundInRoomError(
       //   'Unable to delete user as user is not found in the correct room'
       // );
@@ -225,7 +233,7 @@ class LocalClient {
 
     if (users === null) {
       console.log('Room is not found when deleting room');
-      // throw new RoomNotFoundError('No room found');
+      throw new RoomNotFoundError('Room is not found when deleting room');
     }
 
     for (const user of users) {
@@ -245,6 +253,16 @@ class LocalClient {
       'doc2Qns',
       Array.from(LocalClient.docToQuestion.entries()),
     ];
+  }
+
+  /**
+   * Clears out the maps. This is only useful for debugging and testing
+   * purposes only.
+   */
+  static purge() {
+    LocalClient.docToQuestion.clear();
+    LocalClient.docToUser.clear();
+    LocalClient.userToDoc.clear();
   }
 }
 

@@ -210,6 +210,10 @@ export default function CreateSessionPage() {
           })
           .catch((error) => {
             console.error("Error creating room", error);
+            notifications.show({
+              message: error.message,
+              color: 'red'
+            })
           });
 
         // stop the timer

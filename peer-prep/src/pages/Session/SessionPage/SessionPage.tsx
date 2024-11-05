@@ -147,6 +147,10 @@ export default function SessionPage() {
       }
     } catch (error: any) {
       console.error('Error checking room status', error);
+      notifications.show({
+        message: error.message,
+        color: 'red'
+      })
     }
   };
 
