@@ -62,8 +62,14 @@ jobs:
           npm ci
           npm run test
 
-      # - name: Test Communication Service
-      #   working-directory: communication-sevice
-      #   run: |
-      #     npm ci
-      #     npm run test
+      - name: Test Communication Service
+        working-directory: communication-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test Run Service
+        working-directory: run-sevice
+        run: |
+          npm ci
+          npm run test
