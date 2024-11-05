@@ -19,7 +19,7 @@ const startSession = async (req, res) => {
     if (channelData && channelData.channelId) {
       console.log("Session data found in Redis:", channelData.channelId);
       // Remove channel data from Redis
-      //await redisClient.del(sessionKey);
+      await redisClient.del(sessionKey);
       return res
         .status(200)
         .json({
@@ -42,6 +42,7 @@ const startSession = async (req, res) => {
       // delete session data after 10 minutes
       // NOTE: Maybe both users have to join session within 10 minutes, otherwise this will fail
       await redisClient.expire(sessionKey, 600);
+      // TODO: test expiry
       console.log("created session")
       return res
         .status(200)
@@ -134,7 +135,7 @@ const executeTest = async (req, res) => {
     // Find whether theres already a job in progress
     const existingJob = await redisClient.hGetAll(`channel:${channelId}`);
     if (existingJob && existingJob.status === "processing") {
-      return res.status(409).json({ statusCode: 409, error: "There is a test exexcution already in progress. Please wait for it to complete" });
+      return res.status(409).json({ statusCode: 409, message: "There is a test exexcution already in progress. Please wait for it to complete" });
     }
 
     // Initialize job data in Redis

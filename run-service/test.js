@@ -83,7 +83,17 @@ async function test() {
     });
     console.log("Execution started with response:", executeResponse.data);
 
+    const secondQuestion = await findRandomQuestion()
+    const secondQuestionId = secondQuestion.question._id;
+    console.log("questionId", secondQuestionId);
+    const toBlockResponse = await axios.post(`${RUN_SERVICE_URL}/execute/${questionId}`, {
+      codeAttempt: question.question.solutionCode, 
+      channelId: channelId,
+    });
+    console.log("Execution started with response:", toBlockResponse.data);
    
+
+
   } catch (error) {
     console.error("Error:", error.message);
   }
