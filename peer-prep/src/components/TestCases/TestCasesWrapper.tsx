@@ -125,7 +125,7 @@ export default function TestCasesWrapper({
 
         setIsRunning(false);
         notifications.show({
-          message: `All test cases executed successfully`,
+          message: `All test cases have attempted to execute.`,
         });
 
         setLatestResults(results);
