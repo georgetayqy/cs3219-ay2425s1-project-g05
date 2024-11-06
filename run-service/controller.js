@@ -45,7 +45,6 @@ const startSession = async (req, res) => {
         [secondUserId]: "disconnected",
       });
       console.log("stored session with sessionkey", sessionKey);
-      // delete session data after 10 minutes
       // NOTE: Maybe both users have to join session within x minutes, otherwise this will fail
       await redisClient.expire(sessionKey, 600);
       // TODO: test expiry
@@ -185,7 +184,7 @@ const executeTest = async (req, res) => {
     res.status(200).json({
       statusCode: 200,
       message: `Executing test cases for questionId: ${questionId}`,
-      data: { testCaseCount: testCaseCount },
+      data: { testCaseCount: testCaseCount },w
     });
 
     // Start processing test cases
