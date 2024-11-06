@@ -11,7 +11,7 @@ async function findRandomQuestion() {
 }
 async function test() {
   try {
-    // Start a session between two users
+    // Start a session between two users (WHEN COLLAB SESSION STARTS)
     const sessionResponse = await axios.post(`${RUN_SERVICE_URL}/session`, {
       firstUserId: "user1",
       secondUserId: "user2",
@@ -42,11 +42,12 @@ async function test() {
       const message = JSON.parse(event.data);
 
       // Log message received
-      console.log(`${clientName} received message:`, message);
 
       // Check if execution is complete and log each result
       if (message.status === "complete") {
-        console.log("Test execution completed!");
+        console.log(
+          `========================= Test execution complete for ${message.data.questionId} for ${clientName} ===================================`
+        );
         for (const result of message.data.results) {
           const resultData = result.data.result;
           const {
@@ -65,7 +66,25 @@ async function test() {
           console.log(`  Error: ${stderr}`);
           console.log(`  Memory: ${memory}`);
           console.log(`  Time: ${time}`);
-          console.log(`  Expected Output: ${questionDetails.expectedOutput}`);
+          console.log(
+            `  Expected Output: ${
+              questionDetails ? questionDetails.expectedOutput : "N/A"
+            }`
+          );
+        }
+      } else {
+        console.log(`Message received for ${clientName}:`);
+        console.log("Status", message.status);
+        console.log("Message", message.message);
+        if (message.data) {
+          console.log(`Test Case: ${message.data.result._id}`);
+          console.log(`  Passed:${message.data.result.isPassed}`);
+          console.log(`  Output: ${message.data.result.stdout}`);
+          console.log(
+            `  Expected Output: ${
+              message.data.result.expectedOutput ? questionDetails.expectedOutput : "N/A"
+            }`
+          );
         }
       }
     };
@@ -75,7 +94,7 @@ async function test() {
       setTimeout(() => {
         client1.close();
         console.log("Connection closed after 3 minutes for client1.");
-      }, 40000); 
+      }, 40000);
     };
     client2.onopen = () => {
       setTimeout(() => {
@@ -98,11 +117,13 @@ async function test() {
       client2.close();
     };
 
-    console.log("==================================================");
+    console.log(
+      "========================================================================"
+    );
     // TEST: Execute a question testcase
     const question = await findRandomQuestion();
     const questionId = question.question._id;
-    console.log("questionId", questionId);
+    console.log("FIRST QUESTIONID", questionId);
     const executeResponse = await axios.post(
       `${RUN_SERVICE_URL}/execute/${questionId}`,
       {
@@ -110,13 +131,16 @@ async function test() {
         channelId: channelId,
       }
     );
-    console.log("============First Execution started with response: ================", executeResponse.data);
+    console.log(
+      "=================== FIRST question execution started with response: =======================\n",
+      executeResponse.data
+    );
 
     // TEST: Execute a question testcase that should be blocked (error thrown 409 conflict)
     try {
       const secondQuestion = await findRandomQuestion();
       const secondQuestionId = secondQuestion.question._id;
-      console.log("secondQuestionId", secondQuestionId);
+      console.log("SECONDQUESTIONID", secondQuestionId);
       const secondExecuteResponse = await axios.post(
         `${RUN_SERVICE_URL}/execute/${secondQuestionId}`,
         {
@@ -125,12 +149,15 @@ async function test() {
         }
       );
       console.log(
-        "================== Second Execution started with response:===================",
+        "=================== SECOND question execution started with response: =======================\n",
         secondExecuteResponse.data
       );
     } catch (error) {
       if (error.response) {
-        console.error("Error from test:", error.response.data.message);
+        console.error(
+          "================== Error from test:",
+          error.response.data.message
+        );
       } else {
         console.error("Error from test:", error.message);
       }
@@ -149,12 +176,16 @@ async function test() {
         }
       );
       console.log(
-        "=================== Third question execution started with response: =======================",
+        "=================== THIRD question execution started with response: =======================\n",
         thirdExecuteResponse.data
       );
     }, 15000);
   } catch (error) {
     if (error.response) {
+      console.error(
+        "Status code of error from test:",
+        error.response.data.statusCode
+      );
       console.error("Error from test:", error.response.data.message);
     } else {
       console.error("Error from test:", error.message);
