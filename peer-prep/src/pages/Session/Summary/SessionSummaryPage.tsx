@@ -20,107 +20,65 @@ import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import CodeEditorWithLanguageSelector from "../../../components/Questions/CodeEditor/CodeEditor";
 import { AttemptData, TestCaseResult, UserAttempt } from "../../../types/attempts";
-
-const dummyRecommendedSolution = `class Solution(object):
-  def reverseString(self, s):
-    i, j = 0, len(s) - 1
-    while i < j:
-      s[i], s[j] = s[j], s[i]
-      i, j = i + 1, j - 1`;
-
-const dummyHtmlDescription =
-  "<p>Write a function that reverses a string. The input string is given as an array of characters s.</p> <p>Example 1:</p> <pre>Input: s = ['h','e','l','l','o'] Output: ['o','l','l','e','h']</pre> <p>Example 2:</p> <pre>Input: s = ['H','a','n','n','a','h'] Output: ['h','a','n','n','a','H']</pre>";
-
-const dummyTestCasesResults: TestCaseResult[] = [
-  {
-    isPassed: true,
-    output: "['o','l','l','e','h']",
-    _id: "1",
-  },
-  {
-    isPassed: true,
-    output: "['h','a','n','n','a','H']",
-    _id: "2",
-  },
-  {
-    isPassed: false,
-    output: "['h','a','n','n','a','H']",
-    _id: "3",
-  },
-  {
-    isPassed: true,
-    output: "['o','l','l','e','h']",
-    _id: "4",
-  },
-];
+import { useLocation } from "react-router-dom";
+import { UserResponseData } from "../../../types/user";
 
 export default function SessionSummaryPage() {
   const { fetchData } = useApi();
 
-  const [duration, setDuration] = useState(10);
-  const [runtime, setRuntime] = useState("");
-  const [memory, setMemory] = useState("");
+  const location = useLocation();
+  const { roomIdReceived, attemptReceived } = location.state || {};
+
+  const [roomId, setRoomId] = useState(roomIdReceived);
+  const [attempt, setAttempt] = useState(attemptReceived);
+
+  // Attempt data to display
+  const [completedAt, setCompletedAt] = useState("");
+  const [otherUserDisplayName, setOtherUserDisplayName] = useState("");
+  const [otherUserEmail, setOtherUserEmail] = useState("");
+
   const [questionTitle, setQuestionTitle] = useState("");
   const [questionDescription, setQuestionDescription] = useState("");
+
   const [notes, setNotes] = useState("");
-  const [recommendedSolution, setRecommendedSolution] = useState(
-    dummyRecommendedSolution
-  );
+  const [toSave, setToSave] = useState(false);
+
   const [userSolution, setUserSolution] = useState("");
-  const [testCasesResults, setTestCasesResults] = useState<TestCaseResult[]>(
+  const [testCaseResults, setTestCaseResults] = useState<TestCaseResult[]>(
     []
   );
   const [privateTestsPassed, setPrivateTestsPassed] = useState(true);
 
+
+  // Retrieve session summary and details of other user on page load
   useEffect(() => {
-    getSessionSummary();
+      getSessionSummary();
+      getOtherUser();
   }, []);
 
   const getSessionSummary = async () => {
     try {
-      // Get session summary
-      const response = await fetchData<ServerResponse<AttemptData>>(
-        "/history-service/?roomId=TESTROOM2",
-        SERVICE.HISTORY
-      );
-      const attempt = response.data.attempts[0];
-      const runtime = "100"; // TO replace with actual runtime once sent over by backend
-      const memory = "54.2"; // TO replace with actual memory once sent over by backend
-      const questionTitle = attempt.question.title;
-      const questionDescription = attempt.question.description.descriptionHtml;
-      const notes = attempt.notes;
-      const recommendedSolution = dummyRecommendedSolution; // TO replace with actual recommended solution once sent over by backend
-      const userSolution = attempt.attemptCode;
-      const testCasesResults = attempt.testCasesResults;
-      const createdAt = attempt.createdAt;
-      const updatedAt = attempt.updatedAt;
+      fetchData<ServerResponse<AttemptData>>(
+          `/history-service/attempt/${roomId}`,
+          SERVICE.HISTORY
+        ).then((response) => {
+          const attempt = response.data.attempt[0];
+          setAttempt(attempt);
 
-      const duration = updatedAt
-        ? new Date(updatedAt).getTime() - new Date(createdAt).getTime()
-        : "";
+          const question = attempt.question as Question;
+          setQuestionTitle(question.title);
+          setQuestionDescription(question.description.descriptionHtml);
 
-      // console.log("Session Summary:", {
-      //   duration,
-      //   runtime,
-      //   memory,
-      //   questionTitle,
-      //   questionDescription,
-      //   notes,
-      //   recommendedSolution,
-      //   userSolution,
-      //   testCasesResults,
-      //   createdAt
-      // });
+          setCompletedAt(formatDateTime(attempt.createdAt));
+          if (attempt.notes !== " ") {
+            setNotes(attempt.notes);
+          }
 
-      setRuntime(runtime);
-      setMemory(memory);
-      setQuestionTitle(questionTitle);
-      setQuestionDescription(dummyHtmlDescription); // TO replace with actual question description once sent over by backend
-      setNotes(notes);
-      setRecommendedSolution(recommendedSolution);
-      setUserSolution(userSolution);
-      setTestCasesResults(testCasesResults);
-      setPrivateTestsPassed(calculateSummary(testCasesResults).failed === 0);
+          setUserSolution(attempt.attemptCode);
+
+          setTestCaseResults(attempt.testCaseResults);
+          setPrivateTestsPassed(calculateSummary(attempt.testCaseResults).failed === 0);
+        });
     } catch (error: any) {
       console.error("Error getting session summary:", error);
       notifications.show({
@@ -128,7 +86,25 @@ export default function SessionSummaryPage() {
         color: "red",
       });
     }
-  };
+  }
+  
+  const getOtherUser = async () => { 
+    try {
+      fetchData<ServerResponse<UserResponseData>>(
+        `/user-service/users/${attempt.otherUserId}`,
+        SERVICE.USER
+      ).then((response) => {
+        setOtherUserDisplayName(response.data.user.displayName);
+        setOtherUserEmail(response.data.user.email);
+      });
+    } catch (error: any) {
+      console.error("Error getting details of other user:", error);
+      notifications.show({
+        message: error.message,
+        color: "red",
+      });
+    }
+  }
 
   // Helper function to calculate passed/failed summary
   const calculateSummary = (results: TestCaseResult[]) => {
@@ -136,12 +112,17 @@ export default function SessionSummaryPage() {
     return { passed, failed: results.length - passed };
   };
 
-  const { passed, failed } = calculateSummary(dummyTestCasesResults);
+  const formatDateTime = (dateTime: string) => {
+    const date = new Date(dateTime);
+    return date.toLocaleString();
+  }
+
+  const { passed, failed } = calculateSummary(testCaseResults);
 
   const handleSaveNotes = async () => {
     try {
-      const response = await fetchData<ServerResponse<UserAttempt>>(
-        "/history-service/TESTROOM2",
+      fetchData<ServerResponse<UserAttempt>>(
+        `/history-service/attempt/${roomId}`,
         SERVICE.HISTORY,
         {
           method: "PUT",
@@ -152,10 +133,12 @@ export default function SessionSummaryPage() {
             notes,
           }),
         }
-      );
-      notifications.show({
-        message: "Notes saved successfully!",
-        color: "green",
+      ).then((response) => {
+        setToSave(false);
+        notifications.show({
+          message: "Notes saved successfully!",
+          color: "green",
+        });
       });
     } catch (error: any) {
       console.error("Error saving notes:", error);
@@ -170,17 +153,10 @@ export default function SessionSummaryPage() {
     <Flex className={classes.wrapper}>
       <Stack align="flex-start">
         <Title>Congratulations 🎉</Title>
-        <Text>You finished the problem in {duration} minutes.</Text>
-        <Flex gap="md">
-          <Paper radius="md" withBorder className={classes.rtm}>
-            <Text size="sm">Runtime</Text>
-            <Text size="lg">{runtime} ms</Text>
-          </Paper>
-          <Paper radius="md" withBorder className={classes.rtm}>
-            <Text size="sm">Memory</Text>
-            <Text size="lg">{memory} MB</Text>
-          </Paper>
-        </Flex>
+        <Text>Completed at {completedAt}.</Text>
+
+        {/* TODO: UI to display details of the collaborator properly */}
+        {/* <Text>With - {otherUserDisplayName} {otherUserEmail}</Text> */}
       </Stack>
 
       <Flex gap={20} w={"100%"}>
@@ -214,37 +190,25 @@ export default function SessionSummaryPage() {
             maxRows={15}
             placeholder="Write your notes here"
             value={notes}
-            onChange={(event) => setNotes(event.currentTarget.value)}
+            onChange={(event) => { setNotes(event.currentTarget.value); setToSave(true); }}
           />
-          <Button onClick={handleSaveNotes} mt={20}>
+          <Button onClick={handleSaveNotes} mt={20} disabled={!toSave}>
             Save
           </Button>
         </Paper>
       </Flex>
 
-      <SimpleGrid cols={2} style={{ width: "100%" }}>
-        <Stack>
-          <Title order={4}>Recommended Solution</Title>
-          <CodeEditorWithLanguageSelector
-            label=""
-            code={recommendedSolution}
-            onCodeChange={setRecommendedSolution}
-            required={false}
-            isReadOnly={true}
-          />
-        </Stack>
 
-        <Stack>
-          <Title order={4}>Your Solution</Title>
-          <CodeEditorWithLanguageSelector
-            label=""
-            code={userSolution}
-            onCodeChange={setUserSolution}
-            required={false}
-            isReadOnly={true}
-          />
-        </Stack>
-      </SimpleGrid>
+      <Paper w={"100%"}>
+        <Title order={4}>Your Solution</Title>
+        <CodeEditorWithLanguageSelector
+          label=""
+          code={userSolution}
+          onCodeChange={setUserSolution}
+          required={false}
+          isReadOnly={true}
+        />
+      </Paper>
 
       <Paper radius="md" withBorder className={classes.testCases}>
         <Title order={4}>Test Case Summary</Title>
@@ -252,7 +216,7 @@ export default function SessionSummaryPage() {
           Passed: {passed}, Failed: {failed}
         </Text>
         <Accordion multiple mt={10}>
-          {testCasesResults.map((result, index) => (
+          {testCaseResults.map((result, index) => (
             <Accordion.Item key={index} value={result._id}>
               <Accordion.Control
                 icon={
@@ -270,8 +234,8 @@ export default function SessionSummaryPage() {
                 Test Case {index + 1} - {result.isPassed ? "Passed" : "Failed"}
               </Accordion.Control>
               <Accordion.Panel>
-                {/* TO replace with expected output (not yet sent over by backend) */}
-                <Text>Expected Output: {result.output}</Text>
+                <Text>Input: {result.input}</Text>
+                <Text>Expected Output: {result.expectedOutput}</Text>
                 <Text>Your Output: {result.output}</Text>
               </Accordion.Panel>
             </Accordion.Item>

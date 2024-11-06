@@ -30,6 +30,7 @@ import { useLocalStorage, useSessionStorage } from "@mantine/hooks";
 import { modals, ModalsProvider } from "@mantine/modals";
 import TextChatWidget from "../../../components/Communication/Text/TextChatWidget";
 import { notifications } from "@mantine/notifications";
+import { UserResponseData } from "../../../types/user";
 
 type QuestionCategory =
   | "ALGORITHMS"
@@ -42,16 +43,37 @@ type QuestionCategory =
 
 // Map of category to color for badges
 const categoryColorMap: { [key in QuestionCategory]: string } = {
-  ALGORITHMS: "blue",
-  DATABASES: "green",
+  "ALGORITHMS": "blue",
+  "DATABASES": "green",
   "DATA STRUCTURES": "orange",
-  BRAINTEASER: "red",
-  STRINGS: "purple",
+  "BRAINTEASER": "red",
+  "STRINGS": "purple",
   "BIT MANIPULATION": "cyan",
-  RECURSION: "teal",
+  "RECURSION": "teal",
 };
 
+const dummyTestCaseResults = [
+  {
+      "testCaseId": "first testcase",
+      "isPassed": true,
+      "input": "first qn",
+      "output": "xxx",
+      "expectedOutput": "first ans"
+  },
+  {
+      "testCaseId": "sec testcase",
+      "isPassed": true,
+      "input": "first qn",
+      "output": "xxx",
+      "expectedOutput": "second ans"
+  }
+]
+
 const LOCAL_WEBSOCKET = import.meta.env.VITE_COLLAB_WS_URL_LOCAL;
+
+interface HistoryResponse {
+  attempt: any;
+}
 
 export default function SessionPage() {
   const WEBSOCKET_URL = import.meta.env.VITE_COLLAB_WS_URL || LOCAL_WEBSOCKET;
@@ -67,24 +89,27 @@ export default function SessionPage() {
   const [userId, setUserId] = useState(user?._id);
 
   const location = useLocation();
-  const { questionReceived, roomIdReceived } = location.state || {};
+  const { questionReceived, roomIdReceived, otherUserIdReceived } = location.state || {};
 
   // Room ID and Question details from matching of users
   const [roomId, setRoomId] = useState(roomIdReceived);
   const [question, setQuestion] = useState(questionReceived);
+  const [otherUserId, setOtherUserId] = useState(otherUserIdReceived);
+  const [otherUserDisplayName, setOtherUserDisplayName] = useState("");
+  const [otherUserEmail, setOtherUserEmail] = useState("");
 
   // Question details to be displayed
   const [questionCategories, setQuestionCategories] = useState<
     QuestionCategory[]
   >([]);
-  const [questionDifficulty, setQuestionDifficulty] = useState("");
-  // const [otherUserName, setOtherUserName] = useState('pei1232')
-  // const [otherUserEmail, setOtherUserEmail] = useState('pei1232@gmail.com')
-  const [questionTitle, setQuestionTitle] = useState("");
-  const [questionDescription, setQuestionDescription] = useState("");
-  const [leetCodeLink, setLeetCodeLink] = useState("");
+  const [questionDifficulty, setQuestionDifficulty] = useState(question.difficulity);
+  const [questionTitle, setQuestionTitle] = useState(question.title);
+  const [questionDescription, setQuestionDescription] = useState(question.description.descriptionHtml);
+  const [leetCodeLink, setLeetCodeLink] = useState(question.link);
 
-  const [templateCode, setTemplateCode] = useState("");
+  const [templateCode, setTemplateCode] = useState(question.templateCode);
+  const [attemptCode, setAttemptCode] = useState(question.templateCode);
+  const [testCaseResults, setTestCaseResults] = useState(dummyTestCaseResults);
 
   // when true, don't show modal when # users in room < 2
   // const [isWaitingForRejoin, setIsWaitingForRejoin] = useState(false);
@@ -97,18 +122,22 @@ export default function SessionPage() {
   }
 
   useEffect(() => {
-    console.log("Question Received: ", question);
-    console.log("Room ID Received: ", roomId);
-    // setQuestion(questionReceived)
-    // setRoomId(roomIdReceived)
-
-    setQuestionCategories(question.categories);
-    setQuestionDifficulty(question.difficulity);
-    setQuestionTitle(question.title);
-    setQuestionDescription(question.description.descriptionHtml);
-    setLeetCodeLink(question.link);
-    setTemplateCode(question.templateCode);
-  }, [question, roomId]);
+    try {
+      fetchData<ServerResponse<UserResponseData>>(
+        `/user-service/users/${otherUserId}`,
+        SERVICE.USER
+      ).then((response) => {
+        setOtherUserDisplayName(response.data.user.displayName);
+        setOtherUserEmail(response.data.user.email);
+      });
+    } catch (error: any) {
+      console.error("Error getting details of other user:", error);
+      notifications.show({
+        message: error.message,
+        color: "red",
+      });
+    }
+  }, []);
 
   const renderComplexity = () => {
     const difficultyRating =
@@ -178,10 +207,7 @@ export default function SessionPage() {
         confirm: "End Session",
         cancel: "Cancel",
       },
-      onConfirm: () => {
-        // navigate to the dashboard
-        navigate("/dashboard");
-      },
+      onConfirm: handleEndSession,
     });
   };
 
@@ -225,7 +251,44 @@ export default function SessionPage() {
 
   const handleEndSession = () => {
     modals.closeAll();
-    navigate("/dashboard");
+
+    // call history service to create an attempt
+    try {
+      const { _id, testCases, templateCode, meta, isDeleted, __v, categories, ...questionForAttempt } = question;
+
+      fetchData<ServerResponse<HistoryResponse>>(
+        `/history-service/attempt`, 
+        SERVICE.HISTORY, 
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            otherUserId,
+            roomId,
+            notes: " ",
+            attemptCode,
+            testCaseResults,
+            question: questionForAttempt,
+          }),
+        }
+      ).then((response) => {
+        console.log("Attempt created", response);
+        const attempt = response.data.attempt;
+        console.log("Attempt", attempt);
+
+        // navigate to session summary page
+        navigate(`/session/summary/${roomId}`, { state: { roomIdReceived: roomId, attemptReceived: attempt } });
+      });
+    } catch (error: any) {
+      console.error("Error ending session", error);
+      notifications.show({
+        message: error.message,
+        color: "red",
+      });
+    }
+
   };
 
   const handleWait = () => {
@@ -240,13 +303,13 @@ export default function SessionPage() {
       <TextChatWidget roomId={roomId} />
       <Box className={classes.wrapper}>
         {/* Collaborator Details */}
-        {/* <Group mb="md" style={{ alignItems: "center" }}>
+        <Group mb="md" style={{ alignItems: "center" }}>
           <Group>
             <Avatar radius="xl" size="md" color="blue">
-              {otherUserName.charAt(0).toUpperCase()}
+              {otherUserDisplayName.charAt(0).toUpperCase()}
             </Avatar>
             <div>
-              <Text size="sm">{otherUserName}</Text>
+              <Text size="sm">{otherUserDisplayName}</Text>
               <Text size="xs" color="dimmed">{otherUserEmail}</Text>
             </div>
             <Badge color="teal" size="sm" variant="filled" ml="xs">
@@ -254,7 +317,7 @@ export default function SessionPage() {
             </Badge>
           </Group>
           <IconChevronRight size="1rem" color="dimmed" />
-        </Group> */}
+        </Group>
 
         <Flex gap="md" className={classes.mainContent}>
           <Paper
@@ -338,6 +401,7 @@ export default function SessionPage() {
                 theme="dark"
                 height={"500px"}
                 defaultValue={question.templateCode}
+                onChange={(code) => setAttemptCode(code)}
               />
             </Paper>
             <Stack>

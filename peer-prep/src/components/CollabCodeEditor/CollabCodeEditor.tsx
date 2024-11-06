@@ -22,6 +22,7 @@ interface CodeEditorProps {
   height?: string;
   defaultValue?: string;
   language?: string;
+  onChange?: (value: string) => void;
 }
 
 /**
@@ -43,6 +44,7 @@ export default function CodeEditor({
   height = "90vh",
   defaultValue = "# Write your code here",
   language = "python",
+  onChange,
 }: CodeEditorProps) {
   const doc = useMemo(() => new Doc(), []);
   const [editor, setEditor] = useState(null);
@@ -113,6 +115,11 @@ export default function CodeEditor({
         scrollBeyondLastLine: false,
         minimap: { enabled: false },
       }}
+      onChange={(value) => {
+        if (onChange) {
+          onChange(value || "");
+        }
+      }}    
     />
   );
 }
