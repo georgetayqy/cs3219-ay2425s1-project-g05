@@ -88,7 +88,6 @@ const subscribeToChannel = async (req, res) => {
       (async () => {
         await redisClient.del(`channel:${channelId}`);
       })();
-      console.log("+++++============+++++++++= Elaineeee");
       res.write(`data: ${JSON.stringify(update)}\n\n`);
     } else if (update.statusCode === 206) {
       res.write(`data: ${JSON.stringify(update)}\n\n`);
@@ -158,7 +157,8 @@ const executeTest = async (req, res) => {
     processTestcases(channelId, testcases, codeAttempt, questionId);
   } catch (error) {
     if (error instanceof BaseError) {
-      return res.status(error.statusCode).json({ message: error.message });
+      console.log("error!#JNEJ:", error.message)
+      return res.status(error.statusCode).json({ statusCode: error.statusCode, message: error.message });
     }
     res.status(500).json({ error: "Failed to execute test cases" });
   }

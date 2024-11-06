@@ -48,6 +48,7 @@ async function test() {
         console.log(
           `========================= Test execution complete for ${message.data.questionId} for ${clientName} ===================================`
         );
+        console.log("Code", message.data.code);
         for (const result of message.data.results) {
           const resultData = result;
           const {
@@ -70,6 +71,7 @@ async function test() {
             `  Expected Output: ${
               testCaseDetails ? testCaseDetails.expectedOutput : "N/A"
             }`
+            
           );
         }
       } else {
@@ -154,6 +156,7 @@ async function test() {
       );
     } catch (error) {
       if (error.response) {
+        console.log(error.response.data.statusCode)
         console.error(
           "================== Error from test:",
           error.response.data.message
