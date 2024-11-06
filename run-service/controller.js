@@ -151,6 +151,7 @@ const executeTest = async (req, res) => {
     if (!testcases) {
       throw new NotFoundError("Testcases not found for the question");
     }
+
     for (let i = 0; i < testcases.length; i++) {
       console.log("Testcase:", testcases[i]._id);
       console.log("isPublic:", testcases[i].isPublic);
@@ -277,6 +278,10 @@ async function processTestcases(channelId, testcases, code, questionId) {
   const results = [];
   let hasError = false;
   console.log("============Starting testcases execution==========");
+  await redisClient.publish(
+    `channel:${channelId}`,
+    JSON.stringify({ statusCode: 202, message: `Executing test cases of question ${questionId}` })
+  );
 
   for (let i = 0; i < testcases.length; i++) {
     try {
