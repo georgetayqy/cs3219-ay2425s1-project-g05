@@ -1,5 +1,7 @@
 import {
   Accordion,
+  Avatar,
+  Badge,
   Button,
   Flex,
   Group,
@@ -16,7 +18,7 @@ import classes from "./SessionSummaryPage.module.css";
 import { useEffect, useState } from "react";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { Question } from "../../../types/question";
-import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
+import { IconChevronRight, IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import CodeEditorWithLanguageSelector from "../../../components/Questions/CodeEditor/CodeEditor";
 import { AttemptData, TestCaseResult, UserAttempt } from "../../../types/attempts";
@@ -153,10 +155,24 @@ export default function SessionSummaryPage() {
     <Flex className={classes.wrapper}>
       <Stack align="flex-start">
         <Title>Congratulations 🎉</Title>
-        <Text>Completed at {completedAt}.</Text>
+        <Text color="dimmed">Completed on {completedAt} </Text>
 
-        {/* TODO: UI to display details of the collaborator properly */}
-        {/* <Text>With - {otherUserDisplayName} {otherUserEmail}</Text> */}
+        {/* Collaborator Details */}
+        <Group mb="md" style={{ alignItems: "center" }}>
+          <Group>
+            <Avatar radius="xl" size="md" color="blue">
+              {otherUserDisplayName.charAt(0).toUpperCase()}
+            </Avatar>
+            <div>
+              <Text size="sm">{otherUserDisplayName}</Text>
+              <Text size="xs" color="dimmed">{otherUserEmail}</Text>
+            </div>
+            <Badge color="teal" size="sm" variant="filled" ml="xs">
+              Collaborator
+            </Badge>
+          </Group>
+          <IconChevronRight size="1rem" color="dimmed" />
+        </Group>
       </Stack>
 
       <Flex gap={20} w={"100%"}>

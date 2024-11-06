@@ -104,20 +104,16 @@ const AttemptCard = memo(function AttemptCard({
         <Collapse in={isExpanded}>
           <Flex className={classes.accordionBody}>
             <Flex justify={"space-between"}>
-              <Stack>
-                <Badge>Collaborator:</Badge>
-                <Flex className={classes.collaboratorDetails} align="center" gap="sm" mt="md">
-                  <Avatar radius="xl" size="md" color="blue">
-                    {otherUserDisplayName.charAt(0).toUpperCase()}
-                  </Avatar>
-                  <div>
-                    <Text size="sm">{otherUserDisplayName}</Text>
-                    <Text size="xs" color="dimmed">{otherUserEmail}</Text>
-                  </div>
-                </Flex>
-              </Stack>
+              <Flex className={classes.collaboratorDetails} align="center" gap="sm" mt="md">
+                <Avatar radius="xl" size="md" color="blue">
+                  {otherUserDisplayName.charAt(0).toUpperCase()}
+                </Avatar>
+                <div>
+                  <Text size="sm">{otherUserDisplayName}</Text>
+                  <Text size="xs" color="dimmed">{otherUserEmail}</Text>
+                </div>
+              </Flex>
 
-              
               {/* <SimpleGrid cols={2}> */}
               <Flex>
                 <Button onClick={handleCardClick} variant="light">
