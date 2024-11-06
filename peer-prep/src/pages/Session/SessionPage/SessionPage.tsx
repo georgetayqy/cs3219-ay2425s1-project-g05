@@ -97,7 +97,8 @@ export default function SessionPage() {
   const {
     questionReceived,
     roomIdReceived,
-  }: { questionReceived: Question; roomIdReceived: string } =
+    otherUserIdReceived
+  }: { questionReceived: Question; roomIdReceived: string, otherUserIdReceived: string } =
     location.state || {};
 
   const roomId = useParams().roomId;
@@ -105,7 +106,7 @@ export default function SessionPage() {
   // Room ID and Question details from matching of users
   // TODO don't depend on location.state, make request to get question and room details? OR include it in the URL?
   const [question, setQuestion] = useState(questionReceived);
-  const [otherUserId, setOtherUserId] = useState("");
+  const [otherUserId, setOtherUserId] = useState(otherUserIdReceived);
   const [channelId, setChannelId] = useState<string | null>(null);
   const [otherUserDisplayName, setOtherUserDisplayName] = useState("");
   const [otherUserEmail, setOtherUserEmail] = useState("");
@@ -305,8 +306,9 @@ export default function SessionPage() {
 
     // call history service to create an attempt
     try {
-      const { _id, testCases, templateCode, isDeleted, __v, categories, ...questionForAttempt } = question;
+      const { _id, testCases, meta, templateCode, isDeleted, __v, categories, ...questionForAttempt } = question;
 
+      console.log(currentValueRef)
       fetchData<ServerResponse<HistoryResponse>>(
         `/history-service/attempt`, 
         SERVICE.HISTORY, 

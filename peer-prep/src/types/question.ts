@@ -32,6 +32,7 @@ export type Question = {
   templateCode: string;
   link: string;
   testCases: TestCase[];
+  meta: { [key: string]: any };
   __v: number;
 };
 
