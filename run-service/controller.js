@@ -81,7 +81,9 @@ const subscribeToChannel = async (req, res) => {
     })}\n\n`
   );
 
-  const getCurrentChannelData = await redisClient.hGetAll(`channel:${channelId}`);
+  const getCurrentChannelData = await redisClient.hGetAll(
+    `channel:${channelId}`
+  );
 
   await redisClient.hSet(`channel:${channelId}`, {
     ...getCurrentChannelData,
@@ -131,9 +133,11 @@ const executeTest = async (req, res) => {
     console.log("executing test started");
     const questionId = req.params.questionId;
     const { codeAttempt, channelId, firstUserId, secondUserId } = req.body;
- 
+
     // Check if another execution is in progress
-    const initialChannelData = await redisClient.hGetAll(`channel:${channelId}`);
+    const initialChannelData = await redisClient.hGetAll(
+      `channel:${channelId}`
+    );
     console.log("Existing job data:", initialChannelData);
     if (initialChannelData && initialChannelData.status === "processing") {
       console.log(
@@ -147,8 +151,13 @@ const executeTest = async (req, res) => {
 
     // If another client is not subscribed to the channel, throw an error
     if (initialChannelData) {
-      if (initialChannelData[firstUserId] !== "connected" || initialChannelData[secondUserId] !== "connected") {
-        console.log("Another user is not connected to the channel. Try again later error thrown");
+      if (
+        initialChannelData[firstUserId] !== "connected" ||
+        initialChannelData[secondUserId] !== "connected"
+      ) {
+        console.log(
+          "Another user is not connected to the channel. Try again later error thrown"
+        );
         throw new ConflictError(
           "Another user is not connected to the channel. Try again later."
         );
@@ -180,15 +189,19 @@ const executeTest = async (req, res) => {
     }
     const testCaseCount = testcases.length;
 
+    const toLog = await redisClient.hGetAll(`channel:${channelId}`);
+    console.log("Channel data after setting status:", toLog);
+
+    // Start processing test cases
+    processTestcases(channelId, testcases, codeAttempt, questionId);
+
     // Respond to client with test case count
     res.status(200).json({
       statusCode: 200,
       message: `Executing test cases for questionId: ${questionId}`,
-      data: { testCaseCount: testCaseCount },w
+      data: { testCaseCount: testCaseCount },
+      w,
     });
-
-    // Start processing test cases
-    processTestcases(channelId, testcases, codeAttempt, questionId);
   } catch (error) {
     if (error instanceof BaseError) {
       console.log("Error while executing testcase:", error.message);
@@ -295,7 +308,7 @@ async function processTestcases(channelId, testcases, code, questionId) {
     `channel:${channelId}`,
     JSON.stringify({
       statusCode: 202,
-      message: `Currently executing test cases for question ${questionId}`
+      message: `Currently executing test cases for question ${questionId}`,
     })
   );
 
