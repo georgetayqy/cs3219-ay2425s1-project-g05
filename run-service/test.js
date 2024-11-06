@@ -65,7 +65,7 @@ async function test() {
           console.log(`  Error: ${stderr}`);
           console.log(`  Memory: ${memory}`);
           console.log(`  Time: ${time}`);
-          console.log(`  Expected Output: ${questionDetails.expectedOutput}`);
+          console.log(`  Expected Output: ${questionDetails ? questionDetails.expectedOutput : "N/A"}`);
         }
       }
     };

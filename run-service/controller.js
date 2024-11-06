@@ -41,10 +41,10 @@ const startSession = async (req, res) => {
       });
       console.log("stored session with sessionkey", sessionKey);
       // delete session data after 10 minutes
-      // NOTE: Maybe both users have to join session within 10 minutes, otherwise this will fail
+      // NOTE: Maybe both users have to join session within x minutes, otherwise this will fail
       await redisClient.expire(sessionKey, 600);
       // TODO: test expiry
-      console.log("created session");
+      console.log("created session with sessionkey", sessionKey);
       return res.status(200).json({
         statusCode: 200,
         message: `New channelId created for ${userA} and ${userB}`,
@@ -138,6 +138,10 @@ const executeTest = async (req, res) => {
     if (!testcases) {
       throw new NotFoundError("Testcases not found for the question");
     }
+    for (let i = 0; i < testcases.length; i++) {
+      console.log("Testcase:", testcases[i]._id);
+      console.log("isPublic:", testcases[i].isPublic);
+    }
     console.log("Testcases retrieved sucessfully");
 
     // Indicate that the test cases are being processed - initial message to indicate start of execution
@@ -195,18 +199,29 @@ async function runTestcase(testcase, code) {
 
     //console.log("Response from API:", response.data);
     const responseData = response.data;
+
+    let outputFinal = responseData.stdout ? responseData.stdout : "";
+    let questionDetailsFinal = {
+      input: responseData.input || "No input description",
+      expectedOutput: testcase.expectedOutput || "No expected output",
+    };
+
+    // Remove output and question details if the testcase is not public
+    if (!testcase.isPublic) {
+      console.log("Removing output and question details for private testcase");
+      outputFinal = null;
+      questionDetailsFinal = null; 
+    }
+
     const testCaseResult = {
       statusCode: 200,
       message: `${testcase._id} executed successfully`,
       data: {
         result: {
-          stderr: responseData.stderr || "",
+          stderr: responseData.stderr,
           isPassed: responseData.status.id === 3 ? true : false,
-          stdout: responseData.stdout || "No result",
-          questionDetails: {
-            input: responseData.input || "No input description",
-            expectedOutput: testcase.expectedOutput || "No expected output",
-          },
+          stdout: outputFinal,
+          questionDetails: questionDetailsFinal,
           memory: responseData.memory || 0,
           time: responseData.time || "0",
           _id: testcase._id,
@@ -285,11 +300,8 @@ async function processTestcases(channelId, testcases, code, questionId) {
     }
   }
 
-  console.log("Completed testcases execution");
+  console.log("Completed testcases execution for questionId:", questionId);
 
-  console.log(
-    "==================== need to find this elaine! =================="
-  );
   await redisClient.hSet(`channel:${channelId}`, {
     status: hasError ? "error" : "completed",
     data: JSON.stringify(results),
@@ -320,17 +332,5 @@ async function getTestcases(questionId) {
     );
   }
 }
-
-const sendErrorAndClose = (res, subscriber) => {
-  const errorMessage = JSON.stringify({
-    status: "error",
-    statusCode: 504,
-    result: "Gateway Timeout: No response from execution server",
-  });
-
-  res.write(`data: ${errorMessage}\n\n`);
-  subscriber.unsubscribe();
-  res.end();
-};
 
 export { executeTest, subscribeToChannel, startSession };
