@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import { notifications } from "@mantine/notifications";
 import TextChatWidget from "../../components/Communication/Text/TextChatWidget";
 import AttemptCard from "../../components/Attempts/AttemptCard/AttemptCard";
+import { IconClipboardCheck } from "@tabler/icons-react";
 export default function DashboardPage() {
   const { user } = useAuth();
   const { fetchData } = useApi();
@@ -73,7 +74,7 @@ export default function DashboardPage() {
       <section>
         {/* <Container mt="4rem"> */}
         <Box px={"xl"} mt="4rem">
-          <Flex className={classes["question-list"]}>
+          <Flex className={classes["question-list"]} justify={"center"} align={"center"}>
             {userAttempts.length > 0 ? (
               userAttempts.map((attempt, key) => (
                 <AttemptCard
@@ -85,7 +86,15 @@ export default function DashboardPage() {
                 />
               ))
             ) : (
-              <Text>No attempts found</Text>
+              <Center style={{ flexDirection: "column", padding: "2rem" }}>
+                <IconClipboardCheck size={64} color="gray" />
+                <Text size="lg" color="dimmed" mt="md">
+                  You have not completed any questions yet!
+                </Text>
+                <Button mt="lg" component={Link} to="/session/create" variant="light">
+                  Start a session
+                </Button>
+              </Center>
             )}
           </Flex>
         </Box>
