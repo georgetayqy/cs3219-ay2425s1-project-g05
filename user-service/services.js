@@ -37,3 +37,7 @@ export function verifyAccessToken(token) {
     return user;
   });
 }
+
+export function isValidUserId(id) {
+    return mongoose.isValidObjectId(id)
+}
