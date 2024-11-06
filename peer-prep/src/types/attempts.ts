@@ -1,4 +1,4 @@
-import { Question } from "./question";
+import { AttemptQuestion, Question } from "./question";
 
 // src/types/attempts.ts
 export interface TestCaseResult {
@@ -12,9 +12,9 @@ export interface TestCaseResult {
 
 export interface UserAttempt {
   _id: string;
-  userEmail: string;
-  otherUserEmail: string;
-  question: Question;
+  userId: string;
+  otherUserId: string;
+  question: AttemptQuestion;
   roomId: string;
   notes: string;
   attemptCode: string;
@@ -27,4 +27,8 @@ export interface UserAttempt {
 
 export interface AttemptData {
   attempt: UserAttempt[];
+}
+
+export interface AttemptsData {
+  attempts: UserAttempt[];
 }

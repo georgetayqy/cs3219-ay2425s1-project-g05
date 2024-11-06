@@ -18,10 +18,11 @@ import { SAMPLE_QUESTIONS } from "../../types/question";
 import classes from "./DashboardPage.module.css";
 import { Link } from "react-router-dom";
 import useApi, { ServerResponse, SERVICE } from "../../hooks/useApi";
-import { AttemptData, UserAttempt } from "../../types/attempts";
+import { AttemptData, AttemptsData, UserAttempt } from "../../types/attempts";
 import { useEffect, useState } from "react";
 import { notifications } from "@mantine/notifications";
 import TextChatWidget from "../../components/Communication/Text/TextChatWidget";
+import AttemptCard from "../../components/Attempts/AttemptCard/AttemptCard";
 export default function DashboardPage() {
   const { user } = useAuth();
   const { fetchData } = useApi();
@@ -30,10 +31,11 @@ export default function DashboardPage() {
 
   const getUserAttempts = async () => {
     try {
-      const response = await fetchData<ServerResponse<AttemptData>>(
-        "/history-service/user",
+      const response = await fetchData<ServerResponse<AttemptsData>>(
+        "/history-service/user/attempts",
         SERVICE.HISTORY
       );
+      console.log("User attempts:" + response.data.attempts);
       const attempts = response.data.attempts;
       setUserAttempts(attempts);
     } catch (error: any) {
@@ -72,15 +74,14 @@ export default function DashboardPage() {
         {/* <Container mt="4rem"> */}
         <Box px={"xl"} mt="4rem">
           <Flex className={classes["question-list"]}>
-            {/* {SAMPLE_QUESTIONS.map((question, key) => (
-              <QuestionCard key={key} question={question} difficulty="EASY" />
-            ))} */}
             {userAttempts.length > 0 ? (
               userAttempts.map((attempt, key) => (
-                <QuestionCard
+                <AttemptCard
                   key={key}
+                  attempt={attempt}
                   question={attempt.question} 
                   difficulty={attempt.question.difficulty}
+                  roomId={attempt.roomId}
                 />
               ))
             ) : (
