@@ -22,6 +22,9 @@ import { createPortal } from "react-dom";
 const servers: RTCConfiguration = {
   iceServers: [
     {
+      urls: "stun:stun.l.google.com:19302",
+    },
+    {
       urls: ["turn:51.79.242.81:3478"],
       username: import.meta.env.VITE_TURN_SERVER_USERNAME,
       credential: import.meta.env.VITE_TURN_SERVER_PASSWORD,
