@@ -42,11 +42,12 @@ async function test() {
       const message = JSON.parse(event.data);
 
       // Log message received
-      console.log(`${clientName} received message:`, message);
 
       // Check if execution is complete and log each result
       if (message.status === "complete") {
-        console.log(`Test execution complete for ${message.data.questionId} for ${clientName}`);
+        console.log(
+          `========================= Test execution complete for ${message.data.questionId} for ${clientName} ===================================`
+        );
         for (const result of message.data.results) {
           const resultData = result.data.result;
           const {
@@ -65,7 +66,25 @@ async function test() {
           console.log(`  Error: ${stderr}`);
           console.log(`  Memory: ${memory}`);
           console.log(`  Time: ${time}`);
-          console.log(`  Expected Output: ${questionDetails ? questionDetails.expectedOutput : "N/A"}`);
+          console.log(
+            `  Expected Output: ${
+              questionDetails ? questionDetails.expectedOutput : "N/A"
+            }`
+          );
+        }
+      } else {
+        console.log(`Message received for ${clientName}:`);
+        console.log("Status", message.status);
+        console.log("Message", message.message);
+        if (message.data) {
+          console.log(`Test Case: ${message.data.result._id}`);
+          console.log(`  Passed:${message.data.result.isPassed}`);
+          console.log(`  Output: ${message.data.result.stdout}`);
+          console.log(
+            `  Expected Output: ${
+              message.data.result.expectedOutput ? questionDetails.expectedOutput : "N/A"
+            }`
+          );
         }
       }
     };
@@ -135,7 +154,10 @@ async function test() {
       );
     } catch (error) {
       if (error.response) {
-        console.error("================== Error from test:", error.response.data.message);
+        console.error(
+          "================== Error from test:",
+          error.response.data.message
+        );
       } else {
         console.error("Error from test:", error.message);
       }

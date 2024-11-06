@@ -81,6 +81,8 @@ const subscribeToChannel = async (req, res) => {
   subscriber.subscribe(`channel:${channelId}`, (message) => {
     const update = JSON.parse(message);
 
+    console.log(update.result);
+    console.log("Received update from Redis:", update.status);
     if (update.status === "complete") {
       // remove the channel data from Redis
       (async () => {
@@ -88,19 +90,9 @@ const subscribeToChannel = async (req, res) => {
       })();
       res.write(`data: ${JSON.stringify(update)}\n\n`);
     } else if (update.status === "error") {
-      res.write(
-        `data: ${JSON.stringify({
-          status: "error",
-          result: update,
-        })}\n\n`
-      );
+      res.write(`data: ${JSON.stringify(update.result)}\n\n`);
     } else {
-      res.write(
-        `data: ${JSON.stringify({
-          status: "processing",
-          result: update.result,
-        })}\n\n`
-      );
+      res.write(`data: ${JSON.stringify(update.result)}\n\n`);
     }
   });
 
@@ -210,11 +202,11 @@ async function runTestcase(testcase, code) {
     if (!testcase.isPublic) {
       console.log("Removing output and question details for private testcase");
       outputFinal = null;
-      questionDetailsFinal = null; 
+      questionDetailsFinal = null;
     }
 
     const testCaseResult = {
-      statusCode: 200,
+      status: "processed",
       message: `${testcase._id} executed successfully`,
       data: {
         result: {
@@ -274,7 +266,7 @@ async function processTestcases(channelId, testcases, code, questionId) {
       // Publish only the latest test case result
       await redisClient.publish(
         `channel:${channelId}`,
-        JSON.stringify({ status: "processing", result })
+        JSON.stringify({ status: "processing", result: result })
       );
     } catch (error) {
       console.log("Error while executing testcase:", testcases[i]._id);
@@ -313,7 +305,10 @@ async function processTestcases(channelId, testcases, code, questionId) {
   if (!hasError) {
     await redisClient.publish(
       `channel:${channelId}`,
-      JSON.stringify({ status: "complete", data: { results: results, questionId, code } })
+      JSON.stringify({
+        status: "complete",
+        data: { results: results, questionId, code },
+      })
     );
   }
   printRedisMemory();
