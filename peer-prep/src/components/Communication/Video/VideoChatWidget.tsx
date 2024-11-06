@@ -19,10 +19,15 @@ import { useHover, useViewportSize } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { createPortal } from "react-dom";
 
-const servers = {
+const servers: RTCConfiguration = {
   iceServers: [
     {
-      urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
+      urls: "stun:stun.l.google.com:19302",
+    },
+    {
+      urls: ["turn:51.79.242.81:3478"],
+      username: import.meta.env.VITE_TURN_SERVER_USERNAME,
+      credential: import.meta.env.VITE_TURN_SERVER_PASSWORD,
     },
   ],
   iceCandidatePoolSize: 10,
