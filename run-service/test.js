@@ -44,23 +44,23 @@ async function test() {
       // Log message received
 
       // Check if execution is complete and log each result
-      if (message.status === "complete") {
+      if (message.statusCode === 200) {
         console.log(
           `========================= Test execution complete for ${message.data.questionId} for ${clientName} ===================================`
         );
         for (const result of message.data.results) {
-          const resultData = result.data.result;
+          const resultData = result;
           const {
             isPassed,
             stdout,
             stderr,
             memory,
             time,
-            questionDetails,
-            _id,
+            testCaseDetails,
+      
           } = resultData;
 
-          console.log(`Test Case ${_id}:`);
+          console.log(`Test Case ${testCaseDetails.testCaseId}:`);
           console.log(`  Passed: ${isPassed}`);
           console.log(`  Output: ${stdout}`);
           console.log(`  Error: ${stderr}`);
@@ -68,21 +68,21 @@ async function test() {
           console.log(`  Time: ${time}`);
           console.log(
             `  Expected Output: ${
-              questionDetails ? questionDetails.expectedOutput : "N/A"
+              testCaseDetails ? testCaseDetails.expectedOutput : "N/A"
             }`
           );
         }
       } else {
         console.log(`Message received for ${clientName}:`);
-        console.log("Status", message.status);
+        console.log("StatusCode", message.statusCode);
         console.log("Message", message.message);
         if (message.data) {
-          console.log(`Test Case: ${message.data.result._id}`);
+          console.log(`Test Case: ${message.data.result.testCaseDetails.testCaseId}`);
           console.log(`  Passed:${message.data.result.isPassed}`);
           console.log(`  Output: ${message.data.result.stdout}`);
           console.log(
             `  Expected Output: ${
-              message.data.result.expectedOutput ? questionDetails.expectedOutput : "N/A"
+              message.data.result.expectedOutput ? testCaseDetails.expectedOutput : "N/A"
             }`
           );
         }

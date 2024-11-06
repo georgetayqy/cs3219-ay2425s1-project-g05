@@ -71,7 +71,7 @@ const subscribeToChannel = async (req, res) => {
   // Response to indicate start of execution and blocks further requests
   res.write(
     `data: ${JSON.stringify({
-      status: "processing",
+      statusCode: 206,
       message: "Starting session...",
     })}\n\n`
   );
@@ -82,17 +82,18 @@ const subscribeToChannel = async (req, res) => {
     const update = JSON.parse(message);
 
     console.log(update.result);
-    console.log("Received update from Redis:", update.status);
-    if (update.status === "complete") {
+    console.log("Received update from Redis:", update.statusCode);
+    if (update.statusCode === 200) {
       // remove the channel data from Redis
       (async () => {
         await redisClient.del(`channel:${channelId}`);
       })();
+      console.log("+++++============+++++++++= Elaineeee");
       res.write(`data: ${JSON.stringify(update)}\n\n`);
-    } else if (update.status === "error") {
-      res.write(`data: ${JSON.stringify(update.result)}\n\n`);
+    } else if (update.statusCode === 206) {
+      res.write(`data: ${JSON.stringify(update)}\n\n`);
     } else {
-      res.write(`data: ${JSON.stringify(update.result)}\n\n`);
+      res.write(`data: ${JSON.stringify(update)}\n\n`);
     }
   });
 
@@ -193,32 +194,30 @@ async function runTestcase(testcase, code) {
     const responseData = response.data;
 
     let outputFinal = responseData.stdout ? responseData.stdout : "";
-    let questionDetailsFinal = {
+    let testCaseDetailsFinal = {
       input: responseData.input || "No input description",
       expectedOutput: testcase.expectedOutput || "No expected output",
+      testCaseId: testcase._id,
     };
 
     // Remove output and question details if the testcase is not public
     if (!testcase.isPublic) {
       console.log("Removing output and question details for private testcase");
       outputFinal = null;
-      questionDetailsFinal = null;
+      testCaseDetailsFinal = {
+        testCaseId: testcase._id,
+        input: "Hidden",
+        expectedOutput: "Hidden",
+      };
     }
 
     const testCaseResult = {
-      status: "processed",
-      message: `${testcase._id} executed successfully`,
-      data: {
-        result: {
-          stderr: responseData.stderr,
-          isPassed: responseData.status.id === 3 ? true : false,
-          stdout: outputFinal,
-          questionDetails: questionDetailsFinal,
-          memory: responseData.memory || 0,
-          time: responseData.time || "0",
-          _id: testcase._id,
-        },
-      },
+      stderr: responseData.stderr,
+      isPassed: responseData.status.id === 3 ? true : false,
+      stdout: outputFinal,
+      testCaseDetails: testCaseDetailsFinal,
+      memory: responseData.memory || 0,
+      time: responseData.time || "0",
     };
     return testCaseResult;
   } catch (error) {
@@ -266,14 +265,17 @@ async function processTestcases(channelId, testcases, code, questionId) {
       // Publish only the latest test case result
       await redisClient.publish(
         `channel:${channelId}`,
-        JSON.stringify({ status: "processing", result: result })
+        JSON.stringify({
+          statusCode: 206,
+          message: `Testcase ${testcases[i]._id} executed successfully`,
+          data: { result },
+        })
       );
     } catch (error) {
       console.log("Error while executing testcase:", testcases[i]._id);
       const errorMessage = {
         testcaseId: testcases[i]._id,
-        statusCode: error.statusCode,
-        error: error.message,
+        message: error.message,
       };
       results.push(errorMessage);
       hasError = true; // Set error flag to true
@@ -286,7 +288,7 @@ async function processTestcases(channelId, testcases, code, questionId) {
       // Publish only the latest error result
       await redisClient.publish(
         `channel:${channelId}`,
-        JSON.stringify({ status: "error", message: errorMessage })
+        JSON.stringify({ statusCode: 500, message: errorMessage })
       );
       break;
     }
@@ -306,7 +308,7 @@ async function processTestcases(channelId, testcases, code, questionId) {
     await redisClient.publish(
       `channel:${channelId}`,
       JSON.stringify({
-        status: "complete",
+        statusCode: 200,
         data: { results: results, questionId, code },
       })
     );
