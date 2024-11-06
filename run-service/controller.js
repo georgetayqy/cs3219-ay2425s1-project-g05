@@ -96,9 +96,9 @@ const subscribeToChannel = async (req, res) => {
 
       // final one: set timeout of 8 seconds
       // comment out later
-      setTimeout(() => {
-        res.write(`data: ${JSON.stringify(update)}\n\n`);
-      }, 8000);
+      // setTimeout(() => {
+      res.write(`data: ${JSON.stringify(update)}\n\n`);
+      // }, 8000);
 
       // res.write(`data: ${JSON.stringify(update)}\n\n`);
     } else if (update.statusCode === 206) {
@@ -106,9 +106,9 @@ const subscribeToChannel = async (req, res) => {
       // temporarily: set a random timeout from 1 to 5 seconds
       // comment out later
       const timeout = Math.floor(Math.random() * 5000) + 1000;
-      setTimeout(() => {
-        res.write(`data: ${JSON.stringify(update)}\n\n`);
-      }, timeout);
+      // setTimeout(() => {
+      res.write(`data: ${JSON.stringify(update)}\n\n`);
+      // }, timeout);
 
       // res.write(`data: ${JSON.stringify(update)}\n\n`);
 

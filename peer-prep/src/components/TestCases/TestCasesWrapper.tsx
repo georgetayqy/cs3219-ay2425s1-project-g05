@@ -226,10 +226,30 @@ export default function TestCasesWrapper({
         "Content-Type": "application/json",
       },
     })
-      .then((response) => {})
+      .then((response) => {
+        console.log({ response });
+      })
       .catch((e) => {
+        console.log("ERROR⚠️: Error running test cases");
         console.error(e);
-        setIsError(true);
+
+        // don't need to set isRunning to false here, we are technically still running the test cases
+        if (e.statusCode === 409) {
+          notifications.show({
+            title: "Test cases already running",
+            message: "Test cases for this question are already running",
+            // color: "red",
+          });
+        } else {
+          notifications.show({
+            title: "Error running test cases",
+            message:
+              "There was an unknown error running the test cases. Please try again.",
+            color: "red",
+          });
+          setIsError(true);
+          setIsRunning(false);
+        }
 
         // 404: testcases/question not found
         // 409: testcases for this question and channel already running
