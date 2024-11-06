@@ -275,7 +275,7 @@ async function runTestcase(testcase, code) {
 }
 
 async function processTestcases(channelId, testcases, code, questionId) {
-  const results = [];
+  // const results = [];
   let hasError = false;
   console.log("============Starting testcases execution==========");
   await redisClient.publish(
@@ -283,63 +283,123 @@ async function processTestcases(channelId, testcases, code, questionId) {
     JSON.stringify({ statusCode: 202, message: `Executing test cases of question ${questionId}` })
   );
 
-  for (let i = 0; i < testcases.length; i++) {
+
+  const results = [];
+
+
+  // Map each test case to a promise
+  const promises = testcases.map(async (testcase) => {
     try {
-      const result = await runTestcase(testcases[i], code);
+      const result = await runTestcase(testcase, code);
       results.push(result);
 
       console.log("result", result);
+
       // Publish only the latest test case result
       await redisClient.publish(
         `channel:${channelId}`,
         JSON.stringify({
           statusCode: 206,
-          message: `Testcase ${testcases[i]._id} executed successfully`,
+          message: `Testcase ${testcase._id} executed successfully`,
           data: { result },
         })
       );
+
+      return result; // Return the result for Promise.all
     } catch (error) {
-      console.log("Error while executing testcase:", testcases[i]._id);
+      console.log("Error while executing testcase:", testcase._id);
+
       const errorMessage = {
-        testcaseId: testcases[i]._id,
+        testcaseId: testcase._id,
         message: error.message,
       };
       results.push(errorMessage);
-      hasError = true; // Set error flag to true
+      hasError = true;
 
-      console.log(
-        "==========Error while executing testcase:",
-        errorMessage.testcaseId
-      );
-      console.log("==========Error Message:", errorMessage.error);
+      console.log("==========Error while executing testcase:", errorMessage.testcaseId);
+      console.log("==========Error Message:", errorMessage.message);
+
       // Publish only the latest error result
       await redisClient.publish(
         `channel:${channelId}`,
         JSON.stringify({ statusCode: 500, message: errorMessage })
       );
-      break;
+
+      throw errorMessage; // Throw to handle failure in Promise.all
     }
-  }
-
-  console.log("Completed testcases execution for questionId:", questionId);
-
-  await redisClient.hSet(`channel:${channelId}`, {
-    status: hasError ? "error" : "completed",
-    data: JSON.stringify(results),
-    questionId: questionId,
-    codeAttempt: code,
   });
 
-  // Publish the "complete" status only if no errors occurred
-  if (!hasError) {
-    await redisClient.publish(
-      `channel:${channelId}`,
-      JSON.stringify({
-        statusCode: 200,
-        data: { results: results, questionId, code },
-      })
-    );
+  // for (let i = 0; i < testcases.length; i++) {
+  //   try {
+  //     const result = await runTestcase(testcases[i], code);
+  //     results.push(result);
+
+  //     console.log("result", result);
+  //     // Publish only the latest test case result
+  //     await redisClient.publish(
+  //       `channel:${channelId}`,
+  //       JSON.stringify({
+  //         statusCode: 206,
+  //         message: `Testcase ${testcases[i]._id} executed successfully`,
+  //         data: { result },
+  //       })
+  //     );
+  //   } catch (error) {
+  //     console.log("Error while executing testcase:", testcases[i]._id);
+  //     const errorMessage = {
+  //       testcaseId: testcases[i]._id,
+  //       message: error.message,
+  //     };
+  //     results.push(errorMessage);
+  //     hasError = true; // Set error flag to true
+
+  //     console.log(
+  //       "==========Error while executing testcase:",
+  //       errorMessage.testcaseId
+  //     );
+  //     console.log("==========Error Message:", errorMessage.error);
+  //     // Publish only the latest error result
+  //     await redisClient.publish(
+  //       `channel:${channelId}`,
+  //       JSON.stringify({ statusCode: 500, message: errorMessage })
+  //     );
+  //     break;
+  //   }
+  // }
+
+  try {
+    await Promise.all(promises);
+
+    console.log("Completed testcases execution for questionId:", questionId);
+
+    await redisClient.hSet(`channel:${channelId}`, {
+      status: hasError ? "error" : "completed",
+      data: JSON.stringify(results),
+      questionId: questionId,
+      codeAttempt: code,
+    });
+
+
+    // Publish the "complete" status only if no errors occurred
+    if (!hasError) {
+      await redisClient.publish(
+        `channel:${channelId}`,
+        JSON.stringify({
+          statusCode: 200,
+          data: { results: results, questionId, code },
+        })
+      );
+    }
+  } catch (error) {
+    console.log("Some testcases failed:", error);
+
+    hasError = true;
+
+
   }
+
+
+
   printRedisMemory();
 }
 
