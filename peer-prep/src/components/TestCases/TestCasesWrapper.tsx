@@ -1,11 +1,13 @@
 // Note: handle run and history service in here
 import {
+  Accordion,
   Alert,
   Badge,
   Box,
   Button,
   ButtonProps,
   Code,
+  Collapse,
   Group,
   rem,
   SimpleGrid,
@@ -23,7 +25,7 @@ import {
   TestCase,
   TestCaseResult,
 } from "../../types/question";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useApi, { ServerResponse, SERVICE } from "../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { EventSourcePolyfill } from "event-source-polyfill";
@@ -31,6 +33,9 @@ import { useColorScheme, useTimeout } from "@mantine/hooks";
 import { clear } from "console";
 import { IconDatabase, IconHourglassEmpty } from "@tabler/icons-react";
 import { kBtoMb, secondsToMsIfappropriate } from "../../utils/utils";
+import { CodeHighlight } from "@mantine/code-highlight";
+
+import "@mantine/code-highlight/styles.css";
 
 type TestCasesWrapperProps = {
   testCases: TestCase[]; // array of test cases
@@ -45,7 +50,8 @@ type TestCasesWrapperProps = {
 
 const STATUS_PARTIAL = 206;
 const STATUS_COMPLETE = 200;
-const STATUS_CREATED = 201;
+const STATUS_CONNECTED = 201;
+const STATUS_STARTED = 202;
 
 export default function TestCasesWrapper({
   testCases,
@@ -79,8 +85,96 @@ export default function TestCasesWrapper({
 
   // array of tries for each attempt
   const [latestResults, setLatestResults] = useState<TestCaseResult[]>([]);
-  const [allResults, setAllResults] = useState<TestCaseResult[][]>([]);
+  // const [allResults, setAllResults] = useState<TestCaseResult[][]>([]);
+  const [attemptCodeMap, setAttemptCodeMap] = useState<{
+    [attempt: number]: { code: string; results: TestCaseResult[] };
+  }>({});
 
+  // this is ridiculous, because I don't want to keep registering and
+  // unregistering the listener, we need a Ref to store the attempt
+  // this useState version of attempt is getting stored in the closure of the event listener
+  // a Ref would not have this issue as it is call-by-reference
+  // we need both as I need to update state based on attempt number
+  const [attempt, setAttempt] = useState<number>(0);
+  const attemptRef = useRef<number>(0);
+
+  function incrementAttempt() {
+    setAttempt((prev) => prev + 1);
+    attemptRef.current = attemptRef.current + 1;
+  }
+
+  console.log(attemptCodeMap, "asdnashjkdhbj");
+
+  const onMessage = (event: MessageEvent<string>) => {
+    console.log("LOG: event source on message");
+    console.log(event);
+    const message: ExecutionResultSchema = JSON.parse(event.data);
+
+    console.log("INFO ✅: Message json formatted ", message);
+
+    switch (message.statusCode) {
+      case STATUS_PARTIAL:
+        const result = (message.data as PartialResult).result;
+        console.log("INFO: One result", result);
+        setLatestResults((prev) => [...prev, result]);
+        break;
+      case STATUS_COMPLETE:
+        console.log("INFO: Complete result received");
+        const { results, code } = message.data as FinalResult;
+        // setLatestResults(message.data.);
+
+        setIsRunning(false);
+        notifications.show({
+          message: `All test cases executed successfully`,
+        });
+
+        setLatestResults(results);
+
+        setAttemptCodeMap((prev) => ({
+          ...prev,
+          [attemptRef.current]: {
+            code,
+            results,
+          },
+        }));
+
+        // console.log("INFO: Latest results", results);
+        clearRunningTimeout();
+
+        console.log("INFO: ✅ Test Cases Ran Successfuly");
+        console.log({ attemptCodeMap });
+        break;
+      case STATUS_CONNECTED:
+        break;
+      case STATUS_STARTED:
+        notifications.show({
+          message: `Executing ${testCases.length} test cases`,
+        });
+
+        incrementAttempt();
+
+        setIsError(false);
+        setIsRunning(true);
+
+        // latest results should have already been copied into all results
+        setLatestResults([]);
+        startRunningTimeout();
+        break;
+      default:
+        clearRunningTimeout();
+        setIsError(true);
+    }
+  };
+
+  const onConnect = (event: Event) => {
+    console.log("LOG: event source on connect");
+    console.log(event);
+  };
+
+  const onError = (event: Event) => {
+    console.log("LOG: event source on error");
+    console.log(event);
+  };
   // ---- effects
   useEffect(() => {
     if (!channelId) return;
@@ -97,52 +191,14 @@ export default function TestCasesWrapper({
       }
     );
 
-    const onMessage = (event: MessageEvent<string>) => {
-      console.log("LOG: event source on message");
-      console.log(event);
-      const message: ExecutionResultSchema = JSON.parse(event.data);
-
-      console.log("INFO ✅: Message json formatted ", message);
-      if (message.statusCode === STATUS_PARTIAL) {
-        // console.log("INFO: Partial result received");
-        const result = (message.data as PartialResult).result;
-        console.log("INFO: One result", result);
-        setLatestResults((prev) => [...prev, result]);
-      } else if (message.statusCode === STATUS_COMPLETE) {
-        console.log("INFO: Complete result received");
-        const results = (message.data as FinalResult).results;
-        // setLatestResults(message.data.);
-
-        setIsRunning(false);
-        notifications.show({
-          message: `All test cases executed successfully`,
-        });
-
-        setLatestResults(results);
-        setAllResults((prev) => [...prev, results]);
-
-        console.log("INFO: Latest results", results);
-        clearRunningTimeout();
-      } else if (message.statusCode === STATUS_CREATED) {
-      } else {
-        clearRunningTimeout();
-        setIsError(true);
-      }
-    };
-
-    const onConnect = (event: Event) => {
-      console.log("LOG: event source on connect");
-      console.log(event);
-    };
-
-    const onError = (event: Event) => {
-      console.log("LOG: event source on error");
-      console.log(event);
-    };
-
     eventSource.onmessage = onMessage;
     eventSource.onopen = onConnect;
     eventSource.onerror = onError;
+
+    return () => {
+      // disconnect the event source
+      eventSource.close();
+    };
   }, [channelId]);
 
   function onTestCaseChange(testCaseId: number) {
@@ -152,16 +208,10 @@ export default function TestCasesWrapper({
   }
 
   function runTestCases() {
-    setIsError(false);
-    setIsRunning(true);
-
-    // latest results should have already been copied into all results
-    setLatestResults([]);
-
-    const runNumber = allResults.length + 1;
-
     console.log("LOG: Current code value", currentValueRef.current);
-
+    setIsRunning(true);
+    setLatestResults([]);
+    setIsError(false);
     fetchData<
       ServerResponse<{
         testCaseCount: number;
@@ -176,29 +226,21 @@ export default function TestCasesWrapper({
         "Content-Type": "application/json",
       },
     })
-      .then((response) => {
-        notifications.show({
-          message: `Executing ${response.data.testCaseCount} test cases`,
-        });
-      })
+      .then((response) => {})
       .catch((e) => {
-        // TODO: handle error
         console.error(e);
+        setIsError(true);
 
         // 404: testcases/question not found
         // 409: testcases for this question and channel already running
       });
-
-    startRunningTimeout();
   }
 
   function getTestCaseResult(
     testCaseId: string,
     runNumber: number // unused for now, -1 means latest
   ): TestCaseResult | undefined {
-    // stub
     // find the test case and get the result
-    console.log({ latestResults });
     return latestResults.find(
       (result) => result.testCaseDetails.testCaseId === testCaseId
     );
@@ -324,6 +366,7 @@ export default function TestCasesWrapper({
               </Code>
             </Box>
           </SimpleGrid>
+
           <Box>
             <Text style={{ fontWeight: "700" }}> Actual output: </Text>
           </Box>
@@ -331,9 +374,11 @@ export default function TestCasesWrapper({
             block
             className={classes.codeBlock}
             style={{
-              outline: `1.5px solid var(--mantine-color-${getTestCaseColour(
-                currentTestCase._id.toString()
-              )}-9)`,
+              outline:
+                getTestCaseResult(currentTestCase._id.toString(), 1) &&
+                `1.5px solid var(--mantine-color-${getTestCaseColour(
+                  currentTestCase._id.toString()
+                )}-9)`,
             }}
             color={
               colorScheme === "light" &&
@@ -344,6 +389,7 @@ export default function TestCasesWrapper({
               ? "No output yet, please run the test case to view output"
               : getTestCaseResult(currentTestCase._id.toString(), 1).stdout}
           </Code>
+
           <Box mt={"xs"}>
             <Text style={{ fontWeight: "700" }}> Error logs: </Text>
           </Box>
@@ -352,6 +398,22 @@ export default function TestCasesWrapper({
               ? "No output yet, please run the test case to view output"
               : getTestCaseResult(currentTestCase._id.toString(), 1).stderr}
           </Code>
+
+          <Accordion variant="separated" mt="md">
+            <Accordion.Item value={"code"}>
+              <Accordion.Control>
+                <b>Submitted code</b>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <CodeHighlight
+                  code={attemptCodeMap[attempt]?.code || ""}
+                  language="python"
+                  copyLabel="Copy button code"
+                  copiedLabel="Copied!"
+                />
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
         </Box>
       ) : (
         <Box className={classes.testCaseDisplay}>
