@@ -10,11 +10,20 @@ import {
   Title,
 } from "@mantine/core";
 import classes from "./TestCasesWrapper.module.css";
-import { Question, TestCase, TestCaseResult } from "../../types/question";
+import {
+  ExecutionResultSchema,
+  FinalResult,
+  PartialResult,
+  Question,
+  TestCase,
+  TestCaseResult,
+} from "../../types/question";
 import { useEffect, useState } from "react";
 import useApi, { ServerResponse, SERVICE } from "../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { EventSourcePolyfill } from "event-source-polyfill";
+import { useTimeout } from "@mantine/hooks";
+import { clear } from "console";
 
 type TestCasesWrapperProps = {
   testCases: TestCase[]; // array of test cases
@@ -29,6 +38,7 @@ type TestCasesWrapperProps = {
 
 const STATUS_PARTIAL = 206;
 const STATUS_COMPLETE = 200;
+const STATUS_CREATED = 201;
 
 export default function TestCasesWrapper({
   testCases,
@@ -44,6 +54,19 @@ export default function TestCasesWrapper({
   const { fetchData } = useApi();
   // set to false only when receive back full result from SSE
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const { start: startRunningTimeout, clear: clearRunningTimeout } = useTimeout(
+    () => {
+      setIsError(true);
+      setIsRunning(false);
+      notifications.show({
+        title: "Error running test cases",
+        message:
+          "There was an unknown error running the test cases. Timed out after 10 seconds. Please try again.",
+        color: "red",
+      });
+    },
+    10000
+  );
 
   const [isError, setIsError] = useState<boolean>(false);
 
@@ -70,15 +93,33 @@ export default function TestCasesWrapper({
     const onMessage = (event: MessageEvent<string>) => {
       console.log("LOG: event source on message");
       console.log(event);
-      const message: ServerResponse<TestCaseResult | TestCaseResult[]> =
-        JSON.parse(event.data);
+      const message: ExecutionResultSchema = JSON.parse(event.data);
 
       console.log("INFO ✅: Message json formatted ", message);
       if (message.statusCode === STATUS_PARTIAL) {
+        // console.log("INFO: Partial result received");
+        const result = (message.data as PartialResult).result;
+        console.log("INFO: One result", result);
+        setLatestResults((prev) => [...prev, result]);
       } else if (message.statusCode === STATUS_COMPLETE) {
-        const results = message.data as TestCaseResult[];
+        console.log("INFO: Complete result received");
+        const results = (message.data as FinalResult).results;
         // setLatestResults(message.data.);
+
+        setIsRunning(false);
+        notifications.show({
+          message: `All test cases executed successfully`,
+        });
+
+        setLatestResults(results);
+        setAllResults((prev) => [...prev, results]);
+
+        console.log("INFO: Latest results", results);
+        clearRunningTimeout();
+      } else if (message.statusCode === STATUS_CREATED) {
       } else {
+        clearRunningTimeout();
+        setIsError(true);
       }
     };
 
@@ -104,7 +145,11 @@ export default function TestCasesWrapper({
   }
 
   function runTestCases() {
+    setIsError(false);
     setIsRunning(true);
+
+    // latest results should have already been copied into all results
+    setLatestResults([]);
 
     const runNumber = allResults.length + 1;
 
@@ -137,15 +182,19 @@ export default function TestCasesWrapper({
         // 409: testcases for this question and channel already running
       });
 
-    setTimeout(() => {
-      setIsRunning(false);
-    }, 1000);
+    startRunningTimeout();
   }
 
-  function getTestCaseResult(testCaseId: string, runNumber: number) {
+  function getTestCaseResult(
+    testCaseId: string,
+    runNumber: number
+  ): TestCaseResult | undefined {
     // stub
     // find the test case and get the result
-    return "";
+    console.log({ latestResults });
+    return latestResults.find(
+      (result) => result.testCaseDetails.testCaseId === testCaseId
+    );
   }
   return (
     <Box className={classes.container}>
@@ -186,6 +235,13 @@ export default function TestCasesWrapper({
             radius={"sm"}
             variant="light"
             onClick={() => onTestCaseChange(testCase._id)}
+            loading={
+              isRunning &&
+              latestResults.find(
+                (result) =>
+                  result.testCaseDetails.testCaseId === testCase._id.toString()
+              ) === undefined
+            }
           >
             {index + 1}
           </Button>
@@ -203,7 +259,6 @@ export default function TestCasesWrapper({
             <Box>
               <Text style={{ fontWeight: "700" }}> Expected Output </Text>
               <Code block mt="xs">
-                {" "}
                 {currentTestCase.expectedOutput}
               </Code>
             </Box>
@@ -214,7 +269,7 @@ export default function TestCasesWrapper({
           <Code block>
             {getTestCaseResult(currentTestCase._id.toString(), 1) === undefined
               ? "No output yet, please run the test case to view output"
-              : getTestCaseResult(currentTestCase._id.toString(), 1)}
+              : getTestCaseResult(currentTestCase._id.toString(), 1).stdout}
           </Code>
         </Box>
       )}

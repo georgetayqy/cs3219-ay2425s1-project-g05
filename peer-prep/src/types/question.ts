@@ -96,11 +96,12 @@ list contains a cycle.`,
 
 /* TEST CASES TYPES */
 export type TestCaseResult = {
-  _id: string // id of the test case
+
   stderr: string,
   isPassed: boolean,
   stdout: string | null,
-  questionDetails: {
+  testCaseDetails: {
+    testCaseId: string,
     input: string,
     expectedOutput: string | null
   },
@@ -108,3 +109,13 @@ export type TestCaseResult = {
   time: string,
 }
 
+export type PartialResult = {
+  result: TestCaseResult
+}
+
+export type FinalResult = {
+  code: string,
+  questionId: string,
+  results: TestCaseResult[]
+}
+export type ExecutionResultSchema = ServerResponse<PartialResult> | ServerResponse<FinalResult>

@@ -76,7 +76,7 @@ const subscribeToChannel = async (req, res) => {
   // Response to indicate start of execution and blocks further requests
   res.write(
     `data: ${JSON.stringify({
-      statusCode: 206,
+      statusCode: 201,
       message: "Starting session...",
     })}\n\n`
   );
@@ -93,9 +93,25 @@ const subscribeToChannel = async (req, res) => {
       (async () => {
         await redisClient.del(`channel:${channelId}`);
       })();
-      res.write(`data: ${JSON.stringify(update)}\n\n`);
+
+      // final one: set timeout of 8 seconds
+      // comment out later
+      setTimeout(() => {
+        res.write(`data: ${JSON.stringify(update)}\n\n`);
+      }, 8000);
+
+      // res.write(`data: ${JSON.stringify(update)}\n\n`);
     } else if (update.statusCode === 206) {
-      res.write(`data: ${JSON.stringify(update)}\n\n`);
+
+      // temporarily: set a random timeout from 1 to 5 seconds
+      // comment out later
+      const timeout = Math.floor(Math.random() * 5000) + 1000;
+      setTimeout(() => {
+        res.write(`data: ${JSON.stringify(update)}\n\n`);
+      }, timeout);
+
+      // res.write(`data: ${JSON.stringify(update)}\n\n`);
+
     } else {
       res.write(`data: ${JSON.stringify(update)}\n\n`);
     }
