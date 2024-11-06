@@ -39,6 +39,9 @@ const startSession = async (req, res) => {
         userA,
         userB,
       });
+      await redisClient.hSet(channelId, {
+        sessionKey,
+      });
       console.log("stored session with sessionkey", sessionKey);
       // delete session data after 10 minutes
       // NOTE: Maybe both users have to join session within x minutes, otherwise this will fail
@@ -81,7 +84,6 @@ const subscribeToChannel = async (req, res) => {
   subscriber.subscribe(`channel:${channelId}`, (message) => {
     const update = JSON.parse(message);
 
-    console.log(update.result);
     console.log("Received update from Redis:", update.statusCode);
     if (update.statusCode === 200) {
       // remove the channel data from Redis
