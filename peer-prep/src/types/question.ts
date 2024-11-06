@@ -1,3 +1,5 @@
+import { ServerResponse } from "../hooks/useApi";
+
 export type Complexity = "EASY" | "MEDIUM" | "HARD";
 
 export type TestCase = {
@@ -90,3 +92,19 @@ list contains a cycle.`,
   complexity: "medium",
   link: "https://leetcode.com/problems/linked-list-cycle/"
 }]
+
+
+/* TEST CASES TYPES */
+export type TestCaseResult = {
+  _id: string // id of the test case
+  stderr: string,
+  isPassed: boolean,
+  stdout: string | null,
+  questionDetails: {
+    input: string,
+    expectedOutput: string | null
+  },
+  memory: number,
+  time: string,
+}
+

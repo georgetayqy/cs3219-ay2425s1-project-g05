@@ -17,7 +17,8 @@ export interface ServerResponse<T> {
 export enum SERVICE {
   USER,
   QUESTION,
-  COLLAB
+  COLLAB,
+  RUN,
 }
 
 export default function useApi() {
@@ -40,27 +41,34 @@ export default function useApi() {
   ) {
     setIsLoading(true);
     try {
-      // todo make this nicer...
-      const response = await fetch(
-        `${
-          service === SERVICE.USER
-            ? import.meta.env.VITE_API_URL_USER
-            : service === SERVICE.QUESTION
-            ? import.meta.env.VITE_API_URL_QUESTION
-            : import.meta.env.VITE_API_URL_COLLAB
+      let baseUrl;
+      switch (service) {
+        case SERVICE.USER:
+          baseUrl = import.meta.env.VITE_API_URL_USER;
+          break;
+        case SERVICE.QUESTION:
+          baseUrl = import.meta.env.VITE_API_URL_QUESTION;
+          break;
+        case SERVICE.COLLAB:
+          baseUrl = import.meta.env.VITE_API_URL_COLLAB;
+          break;
+        case SERVICE.RUN:
+          baseUrl = import.meta.env.VITE_API_URL_RUN;
+          break;
+        default:
+          throw new Error("Missing base URL!");
+      }
 
-        }${url}`,
-        {
-          ...options,
-          headers: {
-            ...options?.headers,
-            // "x-api-key": import.meta.env.VITE_API_KEY as string,
-            // bearer token
-            // "Authorization": `Bearer ${accessToken}`,
-          },
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`${baseUrl}${url}`, {
+        ...options,
+        headers: {
+          ...options?.headers,
+          // "x-api-key": import.meta.env.VITE_API_KEY as string,
+          // bearer token
+          // "Authorization": `Bearer ${accessToken}`,
+        },
+        credentials: "include",
+      });
 
       // if the response status indicates not logged in, clear data and redirect to login
       // if (response.status === 401) {

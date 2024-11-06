@@ -21,7 +21,7 @@ import {
 import classes from "./SessionPage.module.css";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import CodeEditor from "../../../components/CollabCodeEditor/CollabCodeEditor";
 import AvatarWithDetailsButton from "../../../components/AvatarIcon/AvatarWithDetailsButton";
 import { IconChevronRight } from "@tabler/icons-react";
@@ -30,6 +30,8 @@ import { useLocalStorage, useSessionStorage } from "@mantine/hooks";
 import { modals, ModalsProvider } from "@mantine/modals";
 import TextChatWidget from "../../../components/Communication/Text/TextChatWidget";
 import { notifications } from "@mantine/notifications";
+import TestCasesWrapper from "../../../components/TestCases/TestCasesWrapper";
+import { useAuth } from "../../../hooks/useAuth";
 
 type QuestionCategory =
   | "ALGORITHMS"
@@ -50,7 +52,11 @@ const categoryColorMap: { [key in QuestionCategory]: string } = {
   "BIT MANIPULATION": "cyan",
   RECURSION: "teal",
 };
-
+interface CheckRoomDetailsResponse {
+  [roomId: string]: {
+    users: String[];
+  };
+}
 const LOCAL_WEBSOCKET = import.meta.env.VITE_COLLAB_WS_URL_LOCAL;
 
 export default function SessionPage() {
@@ -59,19 +65,25 @@ export default function SessionPage() {
   const { fetchData } = useApi();
   const navigate = useNavigate();
 
-  const [user, setUser] = useState(
-    localStorage.getItem("user")
-      ? JSON.parse(localStorage.getItem("user") as string)
-      : null
-  );
-  const [userId, setUserId] = useState(user?._id);
+  const { user } = useAuth();
 
   const location = useLocation();
-  const { questionReceived, roomIdReceived } = location.state || {};
+
+  // todo questionReceived shouldnt be fromt location.state
+  // roomid is from URL
+  const {
+    questionReceived,
+    roomIdReceived,
+  }: { questionReceived: Question; roomIdReceived: string } =
+    location.state || {};
+
+  const roomId = useParams().roomId;
 
   // Room ID and Question details from matching of users
-  const [roomId, setRoomId] = useState(roomIdReceived);
+  // TODO don't depend on location.state, make request to get question and room details? OR include it in the URL?
   const [question, setQuestion] = useState(questionReceived);
+  const [otherUserId, setOtherUserId] = useState("");
+  const [channelId, setChannelId] = useState<string | null>(null);
 
   // Question details to be displayed
   const [questionCategories, setQuestionCategories] = useState<
@@ -90,25 +102,66 @@ export default function SessionPage() {
   // const [isWaitingForRejoin, setIsWaitingForRejoin] = useState(false);
   const isWaitingForRejoinRef = useRef(false);
 
-  interface CheckRoomDetailsResponse {
-    [roomId: string]: {
-      users: String[];
-    };
-  }
-
+  // don't need to rerender!
+  const currentValueRef = useRef("");
   useEffect(() => {
     console.log("Question Received: ", question);
     console.log("Room ID Received: ", roomId);
     // setQuestion(questionReceived)
     // setRoomId(roomIdReceived)
 
-    setQuestionCategories(question.categories);
-    setQuestionDifficulty(question.difficulity);
+    setQuestionCategories(question.categories as QuestionCategory[]);
+    setQuestionDifficulty(question.difficulty);
     setQuestionTitle(question.title);
     setQuestionDescription(question.description.descriptionHtml);
     setLeetCodeLink(question.link);
     setTemplateCode(question.templateCode);
   }, [question, roomId]);
+
+  // ONMOUNT: get room information based on roomId
+  useEffect(() => {
+    // TODO ERROR HANDLING
+    fetchData<
+      ServerResponse<{
+        [roomId: string]: {
+          users: string[];
+        };
+      }>
+    >(`/collaboration-service/rooms/${roomId}`, SERVICE.COLLAB)
+      .then((res1) => {
+        console.log({ res1 });
+        console.log("LOG✅: Room details", res1);
+        const otherUserId =
+          res1.data[roomId].users.find((id) => id !== user?._id) || "";
+        setOtherUserId(otherUserId);
+
+        fetchData<
+          ServerResponse<{
+            channelId: string;
+          }>
+        >(`/run-service/session`, SERVICE.RUN, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            firstUserId: user?._id,
+            secondUserId: otherUserId,
+          }),
+        })
+          .then((response) => {
+            console.log(
+              "LOG✅: Session created with CHANNEL ID",
+              response.data.channelId
+            );
+            setChannelId(response.data.channelId);
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      })
+      .catch(console.error);
+  }, []);
 
   const renderComplexity = () => {
     const difficultyRating =
@@ -130,7 +183,6 @@ export default function SessionPage() {
 
       const users = response.data[roomId].users;
 
-      console.log({ isWaitingForRejoinRef });
       if (users.length < 2 && !isWaitingForRejoinRef.current) {
         // other user has left the room
         openSessionEndedModal();
@@ -159,10 +211,9 @@ export default function SessionPage() {
   };
 
   useEffect(() => {
-    setUserId(user?._id);
-
     // Call checkRoomStatus every 5 seconds
     const intervalId = setInterval(() => {
+      return;
       checkRoomStatus();
     }, 5000);
 
@@ -334,24 +385,20 @@ export default function SessionPage() {
                 // endpoint={"ws://localhost:8004"}
                 endpoint={WEBSOCKET_URL}
                 room={roomId}
-                user={userId}
+                userId={user._id}
                 theme="dark"
                 height={"500px"}
                 defaultValue={question.templateCode}
+                currentValueRef={currentValueRef}
               />
             </Paper>
-            <Stack>
-              <Paper
-                style={{ height: "200px", backgroundColor: "#f0f0f0" }}
-                className={classes.paper}
-              >
-                {/* Placeholder for Test Cases */}
-                <Title order={4}>Test Cases</Title>
-                <Text size="lg" color="dimmed">
-                  Test Cases Placeholder
-                </Text>
-              </Paper>
-            </Stack>
+
+            <TestCasesWrapper
+              testCases={question.testCases || []}
+              channelId={channelId}
+              questionId={question._id}
+              currentValueRef={currentValueRef}
+            />
           </Stack>
         </Flex>
       </Box>

@@ -17,11 +17,12 @@ function getColour() {
 interface CodeEditorProps {
   endpoint: string;
   room: string;
-  user: string;
+  userId: string;
   theme?: string;
   height?: string;
   defaultValue?: string;
   language?: string;
+  currentValueRef: React.MutableRefObject<string>;
 }
 
 /**
@@ -38,11 +39,12 @@ interface CodeEditorProps {
 export default function CodeEditor({
   endpoint,
   room,
-  user,
+  userId,
   theme = "light",
   height = "90vh",
   defaultValue = "# Write your code here",
   language = "python",
+  currentValueRef,
 }: CodeEditorProps) {
   const doc = useMemo(() => new Doc(), []);
   const [editor, setEditor] = useState(null);
@@ -54,7 +56,7 @@ export default function CodeEditor({
     // create the params
     const params = {
       templateCode: defaultValue,
-      userId: user,
+      userId: userId,
     };
 
     const provider = new WebsocketProvider(endpoint, room, doc, {
@@ -107,6 +109,9 @@ export default function CodeEditor({
       language={language}
       onMount={(editor) => {
         setEditor(editor);
+      }}
+      onChange={(value, event) => {
+        currentValueRef.current = value;
       }}
       options={{
         padding: { top: 12, bottom: 12 },

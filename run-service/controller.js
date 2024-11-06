@@ -66,6 +66,11 @@ const subscribeToChannel = async (req, res) => {
   const subscriber = redisClient.duplicate();
   await subscriber.connect();
 
+  // Set response headers for SSE
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
   // TODO: handle pub sub failures? Check in store whether there is an existing result?
 
   // Response to indicate start of execution and blocks further requests
@@ -135,7 +140,7 @@ const executeTest = async (req, res) => {
       console.log("isPublic:", testcases[i].isPublic);
     }
     console.log("Testcases retrieved sucessfully");
-
+    console.log({ channelId })
     // Indicate that the test cases are being processed - initial message to indicate start of execution
     await redisClient.hSet(`channel:${channelId}`, {
       status: "processing",
@@ -156,6 +161,7 @@ const executeTest = async (req, res) => {
     // Start processing test cases
     processTestcases(channelId, testcases, codeAttempt, questionId);
   } catch (error) {
+    console.log("ERROR: ", error)
     if (error instanceof BaseError) {
       return res.status(error.statusCode).json({ message: error.message });
     }
