@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { connect } from "mongoose";
+import mongoose, { connect } from "mongoose";
 
 export async function connectToDB() {
   let mongoDBUri = process.env.MONGO_PROD_URI;
