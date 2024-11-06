@@ -1,13 +1,18 @@
 // Note: handle run and history service in here
 import {
+  Alert,
   Badge,
   Box,
   Button,
+  ButtonProps,
   Code,
   Group,
+  rem,
   SimpleGrid,
+  Space,
   Text,
   Title,
+  useMantineColorScheme,
 } from "@mantine/core";
 import classes from "./TestCasesWrapper.module.css";
 import {
@@ -22,8 +27,10 @@ import { useEffect, useState } from "react";
 import useApi, { ServerResponse, SERVICE } from "../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { EventSourcePolyfill } from "event-source-polyfill";
-import { useTimeout } from "@mantine/hooks";
+import { useColorScheme, useTimeout } from "@mantine/hooks";
 import { clear } from "console";
+import { IconDatabase, IconHourglassEmpty } from "@tabler/icons-react";
+import { kBtoMb, secondsToMsIfappropriate } from "../../utils/utils";
 
 type TestCasesWrapperProps = {
   testCases: TestCase[]; // array of test cases
@@ -50,7 +57,7 @@ export default function TestCasesWrapper({
   const [currentTestCase, setCurrentTestCase] = useState<TestCase | null>(
     testCases[0]
   );
-
+  const { colorScheme } = useMantineColorScheme();
   const { fetchData } = useApi();
   // set to false only when receive back full result from SSE
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -187,7 +194,7 @@ export default function TestCasesWrapper({
 
   function getTestCaseResult(
     testCaseId: string,
-    runNumber: number
+    runNumber: number // unused for now, -1 means latest
   ): TestCaseResult | undefined {
     // stub
     // find the test case and get the result
@@ -196,6 +203,19 @@ export default function TestCasesWrapper({
       (result) => result.testCaseDetails.testCaseId === testCaseId
     );
   }
+
+  function getTestCaseColour(testCaseId: string): ButtonProps["color"] {
+    // if latestresult is fail, return red
+    const result = getTestCaseResult(testCaseId, -1);
+    if (!result) return "gray";
+
+    if (result.isPassed) {
+      return "green";
+    } else {
+      return "red";
+    }
+  }
+  console.log({ colorScheme });
   return (
     <Box className={classes.container}>
       <Group style={{ alignItems: "center" }}>
@@ -213,27 +233,12 @@ export default function TestCasesWrapper({
       </Group>
       <Group>
         {testCases.map((testCase, index) => (
-          // <Box key={index} className={classes.testCaseIcon}>
-          //   {" "}
-          //   {index + 1}{" "}
-          // </Box>
-          // <Badge
-          //   key={index}
-          //   size="xl"
-          //   color="cyan"
-          //   radius={"sm"}
-          //   variant="light"
-          //   onClick={() => onTestCaseChange(testCase._id)}
-          //   style={{ cursor: "pointer" }}
-          // >
-          //   {index + 1}
-          // </Badge>
           <Button
             key={index}
             size="sm"
-            color="cyan"
+            color={getTestCaseColour(testCase._id.toString())}
             radius={"sm"}
-            variant="light"
+            variant={testCase._id === currentTestCase?._id ? "filled" : "light"}
             onClick={() => onTestCaseChange(testCase._id)}
             loading={
               isRunning &&
@@ -247,18 +252,74 @@ export default function TestCasesWrapper({
           </Button>
         ))}
       </Group>
-      {currentTestCase && (
+      {currentTestCase && currentTestCase.isPublic ? (
         <Box className={classes.testCaseDisplay}>
-          <SimpleGrid cols={{ base: 1, md: 2 }}>
+          {getTestCaseResult(currentTestCase._id.toString(), 1) && (
+            <Group>
+              <Badge
+                variant="dot"
+                color={getTestCaseColour(currentTestCase._id.toString())}
+                size="xl"
+                radius="xs"
+              >
+                {getTestCaseResult(currentTestCase._id.toString(), 1).isPassed
+                  ? "Passed"
+                  : "Failed"}
+              </Badge>
+              <Space flex={1} />
+              <Group>
+                <Badge
+                  leftSection={<IconDatabase width="16px" height="16px" />}
+                  radius="sm"
+                  variant="light"
+                  size="lg"
+                  styles={{
+                    label: {
+                      // get rid of uppercase
+                      textTransform: "none",
+                    },
+                  }}
+                  color={colorScheme === "dark" ? "gray" : "gray"}
+                >
+                  {kBtoMb(
+                    getTestCaseResult(currentTestCase._id.toString(), 1).memory
+                  )}{" "}
+                  MB
+                </Badge>
+                <Badge
+                  leftSection={
+                    <IconHourglassEmpty width="16px" height="16px" />
+                  }
+                  radius="sm"
+                  variant="light"
+                  size="lg"
+                  styles={{
+                    label: {
+                      // get rid of uppercase
+                      textTransform: "none",
+                    },
+                  }}
+                  color={colorScheme === "dark" ? "gray" : "gray"}
+                >
+                  {secondsToMsIfappropriate(
+                    Number(
+                      getTestCaseResult(currentTestCase._id.toString(), 1).time
+                    )
+                  )}
+                </Badge>
+              </Group>
+            </Group>
+          )}
+          <SimpleGrid cols={{ base: 1, md: 2 }} mt="lg">
             <Box mb={"md"}>
-              <Text style={{ fontWeight: "700" }}> Input </Text>
-              <Code block mt={"xs"}>
+              <Text style={{ fontWeight: "700" }}> Test Program </Text>
+              <Code block mt={"xs"} className={classes.codeBlock}>
                 {currentTestCase.testCode}
               </Code>
             </Box>
             <Box>
               <Text style={{ fontWeight: "700" }}> Expected Output </Text>
-              <Code block mt="xs">
+              <Code block mt="xs" className={classes.codeBlock}>
                 {currentTestCase.expectedOutput}
               </Code>
             </Box>
@@ -266,11 +327,51 @@ export default function TestCasesWrapper({
           <Box>
             <Text style={{ fontWeight: "700" }}> Actual output: </Text>
           </Box>
-          <Code block>
+          <Code
+            block
+            className={classes.codeBlock}
+            style={{
+              outline: `1.5px solid var(--mantine-color-${getTestCaseColour(
+                currentTestCase._id.toString()
+              )}-9)`,
+            }}
+            color={
+              colorScheme === "light" &&
+              `${getTestCaseColour(currentTestCase._id.toString())}.1`
+            }
+          >
             {getTestCaseResult(currentTestCase._id.toString(), 1) === undefined
               ? "No output yet, please run the test case to view output"
               : getTestCaseResult(currentTestCase._id.toString(), 1).stdout}
           </Code>
+          <Box mt={"xs"}>
+            <Text style={{ fontWeight: "700" }}> Error logs: </Text>
+          </Box>
+          <Code block className={classes.codeBlock}>
+            {getTestCaseResult(currentTestCase._id.toString(), 1) === undefined
+              ? "No output yet, please run the test case to view output"
+              : getTestCaseResult(currentTestCase._id.toString(), 1).stderr}
+          </Code>
+        </Box>
+      ) : (
+        <Box className={classes.testCaseDisplay}>
+          {getTestCaseResult(currentTestCase._id.toString(), 1) && (
+            <Group mb={"lg"}>
+              <Badge
+                variant="dot"
+                color={getTestCaseColour(currentTestCase._id.toString())}
+                size="xl"
+                radius="xs"
+              >
+                {getTestCaseResult(currentTestCase._id.toString(), 1).isPassed
+                  ? "Passed"
+                  : "Failed"}
+              </Badge>
+            </Group>
+          )}
+          <Alert variant="light">
+            This is a private test case! No other details will be shown.
+          </Alert>
         </Box>
       )}
     </Box>

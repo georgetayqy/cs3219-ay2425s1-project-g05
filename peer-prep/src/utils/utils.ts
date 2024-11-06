@@ -37,3 +37,23 @@ export function formatTime(date: Date): string {
 
   return `${hours}:${minutesStr} ${ampm}`;
 }
+
+/**
+ * Convert kilobytes to megabytes.
+ * Round to 2 dp
+ * 
+ * @param kb 
+ * @returns 
+ */
+export function kBtoMb(kb: number): number {
+  return Math.round((kb / 1000) * 100) / 100;
+}
+
+/**
+ * If the number (in seconds) is less than 0.1, convert to ms
+ * @param s 
+ * @returns String
+ */
+export function secondsToMsIfappropriate(s: number): string {
+  return s < 0.1 ? `${s * 1000} ms` : `${s} s`;
+}
