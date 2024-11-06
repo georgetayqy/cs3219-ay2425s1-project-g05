@@ -120,7 +120,7 @@ const executeTest = async (req, res) => {
     const { codeAttempt, channelId } = req.body;
 
     // Check if another execution is in progress
-    const existingJob = await redisClient.hGetAll(`channel:${channelId}`); 
+    const existingJob = await redisClient.hGetAll(`channel:${channelId}`);
     console.log("Existing job data:", existingJob);
     if (existingJob && existingJob.status === "processing") {
       console.log(
@@ -131,7 +131,7 @@ const executeTest = async (req, res) => {
       );
       return;
     }
-    
+
     // Retrieve testcases for the question
     console.log("Executing test cases for questionId:", questionId);
     const testcases = await getTestcases(questionId);
@@ -158,10 +158,10 @@ const executeTest = async (req, res) => {
     });
 
     // Start processing test cases
-    processTestcases(channelId, testcases, codeAttempt);
+    processTestcases(channelId, testcases, codeAttempt, questionId);
   } catch (error) {
     if (error instanceof BaseError) {
-      return res.status(error.statusCode).json({ error: error.message });
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ error: "Failed to execute test cases" });
   }
@@ -245,7 +245,7 @@ async function runTestcase(testcase, code) {
   }
 }
 
-async function processTestcases(channelId, testcases, code) {
+async function processTestcases(channelId, testcases, code, questionId) {
   const results = [];
   let hasError = false;
   console.log("============Starting testcases execution==========");
@@ -287,17 +287,21 @@ async function processTestcases(channelId, testcases, code) {
 
   console.log("Completed testcases execution");
 
-  // Store results in Redis
+  console.log(
+    "==================== need to find this elaine! =================="
+  );
   await redisClient.hSet(`channel:${channelId}`, {
     status: hasError ? "error" : "completed",
     data: JSON.stringify(results),
+    questionId: questionId,
+    codeAttempt: code,
   });
 
   // Publish the "complete" status only if no errors occurred
   if (!hasError) {
     await redisClient.publish(
       `channel:${channelId}`,
-      JSON.stringify({ status: "complete", data: { results: results } })
+      JSON.stringify({ status: "complete", data: { results: results, questionId, code } })
     );
   }
   printRedisMemory();
