@@ -18,7 +18,7 @@ import { IconPhone, IconPhoneEnd, IconVideo } from "@tabler/icons-react";
 import { useHover, useViewportSize } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { createPortal } from "react-dom";
-
+import Peer from "peerjs";
 const servers: RTCConfiguration = {
   iceServers: [
     {
@@ -58,7 +58,7 @@ export default function VideoChatWidget({
   otherUser?: ChatRoomUser;
   onVideoCallDisconnect: () => void;
 }) {
-  const { user } = useAuth();
+  const auth = useAuth();
 
   const localStream = useRef<MediaStream | null>(null);
   const remoteStream = useRef<MediaStream | null>(new MediaStream());
@@ -69,6 +69,73 @@ export default function VideoChatWidget({
 
   const selfVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+
+  const [peerId, setPeerId] = useState(auth.user._id);
+  const [remotePeerIdValue, setRemotePeerIdValue] = useState("");
+  const peerInstance = useRef(null);
+
+  console.log({ auth }, " nasjdkasjkdhjka user");
+
+  useEffect(() => {
+    console.log("DEBUG: auth.user", auth.user);
+    if (!auth.user) {
+      console.log("DEBUG: no auth.user", auth);
+      return;
+    }
+    const peer = new Peer(auth.user._id, {
+      config: servers,
+    });
+
+    peer.on("open", (id) => {
+      console.log("DEBUG: peer open id set to", id);
+      setPeerId(id);
+    });
+
+    peer.on("call", async (call) => {
+      console.log("DEBUG: call received", call);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      selfVideoRef.current.srcObject = stream;
+      selfVideoRef.current.play();
+      selfVideoRef.current.muted = true;
+      call.answer(stream);
+      call.on("stream", function (remoteStream) {
+        remoteVideoRef.current.srcObject = remoteStream;
+        remoteVideoRef.current.play();
+      });
+    });
+    peerInstance.current = peer;
+
+    return () => {
+      peer.destroy();
+    };
+  }, [auth.user._id]);
+
+  const call = async () => {
+    // remote peer id is the user id
+    const remotePeerId = otherUser?.userId;
+
+    console.log("DEBUG: calling", remotePeerId);
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+
+    selfVideoRef.current.srcObject = stream;
+    selfVideoRef.current.play();
+    selfVideoRef.current.muted = true;
+
+    const call = peerInstance.current.call(remotePeerId, stream);
+
+    call.on("stream", (remoteStream) => {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play();
+    });
+  };
 
   const [callData, setCallData] = useState<any>(null);
   const [offerCandidates, setOfferCandidates] = useState<RTCIceCandidateInit[]>(
@@ -88,254 +155,254 @@ export default function VideoChatWidget({
   //   setCallData(data);
   // }
 
-  function cleanup() {
-    console.log("LOG(VIDEO): Cleaning up");
+  // function cleanup() {
+  //   console.log("LOG(VIDEO): Cleaning up");
 
-    if (pc.current) {
-      pc.current.close();
-      pc.current = null;
-    }
+  //   if (pc.current) {
+  //     pc.current.close();
+  //     pc.current = null;
+  //   }
 
-    if (localStream) {
-      localStream.current.getTracks().forEach((track) => track.stop());
-      localStream.current = null;
-    }
+  //   if (localStream) {
+  //     localStream.current.getTracks().forEach((track) => track.stop());
+  //     localStream.current = null;
+  //   }
 
-    if (remoteStream) {
-      remoteStream.current.getTracks().forEach((track) => track.stop());
-    }
+  //   if (remoteStream) {
+  //     remoteStream.current.getTracks().forEach((track) => track.stop());
+  //   }
 
-    if (selfVideoRef.current) selfVideoRef.current.srcObject = null;
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+  //   if (selfVideoRef.current) selfVideoRef.current.srcObject = null;
+  //   if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
-    socket.off("video-check", onVideoCheck);
-    socket.off("video-answer");
-    socket.off("video-offer-ice-candidate");
-    socket.off("video-answer-ice-candidate");
+  //   socket.off("video-check", onVideoCheck);
+  //   socket.off("video-answer");
+  //   socket.off("video-offer-ice-candidate");
+  //   socket.off("video-answer-ice-candidate");
 
-    onVideoCallDisconnect();
-  }
+  //   onVideoCallDisconnect();
+  // }
 
-  async function init() {
-    console.log("LOG: initializing!");
+  // async function init() {
+  //   console.log("LOG: initializing!");
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+  //   try {
+  //     const stream = await navigator.mediaDevices.getUserMedia({
+  //       video: true,
+  //       audio: true,
+  //     });
 
-      if (!pc.current) pc.current = new RTCPeerConnection(servers);
+  //     if (!pc.current) pc.current = new RTCPeerConnection(servers);
 
-      console.log("LOG: Got MediaStream:", stream);
-      localStream.current = stream;
-      localStream.current
-        .getTracks()
-        .forEach((track) => pc.current.addTrack(track, localStream.current));
+  //     console.log("LOG: Got MediaStream:", stream);
+  //     localStream.current = stream;
+  //     localStream.current
+  //       .getTracks()
+  //       .forEach((track) => pc.current.addTrack(track, localStream.current));
 
-      // show stream in HTML video
-      if (selfVideoRef.current) {
-        selfVideoRef.current.srcObject = localStream.current;
-        selfVideoRef.current.muted = true;
-      }
+  //     // show stream in HTML video
+  //     if (selfVideoRef.current) {
+  //       selfVideoRef.current.srcObject = localStream.current;
+  //       selfVideoRef.current.muted = true;
+  //     }
 
-      pc.current.ontrack = (event) => {
-        console.log("LOG: ontrack event:", event);
-        event.streams[0].getTracks().forEach((track) => {
-          console.log("LOG: Adding track to remoteStream:", track);
-          if (!remoteStream.current) remoteStream.current = new MediaStream();
-          remoteStream.current.addTrack(track);
-        });
-      };
+  //     pc.current.ontrack = (event) => {
+  //       console.log("LOG: ontrack event:", event);
+  //       event.streams[0].getTracks().forEach((track) => {
+  //         console.log("LOG: Adding track to remoteStream:", track);
+  //         if (!remoteStream.current) remoteStream.current = new MediaStream();
+  //         remoteStream.current.addTrack(track);
+  //       });
+  //     };
 
-      if (remoteVideoRef.current)
-        remoteVideoRef.current.srcObject = remoteStream.current;
+  //     if (remoteVideoRef.current)
+  //       remoteVideoRef.current.srcObject = remoteStream.current;
 
-      pc.current.onconnectionstatechange = (event) => {
-        console.log("LOG: onconnectionstatechange event:", event);
-        console.log(pc.current.connectionState);
-        // alert(" break ! ");
-        if (pc.current.connectionState === "connected") {
-          console.log("LOG: Connected");
+  //     pc.current.onconnectionstatechange = (event) => {
+  //       console.log("LOG: onconnectionstatechange event:", event);
+  //       console.log(pc.current.connectionState);
+  //       // alert(" break ! ");
+  //       if (pc.current.connectionState === "connected") {
+  //         console.log("LOG: Connected");
 
-          setCallStatus(CALL_STATUS.CONNECTED);
-        }
+  //         setCallStatus(CALL_STATUS.CONNECTED);
+  //       }
 
-        if (pc.current.connectionState === "disconnected") {
-          // ps: I choose not to listen to video-cleanup event and instead clean up the event automatically.
-          // this is better as in the case of no internet, the event will not be received
-          socket.emit("video-cleanup", { roomId, selfId: user._id });
-          // pc.current.restartIce();
+  //       if (pc.current.connectionState === "disconnected") {
+  //         // ps: I choose not to listen to video-cleanup event and instead clean up the event automatically.
+  //         // this is better as in the case of no internet, the event will not be received
+  //         socket.emit("video-cleanup", { roomId, selfId: auth.user._id });
+  //         // pc.current.restartIce();
 
-          setCallStatus(CALL_STATUS.IDLE);
+  //         setCallStatus(CALL_STATUS.IDLE);
 
-          cleanup();
-        }
-      };
+  //         cleanup();
+  //       }
+  //     };
 
-      // listen for response for checking if there is another user in the video call
-      socket.on("video-check", onVideoCheck);
+  //     // listen for response for checking if there is another user in the video call
+  //     socket.on("video-check", onVideoCheck);
 
-      // listen for end call event
-      socket.on("video-cleanup", (data: { selfId: string }) => {
-        console.log("LOG: receive { video-cleanup } data:", data);
+  //     // listen for end call event
+  //     socket.on("video-cleanup", (data: { selfId: string }) => {
+  //       console.log("LOG: receive { video-cleanup } data:", data);
 
-        // cleanup
-        cleanup();
-      });
-    } catch (e) {
-      notifications.show({
-        message:
-          "Please allow camera and microphone access in order to make a video call.",
-        title: "Permission Error",
-        color: "red",
-      });
+  //       // cleanup
+  //       cleanup();
+  //     });
+  //   } catch (e) {
+  //     notifications.show({
+  //       message:
+  //         "Please allow camera and microphone access in order to make a video call.",
+  //       title: "Permission Error",
+  //       color: "red",
+  //     });
 
-      throw e;
-    }
-  }
+  //     throw e;
+  //   }
+  // }
 
-  useEffect(() => {
-    // register the video-check event
+  // useEffect(() => {
+  //   // register the video-check event
 
-    return () => {
-      // unregister the video-check event
-      socket.off("video-check");
-      socket.off("video-answer");
-      socket.off("video-offer-ice-candidate");
-      socket.off("video-answer-ice-candidate");
-      socket.off("video-cleanup");
-    };
-  }, []);
+  //   return () => {
+  //     // unregister the video-check event
+  //     socket.off("video-check");
+  //     socket.off("video-answer");
+  //     socket.off("video-offer-ice-candidate");
+  //     socket.off("video-answer-ice-candidate");
+  //     socket.off("video-cleanup");
+  //   };
+  // }, []);
 
-  async function onCallButtonPress() {
-    if (callStatus === CALL_STATUS.CONNECTED) {
-      // disconnect
-      // emit video-cleanup event
-      socket.emit("video-cleanup", { roomId, selfId: user._id });
-      cleanup();
-    } else {
-      try {
-        setCallStatus(CALL_STATUS.CALLING);
-        // send video-check event to server to check if there is another user in the video call
-        // NOTE:TODO: should not allow pressing after connected
-        if (!pc.current) await init();
-        console.log("LOG: emit { video-check }");
-        socket.emit("video-check", { roomId });
-      } catch (e) {
-        console.log("LOG: Error:", e);
-        setCallStatus(CALL_STATUS.IDLE);
-      }
-    }
-  }
+  // async function onCallButtonPress() {
+  //   if (callStatus === CALL_STATUS.CONNECTED) {
+  //     // disconnect
+  //     // emit video-cleanup event
+  //     socket.emit("video-cleanup", { roomId, selfId: auth.user._id });
+  //     cleanup();
+  //   } else {
+  //     try {
+  //       setCallStatus(CALL_STATUS.CALLING);
+  //       // send video-check event to server to check if there is another user in the video call
+  //       // NOTE:TODO: should not allow pressing after connected
+  //       if (!pc.current) await init();
+  //       console.log("LOG: emit { video-check }");
+  //       socket.emit("video-check", { roomId });
+  //     } catch (e) {
+  //       console.log("LOG: Error:", e);
+  //       setCallStatus(CALL_STATUS.IDLE);
+  //     }
+  //   }
+  // }
 
-  async function onVideoCheck(data: null | { offer: Offer }) {
-    console.log("LOG: receive { video-check } data:", data);
-    if (data === null) {
-      console.log("----------------- WE ARE THE CALLER -----------------");
-      // we are the first person in the video call
-      // no longer need to listen for video-check event
-      socket.off("video-check", onVideoCheck); // precautionary measure only
+  // async function onVideoCheck(data: null | { offer: Offer }) {
+  //   console.log("LOG: receive { video-check } data:", data);
+  //   if (data === null) {
+  //     console.log("----------------- WE ARE THE CALLER -----------------");
+  //     // we are the first person in the video call
+  //     // no longer need to listen for video-check event
+  //     socket.off("video-check", onVideoCheck); // precautionary measure only
 
-      // create the offer
-      const offerDescription = await pc.current.createOffer({
-        iceRestart: true,
-      });
-      await pc.current.setLocalDescription(offerDescription);
-      const offer = {
-        sdp: offerDescription.sdp,
-        type: offerDescription.type,
-      };
+  //     // create the offer
+  //     const offerDescription = await pc.current.createOffer({
+  //       iceRestart: true,
+  //     });
+  //     await pc.current.setLocalDescription(offerDescription);
+  //     const offer = {
+  //       sdp: offerDescription.sdp,
+  //       type: offerDescription.type,
+  //     };
 
-      // send the offer to the server
-      console.log("LOG: emit { video-offer }");
-      socket.emit("video-offer", { offer, roomId });
+  //     // send the offer to the server
+  //     console.log("LOG: emit { video-offer }");
+  //     socket.emit("video-offer", { offer, roomId });
 
-      // create INTERNAL event listener for onicecandidate
-      pc.current.onicecandidate = (event) => {
-        if (event.candidate) {
-          offerCandidates.push(event.candidate.toJSON());
+  //     // create INTERNAL event listener for onicecandidate
+  //     pc.current.onicecandidate = (event) => {
+  //       if (event.candidate) {
+  //         offerCandidates.push(event.candidate.toJSON());
 
-          setOfferCandidates((prev) => [...prev, event.candidate.toJSON()]);
+  //         setOfferCandidates((prev) => [...prev, event.candidate.toJSON()]);
 
-          // send candidate to peer
-          console.log(
-            "LOG: emit { video-offer-ice-candidate } data: ",
-            event.candidate.toJSON()
-          );
-          socket.emit("video-offer-ice-candidate", {
-            candidate: event.candidate.toJSON(),
-            roomId,
-          });
-        }
-      };
+  //         // send candidate to peer
+  //         console.log(
+  //           "LOG: emit { video-offer-ice-candidate } data: ",
+  //           event.candidate.toJSON()
+  //         );
+  //         socket.emit("video-offer-ice-candidate", {
+  //           candidate: event.candidate.toJSON(),
+  //           roomId,
+  //         });
+  //       }
+  //     };
 
-      // create event listener for video-answer
-      socket.on(
-        "video-answer",
-        (data: { answer: RTCSessionDescriptionInit }) => {
-          console.log("LOG: receive { video-answer } data:", data);
-          if (!pc.current.currentRemoteDescription && data.answer) {
-            const answerDescription = new RTCSessionDescription(data.answer);
-            pc.current.setRemoteDescription(answerDescription);
-          }
-        }
-      );
+  //     // create event listener for video-answer
+  //     socket.on(
+  //       "video-answer",
+  //       (data: { answer: RTCSessionDescriptionInit }) => {
+  //         console.log("LOG: receive { video-answer } data:", data);
+  //         if (!pc.current.currentRemoteDescription && data.answer) {
+  //           const answerDescription = new RTCSessionDescription(data.answer);
+  //           pc.current.setRemoteDescription(answerDescription);
+  //         }
+  //       }
+  //     );
 
-      // create event lsitener for video-answer-ice-candidate
-      socket.on(
-        "video-answer-ice-candidate",
-        (data: { candidate: RTCIceCandidateInit }) => {
-          console.log(
-            "LOG: receive { video-answer-ice-candidate } data:",
-            data
-          );
-          const candidate = new RTCIceCandidate(data.candidate);
-          pc.current.addIceCandidate(candidate);
-        }
-      );
-    } else {
-      console.log("----------------- WE ARE THE ANSWERER -----------------");
-      await pc.current.setRemoteDescription(
-        new RTCSessionDescription(data.offer)
-      );
-      const answerDescription = await pc.current.createAnswer();
-      await pc.current.setLocalDescription(answerDescription);
+  //     // create event lsitener for video-answer-ice-candidate
+  //     socket.on(
+  //       "video-answer-ice-candidate",
+  //       (data: { candidate: RTCIceCandidateInit }) => {
+  //         console.log(
+  //           "LOG: receive { video-answer-ice-candidate } data:",
+  //           data
+  //         );
+  //         const candidate = new RTCIceCandidate(data.candidate);
+  //         pc.current.addIceCandidate(candidate);
+  //       }
+  //     );
+  //   } else {
+  //     console.log("----------------- WE ARE THE ANSWERER -----------------");
+  //     await pc.current.setRemoteDescription(
+  //       new RTCSessionDescription(data.offer)
+  //     );
+  //     const answerDescription = await pc.current.createAnswer();
+  //     await pc.current.setLocalDescription(answerDescription);
 
-      // send the answer to the server
-      socket.emit("video-answer", { answer: answerDescription, roomId });
+  //     // send the answer to the server
+  //     socket.emit("video-answer", { answer: answerDescription, roomId });
 
-      // create INTERNAL event listener for onicecandidate
-      pc.current.onicecandidate = (event) => {
-        console.log("LOG: onicecandidate event:", event);
-        if (event.candidate) {
-          answerCandidates.push(event.candidate.toJSON());
+  //     // create INTERNAL event listener for onicecandidate
+  //     pc.current.onicecandidate = (event) => {
+  //       console.log("LOG: onicecandidate event:", event);
+  //       if (event.candidate) {
+  //         answerCandidates.push(event.candidate.toJSON());
 
-          setAnswerCandidates((prev) => [...prev, event.candidate.toJSON()]);
+  //         setAnswerCandidates((prev) => [...prev, event.candidate.toJSON()]);
 
-          // send candidate to peer
-          console.log(
-            "LOG: emit { video-answer-ice-candidate } data:",
-            event.candidate
-          );
-          socket.emit("video-answer-ice-candidate", {
-            candidate: event.candidate.toJSON(),
-            roomId,
-          });
-        }
-      };
+  //         // send candidate to peer
+  //         console.log(
+  //           "LOG: emit { video-answer-ice-candidate } data:",
+  //           event.candidate
+  //         );
+  //         socket.emit("video-answer-ice-candidate", {
+  //           candidate: event.candidate.toJSON(),
+  //           roomId,
+  //         });
+  //       }
+  //     };
 
-      // create event listener for video-offer-ice-candidate
-      socket.on(
-        "video-offer-ice-candidate",
-        (data: { candidate: RTCIceCandidateInit }) => {
-          console.log("LOG: receive { video-offer-ice-candidate } data:", data);
-          const candidate = new RTCIceCandidate(data.candidate);
-          pc.current.addIceCandidate(candidate);
-        }
-      );
-    }
-  }
+  //     // create event listener for video-offer-ice-candidate
+  //     socket.on(
+  //       "video-offer-ice-candidate",
+  //       (data: { candidate: RTCIceCandidateInit }) => {
+  //         console.log("LOG: receive { video-offer-ice-candidate } data:", data);
+  //         const candidate = new RTCIceCandidate(data.candidate);
+  //         pc.current.addIceCandidate(candidate);
+  //       }
+  //     );
+  //   }
+  // }
 
   // behaviour of the video chat widget:
   // when waiting for user: show self video
@@ -413,7 +480,7 @@ export default function VideoChatWidget({
         <ActionIcon
           variant="subtle"
           color="white"
-          onClick={onCallButtonPress}
+          onClick={call}
           loading={callStatus === CALL_STATUS.CALLING}
         >
           {" "}
@@ -430,7 +497,7 @@ export default function VideoChatWidget({
         <Box
           className={classes.videoContainer}
           ref={containerRef}
-          display={callStatus === CALL_STATUS.CONNECTED ? "block" : "none"}
+          // display={callStatus === CALL_STATUS.CONNECTED ? "block" : "none"}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -449,7 +516,7 @@ export default function VideoChatWidget({
           >
             <Text className={classes.selfVideoDescriptor}>
               {" "}
-              {user.displayName} (You)
+              {auth.user.displayName} (You)
             </Text>
             <AspectRatio
               ratio={1080 / 720}
@@ -464,7 +531,7 @@ export default function VideoChatWidget({
               variant="filled"
               color="dark"
               className={classes.selfEndCallButton}
-              onClick={onCallButtonPress}
+              // onClick={onCallButtonPress}
             >
               {" "}
               End call{" "}
@@ -493,7 +560,7 @@ export default function VideoChatWidget({
               variant="filled"
               color="dark"
               className={classes.otherEndCallButton}
-              onClick={onCallButtonPress}
+              // onClick={onCallButtonPress}
             >
               {" "}
               End call{" "}
