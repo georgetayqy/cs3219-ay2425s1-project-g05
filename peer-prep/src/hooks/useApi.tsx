@@ -17,7 +17,8 @@ export interface ServerResponse<T> {
 export enum SERVICE {
   USER,
   QUESTION,
-  COLLAB
+  COLLAB,
+  HISTORY
 }
 
 export default function useApi() {
@@ -47,7 +48,9 @@ export default function useApi() {
             ? import.meta.env.VITE_API_URL_USER
             : service === SERVICE.QUESTION
             ? import.meta.env.VITE_API_URL_QUESTION
-            : import.meta.env.VITE_API_URL_COLLAB
+            : service === SERVICE.COLLAB
+            ? import.meta.env.VITE_API_URL_COLLAB
+            : import.meta.env.VITE_API_URL_HISTORY
 
         }${url}`,
         {
