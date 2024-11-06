@@ -25,6 +25,7 @@ import CreateQuestionPage from "./pages/Questions/CreateQuestionPage/CreateQuest
 import EditQuestionPage from "./pages/Questions/EditQuestionPage/EditQuestionPage.tsx";
 import { Notifications } from "@mantine/notifications";
 import AdminRouteWrapper from "./pages/AdminRouteWrapper.tsx";
+import SessionSummaryPage from "./pages/Session/Summary/SessionSummaryPage.tsx";
 import ReadQuestionPage from "./pages/Questions/ReadQuestionPage/ReadQuestionPage.tsx";
 import SessionPage from "./pages/Session/SessionPage/SessionPage.tsx";
 
@@ -126,6 +127,10 @@ const router = createBrowserRouter([
               {
                 path: "/session/:roomId",
                 element: <SessionPage />,
+              },
+              {
+                path: "/session/summary/:roomId",
+                element: <SessionSummaryPage />,
               },
             ],
           },
