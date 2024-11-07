@@ -60,6 +60,12 @@ export default function VideoChatWidget({
 }) {
   const auth = useAuth();
 
+  const [domReady, setDomReady] = useState(false);
+
+  useEffect(() => {
+    setDomReady(true);
+  }, []);
+
   const [callStatus, setCallStatus] = useState<CALL_STATUS>(CALL_STATUS.IDLE);
   const callStatusRef = useRef<CALL_STATUS>(CALL_STATUS.IDLE);
   function setCallStatusWrapper(status: CALL_STATUS) {
@@ -135,6 +141,16 @@ export default function VideoChatWidget({
   }, [auth.user._id]);
 
   const call = async () => {
+    if (!otherUser) {
+      console.log("DEBUG: no other user");
+      notifications.show({
+        message:
+          "No other user to call, please wait until they've joined the room!",
+        title: "Error",
+        color: "red",
+      });
+      return;
+    }
     if (!peerInstance.current) init();
     // remote peer id is the user id
     if (callStatusRef.current === CALL_STATUS.IDLE) {
@@ -539,82 +555,83 @@ export default function VideoChatWidget({
       </Group>
 
       {/* Portal to outside of the Collapse element */}
-      {createPortal(
-        <Box
-          className={classes.videoContainer}
-          ref={containerRef}
-          display={callStatus === CALL_STATUS.IDLE ? "none" : "block"}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          style={{
-            bottom: `${position.bottom}px`,
-            right: `${position.right}px`,
-          }}
-        >
-          {/* <h1>Video Chat Widget</h1> */}
-
+      {domReady &&
+        createPortal(
           <Box
-            className={classes.selfVideoContainer}
-            key={"self"}
-            style={{ display: showSelf ? "block" : "none" }}
+            className={classes.videoContainer}
+            ref={containerRef}
+            display={callStatus === CALL_STATUS.IDLE ? "none" : "block"}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            style={{
+              bottom: `${position.bottom}px`,
+              right: `${position.right}px`,
+            }}
           >
-            <Text className={classes.selfVideoDescriptor}>
-              {" "}
-              {auth.user.displayName} (You)
-            </Text>
-            <AspectRatio
-              ratio={1080 / 720}
-              maw={300}
-              mx="auto"
-              className={classes.selfVideo}
-            >
-              <video ref={selfVideoRef} autoPlay />
-            </AspectRatio>
-            <Button
-              size="xs"
-              variant="filled"
-              color="dark"
-              className={classes.selfEndCallButton}
-              onClick={onEndCall}
-            >
-              {" "}
-              End call{" "}
-            </Button>
-          </Box>
+            {/* <h1>Video Chat Widget</h1> */}
 
-          <Box
-            className={classes.otherVideoContainer}
-            key="other"
-            style={{ display: !showSelf ? "block" : "none" }}
-          >
-            <Text className={classes.otherVideoDescriptor}>
-              {" "}
-              {otherUser?.name}
-            </Text>
-            <AspectRatio
-              ratio={1080 / 720}
-              maw={300}
-              mx="auto"
-              className={classes.otherVideo}
+            <Box
+              className={classes.selfVideoContainer}
+              key={"self"}
+              style={{ display: showSelf ? "block" : "none" }}
             >
-              <video ref={remoteVideoRef} autoPlay />
-            </AspectRatio>
-            <Button
-              size="xs"
-              variant="filled"
-              color="dark"
-              className={classes.otherEndCallButton}
-              onClick={onEndCall}
+              <Text className={classes.selfVideoDescriptor}>
+                {" "}
+                {auth.user.displayName} (You)
+              </Text>
+              <AspectRatio
+                ratio={1080 / 720}
+                maw={300}
+                mx="auto"
+                className={classes.selfVideo}
+              >
+                <video ref={selfVideoRef} autoPlay />
+              </AspectRatio>
+              <Button
+                size="xs"
+                variant="filled"
+                color="dark"
+                className={classes.selfEndCallButton}
+                onClick={onEndCall}
+              >
+                {" "}
+                End call{" "}
+              </Button>
+            </Box>
+
+            <Box
+              className={classes.otherVideoContainer}
+              key="other"
+              style={{ display: !showSelf ? "block" : "none" }}
             >
-              {" "}
-              End call{" "}
-            </Button>
-          </Box>
-        </Box>,
-        document.getElementById("video-chat-widget")
-      )}
+              <Text className={classes.otherVideoDescriptor}>
+                {" "}
+                {otherUser?.name}
+              </Text>
+              <AspectRatio
+                ratio={1080 / 720}
+                maw={300}
+                mx="auto"
+                className={classes.otherVideo}
+              >
+                <video ref={remoteVideoRef} autoPlay />
+              </AspectRatio>
+              <Button
+                size="xs"
+                variant="filled"
+                color="dark"
+                className={classes.otherEndCallButton}
+                onClick={onEndCall}
+              >
+                {" "}
+                End call{" "}
+              </Button>
+            </Box>
+          </Box>,
+          document.getElementById("video-chat-widget")
+        )}
     </Box>
   );
 }
