@@ -60,23 +60,25 @@ export default function VideoChatWidget({
 }) {
   const auth = useAuth();
 
-  const localStream = useRef<MediaStream | null>(null);
-  const remoteStream = useRef<MediaStream | null>(new MediaStream());
-  // const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  // const [remoteStream, setRemoteStream] = useState<MediaStream | null>(
-  //   new MediaStream()
-  // );
+  const [callStatus, setCallStatus] = useState<CALL_STATUS>(CALL_STATUS.IDLE);
+  const callStatusRef = useRef<CALL_STATUS>(CALL_STATUS.IDLE);
+  function setCallStatusWrapper(status: CALL_STATUS) {
+    callStatusRef.current = status;
+    setCallStatus(status);
+  }
 
   const selfVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
-  const [peerId, setPeerId] = useState(auth.user._id);
+  // only when this is populated are we ready to make a call (connection wise)
+  const [peerId, setPeerId] = useState(null);
   const [remotePeerIdValue, setRemotePeerIdValue] = useState("");
   const peerInstance = useRef(null);
+  const mediaConnection = useRef(null);
 
   console.log({ auth }, " nasjdkasjkdhjka user");
 
-  useEffect(() => {
+  function init() {
     console.log("DEBUG: auth.user", auth.user);
     if (!auth.user) {
       console.log("DEBUG: no auth.user", auth);
@@ -93,6 +95,15 @@ export default function VideoChatWidget({
 
     peer.on("call", async (call) => {
       console.log("DEBUG: call received", call);
+
+      // dont answer if not ready to call
+      if (callStatusRef.current !== CALL_STATUS.CALLING) {
+        console.log("DEBUG: RECEIVED A CALL, CANNOT ANSWER");
+
+        return;
+      }
+
+      mediaConnection.current = call;
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
@@ -103,22 +114,38 @@ export default function VideoChatWidget({
       selfVideoRef.current.muted = true;
       call.answer(stream);
       call.on("stream", function (remoteStream) {
+        setCallStatusWrapper(CALL_STATUS.CONNECTED);
+        console.log("DEBUG: remote stream received", remoteStream);
         remoteVideoRef.current.srcObject = remoteStream;
         remoteVideoRef.current.play();
       });
+
+      call.on("close", () => {
+        console.log("DEBUG: call closed in receiver");
+        onEndCall();
+      });
     });
     peerInstance.current = peer;
-
+  }
+  useEffect(() => {
+    init();
     return () => {
-      peer.destroy();
+      peerInstance.current?.destroy();
     };
   }, [auth.user._id]);
 
   const call = async () => {
+    if (!peerInstance.current) init();
     // remote peer id is the user id
+    if (callStatusRef.current === CALL_STATUS.IDLE) {
+      setCallStatusWrapper(CALL_STATUS.CALLING);
+    }
+
+    // call will fail if the other user is not ready to receive the call
     const remotePeerId = otherUser?.userId;
 
     console.log("DEBUG: calling", remotePeerId);
+    console.log("DEBUG: READY TO CALL");
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
@@ -130,26 +157,45 @@ export default function VideoChatWidget({
     selfVideoRef.current.muted = true;
 
     const call = peerInstance.current.call(remotePeerId, stream);
-
+    mediaConnection.current = call;
     call.on("stream", (remoteStream) => {
+      setCallStatusWrapper(CALL_STATUS.CONNECTED);
+      console.log("DEBUG: remote stream received", remoteStream);
       remoteVideoRef.current.srcObject = remoteStream;
       remoteVideoRef.current.play();
     });
+
+    call.on("close", () => {
+      console.log("DEBUG: call closed in caller");
+      onEndCall();
+    });
   };
 
-  const [callData, setCallData] = useState<any>(null);
-  const [offerCandidates, setOfferCandidates] = useState<RTCIceCandidateInit[]>(
-    []
-  );
-  const [answerCandidates, setAnswerCandidates] = useState<
-    RTCIceCandidateInit[]
-  >([]);
+  function onEndCall() {
+    // cleanup
+    setCallStatusWrapper(CALL_STATUS.IDLE);
+    if (selfVideoRef.current) selfVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
-  const [callStatus, setCallStatus] = useState<CALL_STATUS>(CALL_STATUS.IDLE);
+    mediaConnection.current?.close();
+    peerInstance.current?.disconnect();
+    peerInstance.current?.destroy();
+    peerInstance.current = null;
+
+    onVideoCallDisconnect();
+  }
+
+  // const [callData, setCallData] = useState<any>(null);
+  // const [offerCandidates, setOfferCandidates] = useState<RTCIceCandidateInit[]>(
+  //   []
+  // );
+  // const [answerCandidates, setAnswerCandidates] = useState<
+  //   RTCIceCandidateInit[]
+  // >([]);
 
   // let pc = useMemo<RTCPeerConnection | null>(() => null, []);
 
-  let pc = useRef<RTCPeerConnection | null>(null);
+  // let pc = useRef<RTCPeerConnection | null>(null);
 
   // function onVideoCallDataReceived(data: any) {
   //   setCallData(data);
@@ -480,7 +526,7 @@ export default function VideoChatWidget({
         <ActionIcon
           variant="subtle"
           color="white"
-          onClick={call}
+          onClick={callStatus === CALL_STATUS.CONNECTED ? onEndCall : call}
           loading={callStatus === CALL_STATUS.CALLING}
         >
           {" "}
@@ -497,7 +543,7 @@ export default function VideoChatWidget({
         <Box
           className={classes.videoContainer}
           ref={containerRef}
-          // display={callStatus === CALL_STATUS.CONNECTED ? "block" : "none"}
+          display={callStatus === CALL_STATUS.IDLE ? "none" : "block"}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -531,7 +577,7 @@ export default function VideoChatWidget({
               variant="filled"
               color="dark"
               className={classes.selfEndCallButton}
-              // onClick={onCallButtonPress}
+              onClick={onEndCall}
             >
               {" "}
               End call{" "}
@@ -560,7 +606,7 @@ export default function VideoChatWidget({
               variant="filled"
               color="dark"
               className={classes.otherEndCallButton}
-              // onClick={onCallButtonPress}
+              onClick={onEndCall}
             >
               {" "}
               End call{" "}
