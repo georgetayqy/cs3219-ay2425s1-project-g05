@@ -341,7 +341,7 @@ const getFilteredQuestions = async (req, res, next) => {
     // No questions found that match both categories and difficulty
     if (filteredQuestions.length === 0) {
       return res.status(200).json({
-        statusCode: 200,
+        statusCode: 204,
         message: "No questions found with matching categories and difficulty",
         data: { questions: [] },
       });
