@@ -109,6 +109,7 @@ export default function CodeEditor({
       language={language}
       onMount={(editor) => {
         setEditor(editor);
+        currentValueRef.current = editor.getValue();
       }}
       onChange={(value, event) => {
         currentValueRef.current = value;

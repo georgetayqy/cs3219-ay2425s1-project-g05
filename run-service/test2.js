@@ -34,9 +34,25 @@ async function test() {
     const client1 = new EventSource(
       `${RUN_SERVICE_URL}/subscribe/${channelId}?userId=user1&otherUserId=user2`
     );
-    const client2 = new EventSource(
-      `${RUN_SERVICE_URL}/subscribe/${channelId}?userId=user2&otherUserId=user1`
-    );
+
+    // TEST: Client 2 subscribing to the same channel after a while
+    setTimeout(() => {
+      console.log("Client 2 subscribing to channel");
+      const client2 = new EventSource(
+        `${RUN_SERVICE_URL}/subscribe/${channelId}?userId=user2&otherUserId=user1`
+      );
+      client2.onopen = () => {
+        setTimeout(() => {
+          client2.close();
+          console.log("Connection closed after 3 minutes for client2.");
+        }, 40000);
+      };
+      client2.onmessage = (event) => handleMessage(event, "Client 2", client2);
+      client2.onerror = (error) => {
+        console.error("Client 2 encountered an error:", error);
+        client2.close();
+      };
+    }, 500);
 
     const handleMessage = (event, clientName) => {
       const message = JSON.parse(event.data);
@@ -51,15 +67,8 @@ async function test() {
         console.log("Code", message.data.code);
         for (const result of message.data.results) {
           const resultData = result;
-          const {
-            isPassed,
-            stdout,
-            stderr,
-            memory,
-            time,
-            testCaseDetails,
-      
-          } = resultData;
+          const { isPassed, stdout, stderr, memory, time, testCaseDetails } =
+            resultData;
 
           console.log(`Test Case ${testCaseDetails.testCaseId}:`);
           console.log(`  Passed: ${isPassed}`);
@@ -71,7 +80,6 @@ async function test() {
             `  Expected Output: ${
               testCaseDetails ? testCaseDetails.expectedOutput : "N/A"
             }`
-            
           );
         }
       } else {
@@ -79,12 +87,16 @@ async function test() {
         console.log("StatusCode", message.statusCode);
         console.log("Message", message.message);
         if (message.data) {
-          console.log(`Test Case: ${message.data.result.testCaseDetails.testCaseId}`);
+          console.log(
+            `Test Case: ${message.data.result.testCaseDetails.testCaseId}`
+          );
           console.log(`  Passed:${message.data.result.isPassed}`);
           console.log(`  Output: ${message.data.result.stdout}`);
           console.log(
             `  Expected Output: ${
-              message.data.result.expectedOutput ? testCaseDetails.expectedOutput : "N/A"
+              message.data.result.expectedOutput
+                ? testCaseDetails.expectedOutput
+                : "N/A"
             }`
           );
         }
@@ -98,47 +110,47 @@ async function test() {
         console.log("Connection closed after 3 minutes for client1.");
       }, 40000);
     };
-    client2.onopen = () => {
-      setTimeout(() => {
-        client2.close();
-        console.log("Connection closed after 3 minutes for client2.");
-      }, 40000);
-    };
 
     // Set up event listeners for both clients
     client1.onmessage = (event) => handleMessage(event, "Client 1", client1);
-    client2.onmessage = (event) => handleMessage(event, "Client 2", client2);
 
     client1.onerror = (error) => {
       console.error("Client 1 encountered an error:", error);
       client1.close();
     };
 
-    client2.onerror = (error) => {
-      console.error("Client 2 encountered an error:", error);
-      client2.close();
-    };
-
     console.log(
       "========================================================================"
     );
     // TEST: Execute a question testcase
-    const question = await findRandomQuestion();
-    const questionId = question.question._id;
-    console.log("FIRST QUESTIONID", questionId);
-    const executeResponse = await axios.post(
-      `${RUN_SERVICE_URL}/execute/${questionId}`,
-      {
-        codeAttempt: question.question.solutionCode,
-        channelId: channelId,
-        firstUserId: "user1",
-        secondUserId: "user2",
+    try {
+      const question = await findRandomQuestion();
+      const questionId = question.question._id;
+      console.log("FIRST QUESTIONID", questionId);
+      const executeResponse = await axios.post(
+        `${RUN_SERVICE_URL}/execute/${questionId}`,
+        {
+          codeAttempt: question.question.solutionCode,
+          channelId: channelId,
+          firstUserId: "user1",
+          secondUserId: "user2",
+        }
+      );
+      console.log(
+        "=================== FIRST question execution started with response: =======================\n",
+        executeResponse.data
+      );
+    } catch (error) {
+      if (error.response) {
+        console.log(error.response.data.statusCode);
+        console.error(
+          "================== Error from testing question 1:",
+          error.response.data.message
+        );
+      } else {
+        console.error("Error from test:", error.message);
       }
-    );
-    console.log(
-      "=================== FIRST question execution started with response: =======================\n",
-      executeResponse.data
-    );
+    }
 
     // TEST: Execute a question testcase that should be blocked (error thrown 409 conflict)
     try {
@@ -150,8 +162,8 @@ async function test() {
         {
           codeAttempt: secondQuestion.question.solutionCode,
           channelId: secondChannelId,
-          firstUserId: "user2",
-          secondUserId: "user1",
+          firstUserId: "user1",
+          secondUserId: "user2",
         }
       );
       console.log(
@@ -160,9 +172,9 @@ async function test() {
       );
     } catch (error) {
       if (error.response) {
-        console.log(error.response.data.statusCode)
+        console.log(error.response.data.statusCode);
         console.error(
-          "================== Error from test:",
+          "================== Error from testing question 2:",
           error.response.data.message
         );
       } else {
@@ -172,6 +184,7 @@ async function test() {
 
     // TEST: Execute another question testcase afterwards (should execute as intended)
     setTimeout(async () => {
+      try {
       const thirdQuestion = await findRandomQuestion();
       const thirdQuestionId = thirdQuestion.question._id;
       console.log("thirdQuestionId", thirdQuestionId);
@@ -188,6 +201,17 @@ async function test() {
         "=================== THIRD question execution started with response: =======================\n",
         thirdExecuteResponse.data
       );
+    } catch (error) {
+      if (error.response) {
+        console.log(error.response.data.statusCode);
+        console.error(
+          "================== Error from testing question 3:",
+          error.response.data.message
+        );
+      } else {
+        console.error("Error from test:", error.message);
+      }
+    }
     }, 15000);
   } catch (error) {
     if (error.response) {
@@ -197,8 +221,7 @@ async function test() {
       );
       console.error("Error from test:", error.response.data.message);
     } else {
-      //console.error("Error from test:", error.message);
-      console.error("Error from test:", error);
+      console.error("Error from test:", error.message);
     }
   }
 }

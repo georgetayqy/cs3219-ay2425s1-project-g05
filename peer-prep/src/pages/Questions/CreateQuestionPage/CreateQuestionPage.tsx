@@ -25,7 +25,7 @@ import {
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
-import CodeEditorWithLanguageSelector from "../../../components/Questions/LanguageSelector/LanguageSelector";
+import CodeEditorWithLanguageSelector from "../../../components/Questions/CodeEditor/CodeEditor";
 import RichTextEditor from "../../../components/Questions/RichTextEditor/RichTextEditor";
 import { convertToCombinedCategoryId } from "../../../utils/utils";
 

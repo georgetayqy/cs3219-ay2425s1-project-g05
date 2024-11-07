@@ -43,6 +43,13 @@ services:
     ports:
       - '8005:8005'
 
+  # history-service:
+  #   build:
+  #     context: ./history-service
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - '8006:8006'
+
   run-service:
     build:
       context: ./run-service

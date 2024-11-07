@@ -192,17 +192,20 @@ export default function CreateSessionPage() {
             const roomId = response.data["roomId"];
             const question = response.data["question"];
 
+            // Get the other user id from match object returned
+            const userIds = data["userIds"];
+            const otherUser = userIds.find((id : String) => id !== user._id);
+
             console.log("room id after creating room ", roomId);
             console.log("question after creating room", question);
 
             setMatchFound(true); // Display the success component when a match is found
-
             // Start countdown timer
             const interval = setInterval(() => {
               setRedirectCountdown((prevCountdown) => {
                 if (prevCountdown <= 1) {
                   clearInterval(interval);
-                  goToRoom(question, roomId, response.data); // Redirect to room
+                  goToRoom(question, roomId, otherUser); // Redirect to room
                 }
                 return prevCountdown - 1;
               });
@@ -306,9 +309,9 @@ export default function CreateSessionPage() {
     search();
   }
 
-  function goToRoom(question, roomId, matchData) {
+  function goToRoom(question, roomId, otherUserId) {
     navigate(`/session/${roomId}`, {
-      state: { questionReceived: question, roomIdReceived: roomId, matchData },
+      state: { questionReceived: question, roomIdReceived: roomId, otherUserIdReceived: otherUserId },
     });
   }
 
