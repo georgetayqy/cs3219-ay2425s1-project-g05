@@ -34,12 +34,14 @@ async function initializeChatSession() {
 initializeChatSession();
 
 // Chat endpoint
-app.post('/chat', async (req, res) => {
+app.post('/api/ai-chat-service/chat', async (req, res) => {
   const { message } = req.body;
 
   if (!message) {
-    return res.status(400).json({ error: 'Message is required' });
+    return res.status(400).json({ statusCode: 400, message: 'Message is required' });
   }
+
+  console.log('Message:', message);
 
   try {
     // Send the user message to Gemini and get the response
@@ -47,12 +49,20 @@ app.post('/chat', async (req, res) => {
     const response = await result.response;
     const text = await response.text();
 
-    console.log(`Response: `, response);
+    console.log('Response:', text);
 
-    res.json({ reply: text });
+    res.status(200).json({
+      statusCode: 200,
+      message: 'Chat response retrieved successfully',
+      data: { reply: text }
+    });
   } catch (error) {
     console.error('Error communicating with Gemini API:', error);
-    res.status(500).json({ error: 'Error communicating with Gemini API' });
+    res.status(500).json({
+      statusCode: 500,
+      message: 'Error communicating with Gemini API',
+      data: null
+    });
   }
 });
 
