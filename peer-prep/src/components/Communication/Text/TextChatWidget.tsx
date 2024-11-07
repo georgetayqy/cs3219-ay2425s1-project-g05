@@ -143,6 +143,8 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   const [messageState, setMessageState] = useState<MessageState>(
     MessageState.BEFORE_SEND
   );
+  const wasFocusedOnInput = useRef(false);
+
   const [chatState, setChatState] = useState<ChatState>(ChatState.DISCONNECTED);
   const [usersInRoom, setUsersInRoom] = useState<ChatRoomUser[]>([]);
   const [usersSeenSoFar, setUsersSeenSoFar] = useState<ChatRoomUser[]>([]);
@@ -165,6 +167,21 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   const [integrationErrorState, setIntegrationErrorState] =
     useState<IntegrationError>({});
 
+  const chatContentRef = useRef<HTMLDivElement>(null);
+
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // useEffect(() => {
+  //   if (
+  //     wasFocusedOnInput.current &&
+  //     messageState === MessageState.BEFORE_SEND
+  //   ) {
+  //     // re-focus on the input
+  //     inputRef.current?.focus();
+  //   }
+  // }, [messageState, inputRef.current]);
+
   const resetState = () => {
     setReplyToMessage(null);
     setSelectedMessage(null);
@@ -179,11 +196,6 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     // focus on the input
     inputRef.current?.focus();
   };
-
-  const chatContentRef = useRef<HTMLDivElement>(null);
-
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // max 3 re-tries
   const [connectTries, setConnectTries] = useState(0);
@@ -248,6 +260,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
 
   // choose where to send the message
   const onBeforeSendMessage = () => {
+    if (messageState === MessageState.SENDING) return;
     if (defaultSendTo === "person") {
       onSendMessage();
     } else if (defaultSendTo === "gemini_1.0") {
@@ -286,12 +299,6 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     const integration = "gemini_1.0";
 
     setMessageState(MessageState.SENDING);
-    socket.emit("chat-message", {
-      roomId: roomId,
-      message: draftMessage,
-      replyToId: replyToMessage?.messageId,
-      integration: integration,
-    });
 
     try {
       fetchData<ServerResponse<AiChatResponse>>(
@@ -310,12 +317,19 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
         console.log("AI response", res);
 
         if (res.statusCode === 200) {
-          const responseText = "Gemini: \n" + res.data.reply;
+          const responseText = res.data.reply;
           setMessageState(MessageState.SENDING);
+          // socket.emit("chat-message", {
+          //   roomId: roomId,
+          //   message: responseText,
+          //   replyToId: replyToMessage?.messageId,
+          // });
+
           socket.emit("chat-message", {
             roomId: roomId,
-            message: responseText,
+            message: `${messageToSend}\n--------------\n${responseText}`,
             replyToId: replyToMessage?.messageId,
+            integration: integration,
           });
         } else {
           const errorMessage = res.message || "Error chatting with AI";
@@ -579,7 +593,14 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                 <Textarea
                   ref={inputRef}
                   value={draftMessage}
-                  onChange={(e) => setDraftMessage(e.target.value)}
+                  onChange={(e) => {
+                    if (messageState === MessageState.SENDING) {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      return;
+                    }
+                    setDraftMessage(e.target.value);
+                  }}
                   placeholder="Type a message... (ENTER) to send"
                   w={"100%"}
                   onKeyDown={(event) => {
