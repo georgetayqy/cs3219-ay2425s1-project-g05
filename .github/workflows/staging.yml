@@ -45,11 +45,25 @@ jobs:
           npm ci
           npm run test
 
+      - name: Upload User Service Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./user-service/coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Test Question Service
         working-directory: question-sevice
         run: |
           npm ci
           npm run test
+
+      - name: Upload Question Service Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./question-service/coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test Matching Service
         working-directory: matching-sevice
@@ -57,17 +71,77 @@ jobs:
           npm ci
           npm run test
 
+      - name: Upload Matching Service Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./matching-service/coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Test Collaboration Service
         working-directory: collaboration-sevice
         run: |
           npm ci
           npm run test
 
+      - name: Upload Collaboration Service Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./collaboration-service/coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Test Communication Service
         working-directory: communication-sevice
         run: |
           npm ci
           npm run test
+
+      - name: Upload Communication Service Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./communication-service/coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Test Run Service
+        working-directory: run-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Upload Run Service Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./run-service/coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Test History Service
+        working-directory: history-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Upload History Service Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./history-service/coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Test AI Chat Service
+        working-directory: ai-chat-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Upload AI Chat Service Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./ai-chat-service/coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     # build container for both x86 and arm platforms
@@ -167,6 +241,28 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:staging-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:${{ github.sha }}
 
+      - name: Build History Service Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./history-service
+          file: ./history-service/Dockerfile
+          push: true
+          platforms: linux/${{ matrix.arch }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:${{ github.sha }}
+
+      - name: Build AI Chat Service Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./ai-chat-service
+          file: ./ai-chat-service/Dockerfile
+          push: true
+          platforms: linux/${{ matrix.arch }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-ai-chat-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-ai-chat-service:${{ github.sha }}
+
   deploy:
     needs: build
     environment: staging
@@ -191,13 +287,14 @@ jobs:
           COMMUNICATION_SERVICE_SECRETS: ${{ secrets.COMMUNICATION_SERVICE_SECRETS }}
           HISTORY_SERVICE_SECRETS: ${{ secrets.HISTORY_SERVICE_SECRETS }}
           RUN_SERVICE_SECRETS: ${{ secrets.RUN_SERVICE_SECRETS }}
+          AI_CHAT_SERVICE_SECRETS: ${{ secrets.AI_CHAT_SERVICE_SECRETS }}
           FRONTEND_SECRETS: ${{ secrets.FRONTEND_SECRETS }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: USER_SERVICE_SECRETS,QUESTION_SERVICE_SECRETS,MATCHING_SERVICE_SECRETS,COLLABORATION_SERVICE_SECRETS,COMMUNICATION_SERVICE_SECRETS,HISTORY_SERVICE_SECRETS,RUN_SERVICE_SECRETS,FRONTEND_SECRETS
+          envs: USER_SERVICE_SECRETS,QUESTION_SERVICE_SECRETS,MATCHING_SERVICE_SECRETS,COLLABORATION_SERVICE_SECRETS,COMMUNICATION_SERVICE_SECRETS,HISTORY_SERVICE_SECRETS,RUN_SERVICE_SECRETS,FRONTEND_SECRETS,AI_CHAT_SERVICE_SECRETS
           script: |
             cd cs3219-ay2425s1-project-g05
             git checkout -b staging
@@ -228,12 +325,20 @@ jobs:
             echo "$RUN_SERVICE_SECRETS" | base64 --decode > .env
             cd ..
 
+            cd ai-chat-service
+            echo "$AI_CHAT_SERVICE_SECRETS" | base64 --decode > .env
+            cd ..
+
+            cd user-service
+            echo "$USER_SERVICE_SECRETS" | base64 --decode > .env
+            cd ..
+
             cd peer-prep
             echo "$FRONTEND_SECRETS" | base64 --decode > .env
             npm install
             npm run build
             mv dist/* /var/www/peerprep.marcussoh.com/
-            
+
             # delete to prevent node module conflicts
             rm -rf node_modules
             cd ..

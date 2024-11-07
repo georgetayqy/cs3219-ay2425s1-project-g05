@@ -73,3 +73,15 @@ jobs:
         run: |
           npm ci
           npm run test
+
+      - name: Test History Service
+        working-directory: history-sevice
+        run: |
+          npm ci
+          npm run test
+
+      - name: Test AI Chat Service
+        working-directory: ai-chat-sevice
+        run: |
+          npm ci
+          npm run test

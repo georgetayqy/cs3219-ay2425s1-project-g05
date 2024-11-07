@@ -14,6 +14,7 @@
     "@monaco-editor/react": "^4.6.0",
     "@node-redis/json": "^1.0.2",
     "axios": "^1.7.7",
+    "c8": "^10.1.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
