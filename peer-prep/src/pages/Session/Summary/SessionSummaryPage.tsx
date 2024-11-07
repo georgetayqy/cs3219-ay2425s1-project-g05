@@ -1,28 +1,37 @@
 import {
   Accordion,
+  Alert,
   Avatar,
   Badge,
+  Box,
   Button,
+  ButtonProps,
+  Code,
   Flex,
   Group,
   Paper,
   ScrollArea,
   Select,
   SimpleGrid,
+  Space,
   Stack,
   Text,
   Textarea,
   Title,
   TypographyStylesProvider,
+  useMantineColorScheme,
 } from "@mantine/core";
 import classes from "./SessionSummaryPage.module.css";
 import { useEffect, useState } from "react";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { Question } from "../../../types/question";
 import {
+  IconCheck,
   IconChevronRight,
   IconCircleCheckFilled,
   IconCircleXFilled,
+  IconDatabase,
+  IconHourglassEmpty,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import CodeEditorWithLanguageSelector from "../../../components/Questions/CodeEditor/CodeEditor";
@@ -34,6 +43,7 @@ import {
 import { useLocation } from "react-router-dom";
 import { UserResponseData } from "../../../types/user";
 import { CodeHighlight } from "@mantine/code-highlight";
+import { kBtoMb, secondsToMsIfappropriate } from "../../../utils/utils";
 
 export default function SessionSummaryPage() {
   const { fetchData } = useApi();
@@ -42,7 +52,7 @@ export default function SessionSummaryPage() {
   const { roomIdReceived, attemptReceived } = location.state || {};
 
   const [roomId, setRoomId] = useState(roomIdReceived);
-  const [attempt, setAttempt] = useState(attemptReceived);
+  const [attempt, setAttempt] = useState<UserAttempt>(attemptReceived);
 
   // Attempt data to display
   const [completedAt, setCompletedAt] = useState("");
@@ -71,6 +81,8 @@ export default function SessionSummaryPage() {
         `/history-service/attempt/${roomId}`,
         SERVICE.HISTORY
       ).then((response) => {
+        getQuestion(response.data.attempt[0].question._id);
+        console.log("LOG: Attempt data: ", { data: response.data });
         const attempt = response.data.attempt[0];
         setAttempt(attempt);
 
@@ -97,6 +109,16 @@ export default function SessionSummaryPage() {
         color: "red",
       });
     }
+  };
+
+  const getQuestion = (qnId: string) => {
+    fetchData<ServerResponse<Question>>(
+      `/question-service/id/${qnId}`,
+      SERVICE.QUESTION
+    ).then((response) => {
+      console.log({ response });
+      const question = response.data;
+    });
   };
 
   const getOtherUser = async () => {
@@ -171,6 +193,15 @@ export default function SessionSummaryPage() {
       setRender(true);
     }, 0);
   }, [selectedLanguage]);
+
+  const attemptCodeMap: {
+    [attempt: number]: { code: string; results: TestCaseResult[] };
+  } = {
+    1: {
+      code: attempt?.attemptCode,
+      results: attempt?.testCaseResults,
+    },
+  };
 
   return (
     <Flex className={classes.wrapper}>
@@ -275,7 +306,33 @@ export default function SessionSummaryPage() {
         <Text>
           Passed: {passed}, Failed: {failed}
         </Text>
-        <Accordion multiple mt={10}>
+        <Box
+          // my="md"
+          p="md"
+          // withBorder
+          // className={privateTestsPassed ? classes.ptcPassed : classes.ptcFailed}
+        >
+          {privateTestsPassed ? (
+            <Alert
+              variant="light"
+              color="green"
+              title="All private test cases passed"
+              icon={<IconCircleCheckFilled />}
+            >
+              Details for private test cases are hidden.
+            </Alert>
+          ) : (
+            <Alert
+              variant="light"
+              color="red"
+              title="Some private test cases failed"
+              icon={<IconCircleXFilled />}
+            >
+              Details for private test cases are hidden.
+            </Alert>
+          )}
+        </Box>
+        {/* <Accordion multiple mt={10}>
           {testCaseResults.map((result, index) => (
             <Accordion.Item key={index} value={result._id}>
               <Accordion.Control
@@ -300,32 +357,221 @@ export default function SessionSummaryPage() {
               </Accordion.Panel>
             </Accordion.Item>
           ))}
-        </Accordion>
-        <Paper
-          mt="md"
-          p="md"
-          withBorder
-          className={privateTestsPassed ? classes.ptcPassed : classes.ptcFailed}
-        >
-          <Group>
-            {privateTestsPassed ? (
-              <IconCircleCheckFilled
-                style={{ color: "var(--mantine-color-green-6)" }}
-              />
-            ) : (
-              <IconCircleXFilled
-                style={{ color: "var(--mantine-color-red-6)" }}
-              />
-            )}
-            <Text>
-              Private Test Cases: {privateTestsPassed ? "Passed" : "Failed"}
-            </Text>
-          </Group>
-          <Text size="sm" color="dimmed">
-            Details for private test cases are hidden.
-          </Text>
-        </Paper>
+        </Accordion> */}
+        <TestCasesDisplay testCaseResults={testCaseResults} />
       </Paper>
     </Flex>
+  );
+}
+
+function TestCasesDisplay({
+  testCaseResults,
+}: {
+  testCaseResults: TestCaseResult[];
+}) {
+  console.log({ testCaseResults });
+  const [currentTestCase, setCurrentTestCase] = useState<TestCaseResult | null>(
+    testCaseResults[0]
+  );
+
+  useEffect(() => {
+    setCurrentTestCase(testCaseResults[0]);
+  }, [testCaseResults]);
+
+  function onTestCaseChange(testCaseId: string) {
+    setCurrentTestCase(
+      testCaseResults.find((testCase) => testCase._id === testCaseId) || null
+    );
+  }
+
+  function getTestCaseColour(testCaseId: string): ButtonProps["color"] {
+    // if latestresult is fail, return red
+    const result = testCaseResults.find((result) => result._id === testCaseId);
+    if (!result) return "gray";
+
+    if (result.isPassed) {
+      return "green";
+    } else {
+      return "red";
+    }
+  }
+
+  function getTestCaseResult(
+    testCaseId: string,
+    _: number
+  ): TestCaseResult | undefined {
+    return testCaseResults.find((result) => result._id === testCaseId);
+  }
+
+  const { colorScheme } = useMantineColorScheme();
+  if (!currentTestCase) return null;
+  return (
+    <Stack style={{ padding: "1rem", gap: "1rem" }}>
+      <Group>
+        {testCaseResults.map((testCase, index) => (
+          <Button
+            key={index}
+            size="sm"
+            color={getTestCaseColour(testCase._id.toString())}
+            radius={"sm"}
+            variant={testCase._id === currentTestCase?._id ? "filled" : "light"}
+            onClick={() => onTestCaseChange(testCase._id)}
+            // loading={
+            //   isRunning &&
+            //   latestResults.find(
+            //     (result) =>
+            //       result.testCaseDetails.testCaseId === testCase._id.toString()
+            //   ) === undefined
+            // }
+          >
+            {index + 1}
+          </Button>
+        ))}
+      </Group>
+      {currentTestCase.expectedOutput !== "Hidden" ? (
+        <Box className={classes.testCaseDisplay}>
+          {getTestCaseResult(currentTestCase._id.toString(), 1) && (
+            <Group>
+              <Badge
+                variant="dot"
+                color={getTestCaseColour(currentTestCase._id.toString())}
+                size="xl"
+                radius="xs"
+              >
+                {getTestCaseResult(currentTestCase._id.toString(), 1).isPassed
+                  ? "Passed"
+                  : "Failed"}
+              </Badge>
+              <Space flex={1} />
+              <Group>
+                <Badge
+                  leftSection={<IconDatabase width="16px" height="16px" />}
+                  radius="sm"
+                  variant="light"
+                  size="lg"
+                  styles={{
+                    label: {
+                      // get rid of uppercase
+                      textTransform: "none",
+                    },
+                  }}
+                  color={colorScheme === "dark" ? "gray" : "gray"}
+                >
+                  {kBtoMb(
+                    getTestCaseResult(currentTestCase._id.toString(), 1)?.meta
+                      ?.memory || 0
+                  )}{" "}
+                  MB
+                </Badge>
+                <Badge
+                  leftSection={
+                    <IconHourglassEmpty width="16px" height="16px" />
+                  }
+                  radius="sm"
+                  variant="light"
+                  size="lg"
+                  styles={{
+                    label: {
+                      // get rid of uppercase
+                      textTransform: "none",
+                    },
+                  }}
+                  color={colorScheme === "dark" ? "gray" : "gray"}
+                >
+                  {secondsToMsIfappropriate(
+                    Number(
+                      getTestCaseResult(currentTestCase._id.toString(), 1)?.meta
+                        ?.time || 0
+                    )
+                  )}
+                </Badge>
+              </Group>
+            </Group>
+          )}
+          <SimpleGrid cols={{ base: 1, md: 2 }} mt="lg">
+            <Box mb={"md"}>
+              <Text style={{ fontWeight: "700" }}> Test Program </Text>
+              <Code block mt={"xs"} className={classes.codeBlock}>
+                {currentTestCase.input}
+              </Code>
+            </Box>
+            <Box>
+              <Text style={{ fontWeight: "700" }}> Expected Output </Text>
+              <Code block mt="xs" className={classes.codeBlock}>
+                {currentTestCase.expectedOutput}
+              </Code>
+            </Box>
+          </SimpleGrid>
+
+          <Box>
+            <Text style={{ fontWeight: "700" }}> Actual output: </Text>
+          </Box>
+          <Code
+            block
+            className={classes.codeBlock}
+            style={{
+              outline:
+                getTestCaseResult(currentTestCase._id.toString(), 1) &&
+                `1.5px solid var(--mantine-color-${getTestCaseColour(
+                  currentTestCase._id.toString()
+                )}-9)`,
+            }}
+            color={
+              colorScheme === "light" &&
+              `${getTestCaseColour(currentTestCase._id.toString())}.1`
+            }
+          >
+            {getTestCaseResult(currentTestCase._id.toString(), 1) === undefined
+              ? "No output yet, please run the test case to view output"
+              : getTestCaseResult(currentTestCase._id.toString(), 1).output}
+          </Code>
+
+          <Box mt={"xs"}>
+            <Text style={{ fontWeight: "700" }}> Error logs: </Text>
+          </Box>
+          <Code block className={classes.codeBlock}>
+            {getTestCaseResult(currentTestCase._id.toString(), 1) === undefined
+              ? "No output yet, please run the test case to view output"
+              : getTestCaseResult(currentTestCase._id.toString(), 1).error}
+          </Code>
+
+          {/* <Accordion variant="separated" mt="md">
+            <Accordion.Item value={"code"}>
+              <Accordion.Control>
+                <b>Submitted code</b>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <CodeHighlight
+                  code={attemptCodeMap[attempt]?.code || ""}
+                  language="python"
+                  copyLabel="Copy button code"
+                  copiedLabel="Copied!"
+                />
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion> */}
+        </Box>
+      ) : (
+        <Box className={classes.testCaseDisplay}>
+          {getTestCaseResult(currentTestCase._id.toString(), 1) && (
+            <Group mb={"lg"}>
+              <Badge
+                variant="dot"
+                color={getTestCaseColour(currentTestCase._id.toString())}
+                size="xl"
+                radius="xs"
+              >
+                {getTestCaseResult(currentTestCase._id.toString(), 1).isPassed
+                  ? "Passed"
+                  : "Failed"}
+              </Badge>
+            </Group>
+          )}
+          <Alert variant="light">
+            This is a private test case! No other details will be shown.
+          </Alert>
+        </Box>
+      )}
+    </Stack>
   );
 }
