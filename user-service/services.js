@@ -23,7 +23,7 @@ export function hashPassword(password) {
 
 export function generateAccessToken({ _id, email, displayName, isAdmin }) {
   return jwt.sign(
-    { userId:_id, email: email, displayName: displayName, isAdmin: isAdmin },
+    { userId:_id.toString(), email: email, displayName: displayName, isAdmin: isAdmin },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: "15m" }
   );
