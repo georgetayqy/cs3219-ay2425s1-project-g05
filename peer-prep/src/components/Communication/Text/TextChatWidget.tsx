@@ -49,6 +49,9 @@ import { useInViewport, useTimeout } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { formatTime } from "../../../utils/utils";
 import VideoChatWidget from "../Video/VideoChatWidget";
+import { User } from "../../../types/user";
+
+import GeminiIcon from "../../../assets/integrations/google-gemini-icon.svg";
 
 enum ChatState {
   DISCONNECTED,
@@ -73,6 +76,8 @@ type Message = {
   timestamp: Date;
   messageId: string;
   replyToId?: string;
+
+  integration?: string; // "gemini_1.0"
 };
 
 // not used
@@ -421,150 +426,16 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
           </Group>
           <Box className={classes.chatContents} ref={chatContentRef}>
             {messages.map((msg, i) => (
-              <Box
-                id={msg.messageId}
+              <TextMessage
                 key={i}
-                onClick={() => onMessageClicked(msg)}
-                className={`${classes.canSelect} ${
-                  selectedMessage?.messageId === msg.messageId
-                    ? classes.isSelected
-                    : ""
-                }`}
-              >
-                {msg.sender.userId === user._id ? (
-                  <Box
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      flexDirection: "column",
-                    }}
-                  >
-                    {msg.replyToId && (
-                      <Flex>
-                        <Text
-                          size="xs"
-                          className={classes.replyToText}
-                          style={{ marginLeft: "auto" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            onViewReply(msg);
-                          }}
-                        >
-                          <span
-                            style={{
-                              flexShrink: 0,
-                              gap: "8px",
-                              display: "flex",
-                            }}
-                          >
-                            <IconCornerLeftUp size="14px" /> replied to{" "}
-                          </span>
-                          <span
-                            style={{
-                              textOverflow: "ellipsis",
-                              overflow: "hidden",
-                            }}
-                          >
-                            {
-                              messages.find(
-                                (otherMsg) =>
-                                  otherMsg.messageId === msg.replyToId
-                              )?.content
-                            }
-                          </span>
-                          <Flex style={{ flexShrink: 0, gap: "8px" }}>
-                            <IconCurrencyLeu
-                              size="14px"
-                              style={{
-                                transform: "rotate(180deg) translateY(-50%)",
-                              }}
-                            />
-                          </Flex>
-                        </Text>
-                      </Flex>
-                    )}
-                    <Box className={`${classes.entry} ${classes.send}`}>
-                      <Text className={`${classes.textBox}`}>
-                        {" "}
-                        {msg.content}{" "}
-                      </Text>
-                      <Text
-                        className={`${classes.timestamp}`}
-                        onClick={() => console.log(msg)}
-                        size="xs"
-                      >
-                        {formatTime(new Date(msg.timestamp))}{" "}
-                      </Text>
-                    </Box>
-                  </Box>
-                ) : (
-                  <Box
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      flexDirection: "column",
-                    }}
-                  >
-                    {msg.replyToId && (
-                      <Flex>
-                        <Text
-                          size="xs"
-                          className={classes.replyToText}
-                          style={{ marginLeft: "2rem" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            onViewReply(msg);
-                          }}
-                        >
-                          <Flex style={{ flexShrink: 0, gap: "8px" }}>
-                            <IconCurrencyLeu
-                              size="14px"
-                              style={{
-                                transform: "scale(1, -1) translateY(-50%)",
-                              }}
-                            />{" "}
-                            replied to{" "}
-                          </Flex>
-                          <span
-                            style={{
-                              textOverflow: "ellipsis",
-                              overflow: "hidden",
-                            }}
-                          >
-                            {
-                              messages.find(
-                                (otherMsg) =>
-                                  otherMsg.messageId === msg.replyToId
-                              )?.content
-                            }
-                          </span>
-                          <Flex style={{ flexShrink: 0, gap: "8px" }}>
-                            <IconCornerRightUp size="14px" />
-                          </Flex>
-                        </Text>
-                      </Flex>
-                    )}
-                    <Box className={`${classes.entry} ${classes.receive}`}>
-                      <Avatar
-                        src={""}
-                        radius="xl"
-                        name={otherUser?.name}
-                        color={"cyan"}
-                        size={"md"}
-                      />
-                      <Text className={`${classes.textBox}`}>
-                        {" "}
-                        {msg.content}{" "}
-                        <span className={`${classes.timestamp}`}>
-                          {formatTime(new Date(msg.timestamp))}{" "}
-                        </span>{" "}
-                      </Text>
-                    </Box>
-                  </Box>
-                )}
-              </Box>
+                onMessageClicked={onMessageClicked}
+                messages={messages}
+                msg={msg}
+                onViewReply={onViewReply}
+                selectedMessage={selectedMessage}
+                user={user}
+                otherUser={otherUser}
+              />
             ))}
             <div ref={chatEndRef}></div>
             <div ref={ref}></div>
@@ -676,6 +547,192 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
         </Collapse>
         <div id="video-chat-widget"> </div>
       </Box>
+    </Box>
+  );
+}
+
+type TextMessageProps = {
+  msg: Message;
+  onMessageClicked: (msg: Message) => void;
+  selectedMessage: Message | null;
+  user: User;
+  onViewReply: (msg: Message) => void;
+  messages: Message[];
+  otherUser?: ChatRoomUser;
+};
+function TextMessage({
+  msg,
+  onMessageClicked,
+  selectedMessage,
+  user,
+  onViewReply,
+  messages,
+  otherUser,
+}: TextMessageProps) {
+  function getAvatar(integration: string) {
+    if (integration === "gemini_1.0") {
+      return (
+        <Avatar
+          src={GeminiIcon}
+          radius="xl"
+          name={"Gemini"}
+          color={"blue"}
+          size={"md"}
+        />
+      );
+    } else {
+      return (
+        <Avatar
+          src={""}
+          radius="xl"
+          name={otherUser?.name}
+          color={"cyan"}
+          size={"md"}
+        />
+      );
+    }
+  }
+  return (
+    <Box
+      id={msg.messageId}
+      onClick={() => onMessageClicked(msg)}
+      className={`${classes.canSelect} ${
+        selectedMessage?.messageId === msg.messageId ? classes.isSelected : ""
+      }`}
+    >
+      {msg.sender.userId !== user._id || msg.integration ? (
+        <Box
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            flexDirection: "column",
+          }}
+        >
+          {msg.replyToId && (
+            <Flex>
+              <Text
+                size="xs"
+                className={classes.replyToText}
+                style={{ marginLeft: "2rem" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onViewReply(msg);
+                }}
+              >
+                <Flex style={{ flexShrink: 0, gap: "8px" }}>
+                  <IconCurrencyLeu
+                    size="14px"
+                    style={{
+                      transform: "scale(1, -1) translateY(-50%)",
+                    }}
+                  />{" "}
+                  replied to{" "}
+                </Flex>
+                <span
+                  style={{
+                    textOverflow: "ellipsis",
+                    overflow: "hidden",
+                  }}
+                >
+                  {
+                    messages.find(
+                      (otherMsg) => otherMsg.messageId === msg.replyToId
+                    )?.content
+                  }
+                </span>
+                <Flex style={{ flexShrink: 0, gap: "8px" }}>
+                  <IconCornerRightUp size="14px" />
+                </Flex>
+              </Text>
+            </Flex>
+          )}
+          <Box
+            className={`${classes.entry} ${classes.receive} ${
+              msg.integration && classes.integration
+            }`}
+          >
+            {/* <Avatar
+              src={""}
+              radius="xl"
+              name={otherUser?.name}
+              color={"cyan"}
+              size={"md"}
+            /> */}
+            {getAvatar(msg.integration)}
+            <Text className={`${classes.textBox}`}>
+              {" "}
+              {msg.content}{" "}
+              <span className={`${classes.timestamp}`}>
+                {formatTime(new Date(msg.timestamp))}{" "}
+              </span>{" "}
+            </Text>
+          </Box>
+        </Box>
+      ) : (
+        <Box
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            flexDirection: "column",
+          }}
+        >
+          {msg.replyToId && (
+            <Flex>
+              <Text
+                size="xs"
+                className={classes.replyToText}
+                style={{ marginLeft: "auto" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onViewReply(msg);
+                }}
+              >
+                <span
+                  style={{
+                    flexShrink: 0,
+                    gap: "8px",
+                    display: "flex",
+                  }}
+                >
+                  <IconCornerLeftUp size="14px" /> replied to{" "}
+                </span>
+                <span
+                  style={{
+                    textOverflow: "ellipsis",
+                    overflow: "hidden",
+                  }}
+                >
+                  {
+                    messages.find(
+                      (otherMsg) => otherMsg.messageId === msg.replyToId
+                    )?.content
+                  }
+                </span>
+                <Flex style={{ flexShrink: 0, gap: "8px" }}>
+                  <IconCurrencyLeu
+                    size="14px"
+                    style={{
+                      transform: "rotate(180deg) translateY(-50%)",
+                    }}
+                  />
+                </Flex>
+              </Text>
+            </Flex>
+          )}
+          <Box className={`${classes.entry} ${classes.send}`}>
+            <Text className={`${classes.textBox}`}> {msg.content} </Text>
+            <Text
+              className={`${classes.timestamp}`}
+              onClick={() => console.log(msg)}
+              size="xs"
+            >
+              {formatTime(new Date(msg.timestamp))}{" "}
+            </Text>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }

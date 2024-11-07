@@ -207,8 +207,8 @@ function onChatMessage(io, socket, data) {
       email: socket.email,
       userSocketId: socket.id,
 
-      integration: integration
     },
+    integration: integration,
     content: message,
     timestamp: new Date(),
     messageId: uniqueId,
