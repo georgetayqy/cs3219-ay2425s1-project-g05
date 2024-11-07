@@ -513,6 +513,11 @@ export default function VideoChatWidget({
   useEffect(() => {
     handleMouseUp();
   }, [height, width]);
+
+  const [domReady, setDomReady] = useState(false);
+  useEffect(() => {
+    setDomReady(true);
+  }, []);
   return (
     <Box>
       <Group gap="xs">
@@ -539,82 +544,83 @@ export default function VideoChatWidget({
       </Group>
 
       {/* Portal to outside of the Collapse element */}
-      {createPortal(
-        <Box
-          className={classes.videoContainer}
-          ref={containerRef}
-          display={callStatus === CALL_STATUS.IDLE ? "none" : "block"}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          style={{
-            bottom: `${position.bottom}px`,
-            right: `${position.right}px`,
-          }}
-        >
-          {/* <h1>Video Chat Widget</h1> */}
-
+      {domReady &&
+        createPortal(
           <Box
-            className={classes.selfVideoContainer}
-            key={"self"}
-            style={{ display: showSelf ? "block" : "none" }}
+            className={classes.videoContainer}
+            ref={containerRef}
+            display={callStatus === CALL_STATUS.IDLE ? "none" : "block"}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            style={{
+              bottom: `${position.bottom}px`,
+              right: `${position.right}px`,
+            }}
           >
-            <Text className={classes.selfVideoDescriptor}>
-              {" "}
-              {auth.user.displayName} (You)
-            </Text>
-            <AspectRatio
-              ratio={1080 / 720}
-              maw={300}
-              mx="auto"
-              className={classes.selfVideo}
-            >
-              <video ref={selfVideoRef} autoPlay />
-            </AspectRatio>
-            <Button
-              size="xs"
-              variant="filled"
-              color="dark"
-              className={classes.selfEndCallButton}
-              onClick={onEndCall}
-            >
-              {" "}
-              End call{" "}
-            </Button>
-          </Box>
+            {/* <h1>Video Chat Widget</h1> */}
 
-          <Box
-            className={classes.otherVideoContainer}
-            key="other"
-            style={{ display: !showSelf ? "block" : "none" }}
-          >
-            <Text className={classes.otherVideoDescriptor}>
-              {" "}
-              {otherUser?.name}
-            </Text>
-            <AspectRatio
-              ratio={1080 / 720}
-              maw={300}
-              mx="auto"
-              className={classes.otherVideo}
+            <Box
+              className={classes.selfVideoContainer}
+              key={"self"}
+              style={{ display: showSelf ? "block" : "none" }}
             >
-              <video ref={remoteVideoRef} autoPlay />
-            </AspectRatio>
-            <Button
-              size="xs"
-              variant="filled"
-              color="dark"
-              className={classes.otherEndCallButton}
-              onClick={onEndCall}
+              <Text className={classes.selfVideoDescriptor}>
+                {" "}
+                {auth.user.displayName} (You)
+              </Text>
+              <AspectRatio
+                ratio={1080 / 720}
+                maw={300}
+                mx="auto"
+                className={classes.selfVideo}
+              >
+                <video ref={selfVideoRef} autoPlay />
+              </AspectRatio>
+              <Button
+                size="xs"
+                variant="filled"
+                color="dark"
+                className={classes.selfEndCallButton}
+                onClick={onEndCall}
+              >
+                {" "}
+                End call{" "}
+              </Button>
+            </Box>
+
+            <Box
+              className={classes.otherVideoContainer}
+              key="other"
+              style={{ display: !showSelf ? "block" : "none" }}
             >
-              {" "}
-              End call{" "}
-            </Button>
-          </Box>
-        </Box>,
-        document.getElementById("video-chat-widget")
-      )}
+              <Text className={classes.otherVideoDescriptor}>
+                {" "}
+                {otherUser?.name}
+              </Text>
+              <AspectRatio
+                ratio={1080 / 720}
+                maw={300}
+                mx="auto"
+                className={classes.otherVideo}
+              >
+                <video ref={remoteVideoRef} autoPlay />
+              </AspectRatio>
+              <Button
+                size="xs"
+                variant="filled"
+                color="dark"
+                className={classes.otherEndCallButton}
+                onClick={onEndCall}
+              >
+                {" "}
+                End call{" "}
+              </Button>
+            </Box>
+          </Box>,
+          document.getElementById("video-chat-widget")
+        )}
     </Box>
   );
 }
