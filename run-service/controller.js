@@ -22,7 +22,7 @@ const startSession = async (req, res) => {
     if (channelData && channelData.channelId) {
       console.log("Session data found in Redis:", channelData.channelId);
       // Remove channel data from Redis
-      await redisClient.del(sessionKey);
+      //await redisClient.del(sessionKey);
       return res.status(200).json({
         statusCode: 200,
         message: `Unique channelId found for ${userA} and ${userB}`,
@@ -67,6 +67,7 @@ const startSession = async (req, res) => {
 const subscribeToChannel = async (req, res) => {
   const { channelId } = req.params;
   const { userId, otherUserId } = req.query;
+  const [userA, userB] = [userId, otherUserId].sort();
 
   const subscriber = redisClient.duplicate();
   await subscriber.connect();
@@ -122,6 +123,7 @@ const subscribeToChannel = async (req, res) => {
         [userId]: "disconnected",
       });
     }
+    await redisClient.del(`session:${userA}-${userB}`);
     await subscriber.unsubscribe();
     await subscriber.disconnect();
     res.end();
