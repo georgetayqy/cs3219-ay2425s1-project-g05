@@ -9,11 +9,11 @@ import {
   ormIsDuplicateAttempt,
   ormUpdateAttempt,
   ormDeleteAttempt,
-  ormGetUserAttempts
+  ormGetUserAttempts,
 } from "../models/orm.js";
 
 const createAttempt = async (req, res, next) => {
-  console.log("createAttempt")
+  console.log("createAttempt");
   const userId = req.userId;
   const attempt = req.body;
 
@@ -23,11 +23,7 @@ const createAttempt = async (req, res, next) => {
       throw new UnauthorisedError("No user found");
     }
     if (
-      await ormIsDuplicateAttempt(
-        userId,
-        attempt.otherUserId,
-        attempt.roomId
-      )
+      await ormIsDuplicateAttempt(userId, attempt.otherUserId, attempt.roomId)
     ) {
       throw new ConflictError("Attempt already exists");
     }
@@ -136,20 +132,19 @@ const deleteAttempt = async (req, res, next) => {
   }
 };
 
-
 const getUserAttempts = async (req, res, next) => {
   try {
     const userId = req.userId;
     if (!userId) {
-      throw new UnauthorisedError("No user found, no attempts to get.")
+      throw new UnauthorisedError("No user found, no attempts to get.");
     }
 
     const attempts = await ormGetUserAttempts(userId);
     // NO EXISTING ATTEMPT BY USER
     if (attempts.length === 0) {
-      throw new NotFoundError("No attempts found");
+      return res.status(200).json({ statusCode: 204, data: { attempts: [] } });
     }
-    return res.status(200).json({ statusCode: 200, data: { attempts,  } });
+    return res.status(200).json({ statusCode: 200, data: { attempts } });
   } catch (error) {
     next(
       error instanceof BaseError
@@ -164,5 +159,5 @@ export {
   getAttempt,
   updateAttempt,
   deleteAttempt,
-  getUserAttempts
+  getUserAttempts,
 };
