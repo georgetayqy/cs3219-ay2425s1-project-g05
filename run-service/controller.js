@@ -17,6 +17,9 @@ const startSession = async (req, res) => {
   try {
     // Check if a session already exists by checking redis store
     const sessionKey = `session:${userA}-${userB}`;
+
+    console.log("✅✅✅✅ REDIS CONTENTS UPON REQUESTION TO START SESSION ✅✅✅✅")
+    printRedisMemory()
     // Get session data from Redis
     const channelData = await redisClient.hGetAll(sessionKey);
     if (channelData && channelData.channelId) {
@@ -34,12 +37,14 @@ const startSession = async (req, res) => {
       const channelId = uuidv4();
       console.log("Creating session in Redis:", channelId);
       // Store channelId in Redis
+
+      // create a key-channelId
       await redisClient.hSet(sessionKey, {
         channelId,
         userA,
         userB,
       });
-      await redisClient.hSet(channelId, {
+      await redisClient.hSet(`channelId:${channelId}`, {
         sessionKey,
         [firstUserId]: "disconnected",
         [secondUserId]: "disconnected",
@@ -105,9 +110,9 @@ const subscribeToChannel = async (req, res) => {
     console.log("Received update from Redis:", update.statusCode);
     if (update.statusCode === 200) {
       // remove the channel data from Redis
-      (async () => {
-        await redisClient.del(`channel:${channelId}`);
-      })();
+      // (async () => {
+      //   await redisClient.del(`channel:${channelId}`);
+      // })();
 
       // final one: set timeout of 8 seconds
       // comment out later
@@ -138,13 +143,13 @@ const subscribeToChannel = async (req, res) => {
     const channelData = await redisClient.hGetAll(`channel:${channelId}`);
     if (channelData && channelData[otherUserId] === "disconnected") {
       await redisClient.del(`channel:${channelId}`);
+      await redisClient.del(`session:${userA}-${userB}`);
     } else {
       await redisClient.hSet(`channel:${channelId}`, {
         ...channelData,
         [userId]: "disconnected",
       });
     }
-    await redisClient.del(`session:${userA}-${userB}`);
     await subscriber.unsubscribe();
     await subscriber.disconnect();
     res.end();
