@@ -81,7 +81,11 @@ const getAllQuestions = async (req, res, next) => {
     let allQuestions = await _getAllQuestions(req.query);
 
     if (allQuestions.length === 0) {
-      throw new NotFoundError("No questions found");
+      return res.status(200).json({
+        statusCode: 204,
+        message: "No questions found.",
+        data: { questions: [] },
+      });
     }
 
     // for all questions, get the categories with the categoriesId
@@ -93,8 +97,9 @@ const getAllQuestions = async (req, res, next) => {
       };
     });
     // for all questions, add testcase ids to question.meta
-    allQuestions = allQuestions.map((question) => addTestcaseIdToQuestion(question));
-    
+    allQuestions = allQuestions.map((question) =>
+      addTestcaseIdToQuestion(question)
+    );
 
     return res.status(200).json({
       statusCode: 200,
@@ -142,7 +147,7 @@ const getQuestionById = async (req, res, next) => {
       ...foundQuestion[0].toObject(),
       categories,
     };
-   
+
     // add testcase ids to question.meta
     foundQuestion = addTestcaseIdToQuestion(foundQuestion);
 
@@ -261,10 +266,7 @@ const updateQuestionById = async (req, res, next) => {
       };
     }
 
-    let updatedQuestion = await _updateQuestionById(
-      id,
-      updatedQuestionDetails
-    );
+    let updatedQuestion = await _updateQuestionById(id, updatedQuestionDetails);
 
     if (!updatedQuestion) {
       throw new NotFoundError("Question not found");
@@ -338,9 +340,11 @@ const getFilteredQuestions = async (req, res, next) => {
 
     // No questions found that match both categories and difficulty
     if (filteredQuestions.length === 0) {
-      throw new NotFoundError(
-        "No questions with matching categories and difficulty found"
-      );
+      return res.status(200).json({
+        statusCode: 204,
+        message: "No questions found with matching categories and difficulty",
+        data: { questions: [] },
+      });
     }
 
     filteredQuestions = filteredQuestions.map((question) => {
@@ -352,7 +356,9 @@ const getFilteredQuestions = async (req, res, next) => {
     });
 
     // add testcase ids to question.meta
-    filteredQuestions = filteredQuestions.map((question) => addTestcaseIdToQuestion(question));
+    filteredQuestions = filteredQuestions.map((question) =>
+      addTestcaseIdToQuestion(question)
+    );
 
     return res.status(200).json({
       statusCode: 200,
@@ -414,10 +420,12 @@ const findQuestion = async (req, res, next) => {
     });
 
     if (!foundQuestion) {
-      console.log("No questions found");
-      throw new NotFoundError(
-        "No question with matching categories and difficulty found"
-      );
+      console.log("No questions found with matching categories and difficulty");
+      return res.status(200).json({
+        statusCode: 204,
+        message: "No questions found with matching categories and difficulty",
+        data: { question: null },
+      });
     }
 
     foundQuestion = {
@@ -447,15 +455,19 @@ const getDistinctCategoriesId = async (req, res, next) => {
     let distinctCategories = await _getDistinctCategoriesId();
 
     if (distinctCategories.length === 0) {
-      throw new NotFoundError("No categories found");
+      return res.status(200).json({
+        statusCode: 204,
+        message: "No categories found.",
+        data: { categories: { categoriesId: [], categories: [] } },
+      });
     }
 
     // add a new array named categories string to distinctCategories
-    // let the current distinctCategories be the categoriesId array 
+    // let the current distinctCategories be the categoriesId array
     distinctCategories = {
       categoriesId: distinctCategories,
       categories: distinctCategories.map((id) => categoriesIdToCategories[id]),
-    }
+    };
 
     return res.status(200).json({
       statusCode: 200,
@@ -481,17 +493,24 @@ const getTestCasesWithId = async (req, res, next) => {
       throw new NotFoundError("Question not found");
     }
 
-    if(!foundQuestion[0].testCases || foundQuestion[0].testCases.length === 0) {
-      throw new NotFoundError("No testcases found for this question");
+    if (
+      !foundQuestion[0].testCases ||
+      foundQuestion[0].testCases.length === 0
+    ) {
+      return res.status(200).json({
+        statusCode: 204,
+        message: "No testcases found for question",
+        data: { testCase: [] },
+      });
     }
-    
+
     // get all testCases from foundQuestion
     const testCases = foundQuestion[0].testCases;
 
     return res.status(200).json({
       statusCode: 200,
       message: "Testcases for question found successfully",
-      data: { testCase: testCases},
+      data: { testCase: testCases },
     });
   } catch (err) {
     console.log(err);
@@ -501,7 +520,7 @@ const getTestCasesWithId = async (req, res, next) => {
         : new BaseError(500, "Error retrieving question")
     );
   }
-}
+};
 
 // move to utils
 const getCategoriesWithId = (categoriesId) => {
@@ -525,8 +544,7 @@ const addTestcaseIdToQuestion = (question) => {
     ...question,
     meta,
   };
-}
-
+};
 
 export {
   createQuestion,
@@ -537,5 +555,5 @@ export {
   getFilteredQuestions,
   findQuestion,
   getDistinctCategoriesId,
-  getTestCasesWithId
+  getTestCasesWithId,
 };
