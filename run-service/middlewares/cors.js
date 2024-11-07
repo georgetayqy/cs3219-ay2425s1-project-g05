@@ -27,7 +27,7 @@ const allowedOrigins = [
 const corsOptions = {
   origin: allowedOrigins,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", 'X-Amz-Date', 'X-Api-Key' , 'X-Amz-Security-Token'],
   credentials: true,
 };
 

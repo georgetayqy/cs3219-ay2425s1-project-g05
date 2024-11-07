@@ -17,12 +17,15 @@ const startSession = async (req, res) => {
   try {
     // Check if a session already exists by checking redis store
     const sessionKey = `session:${userA}-${userB}`;
+
+    console.log("✅✅✅✅ REDIS CONTENTS UPON REQUESTION TO START SESSION ✅✅✅✅")
+    printRedisMemory()
     // Get session data from Redis
     const channelData = await redisClient.hGetAll(sessionKey);
     if (channelData && channelData.channelId) {
       console.log("Session data found in Redis:", channelData.channelId);
       // Remove channel data from Redis
-      await redisClient.del(sessionKey);
+      //await redisClient.del(sessionKey);
       return res.status(200).json({
         statusCode: 200,
         message: `Unique channelId found for ${userA} and ${userB}`,
@@ -34,13 +37,19 @@ const startSession = async (req, res) => {
       const channelId = uuidv4();
       console.log("Creating session in Redis:", channelId);
       // Store channelId in Redis
+
+      // create a key-channelId
       await redisClient.hSet(sessionKey, {
         channelId,
         userA,
         userB,
       });
+      await redisClient.hSet(`channelId:${channelId}`, {
+        sessionKey,
+        [firstUserId]: "disconnected",
+        [secondUserId]: "disconnected",
+      });
       console.log("stored session with sessionkey", sessionKey);
-      // delete session data after 10 minutes
       // NOTE: Maybe both users have to join session within x minutes, otherwise this will fail
       await redisClient.expire(sessionKey, 600);
       // TODO: test expiry
@@ -62,6 +71,8 @@ const startSession = async (req, res) => {
 // Add function to create SSE connection with unique channelId
 const subscribeToChannel = async (req, res) => {
   const { channelId } = req.params;
+  const { userId, otherUserId } = req.query;
+  const [userA, userB] = [userId, otherUserId].sort();
 
   const subscriber = redisClient.duplicate();
   await subscriber.connect();
@@ -73,7 +84,7 @@ const subscribeToChannel = async (req, res) => {
 
   // TODO: handle pub sub failures? Check in store whether there is an existing result?
 
-  // Response to indicate start of execution and blocks further requests
+  // Response to indicate start (on connect)
   res.write(
     `data: ${JSON.stringify({
       statusCode: 201,
@@ -81,18 +92,27 @@ const subscribeToChannel = async (req, res) => {
     })}\n\n`
   );
 
-  // NOTE: EXECUTING RESPONSES WILL BE SENT TO BOTH USERS
+  const getCurrentChannelData = await redisClient.hGetAll(
+    `channel:${channelId}`
+  );
 
+  await redisClient.hSet(`channel:${channelId}`, {
+    ...getCurrentChannelData,
+    [userId]: "connected",
+  });
+
+  const toLog = await redisClient.hGetAll(`channel:${channelId}`);
+  console.log("User connected to channel:", toLog);
+  // NOTE: EXECUTING RESPONSES WILL BE SENT TO BOTH USERS
   subscriber.subscribe(`channel:${channelId}`, (message) => {
     const update = JSON.parse(message);
 
-    console.log(update.result);
     console.log("Received update from Redis:", update.statusCode);
     if (update.statusCode === 200) {
       // remove the channel data from Redis
-      (async () => {
-        await redisClient.del(`channel:${channelId}`);
-      })();
+      // (async () => {
+      //   await redisClient.del(`channel:${channelId}`);
+      // })();
 
       // final one: set timeout of 8 seconds
       // comment out later
@@ -120,7 +140,16 @@ const subscribeToChannel = async (req, res) => {
   req.on("close", async () => {
     console.log("Receiving client's closing connection response");
     // delete channel data from Redis
-    await redisClient.del(`channel:${channelId}`);
+    const channelData = await redisClient.hGetAll(`channel:${channelId}`);
+    if (channelData && channelData[otherUserId] === "disconnected") {
+      await redisClient.del(`channel:${channelId}`);
+      await redisClient.del(`session:${userA}-${userB}`);
+    } else {
+      await redisClient.hSet(`channel:${channelId}`, {
+        ...channelData,
+        [userId]: "disconnected",
+      });
+    }
     await subscriber.unsubscribe();
     await subscriber.disconnect();
     res.end();
@@ -129,13 +158,16 @@ const subscribeToChannel = async (req, res) => {
 
 const executeTest = async (req, res) => {
   try {
+    console.log("executing test started");
     const questionId = req.params.questionId;
-    const { codeAttempt, channelId } = req.body;
+    const { codeAttempt, channelId, firstUserId, secondUserId } = req.body;
 
     // Check if another execution is in progress
-    const existingJob = await redisClient.hGetAll(`channel:${channelId}`);
-    console.log("Existing job data:", existingJob);
-    if (existingJob && existingJob.status === "processing") {
+    const initialChannelData = await redisClient.hGetAll(
+      `channel:${channelId}`
+    );
+    console.log("Existing job data:", initialChannelData);
+    if (initialChannelData && initialChannelData.status === "processing") {
       console.log(
         "Another execution is already in progress. Try again later error thrown"
       );
@@ -143,6 +175,22 @@ const executeTest = async (req, res) => {
         "Another execution is already in progress. Try again later."
       );
       return;
+    }
+
+    // If another client is not subscribed to the channel, throw an error
+    if (initialChannelData) {
+      if (
+        initialChannelData[firstUserId] !== "connected" ||
+        initialChannelData[secondUserId] !== "connected"
+      ) {
+        console.log(
+          "Another user is not connected to the channel. Try again later error thrown"
+        );
+        throw new ConflictError(
+          "Another user is not connected to the channel. Try again later."
+        );
+        return;
+      }
     }
 
     // Retrieve testcases for the question
@@ -159,29 +207,36 @@ const executeTest = async (req, res) => {
     console.log("Testcases retrieved sucessfully");
     console.log({ channelId })
     // Indicate that the test cases are being processed - initial message to indicate start of execution
-    await redisClient.hSet(`channel:${channelId}`, {
-      status: "processing",
-      questionId,
-      codeAttempt,
-      data: JSON.stringify([]),
-    });
-
+    const channelData = await redisClient.hGetAll(`channel:${channelId}`);
+    if (channelData && channelData.status !== "processing") {
+      await redisClient.hSet(`channel:${channelId}`, {
+        status: "processing",
+        questionId,
+        codeAttempt,
+        data: JSON.stringify([]),
+      });
+    }
     const testCaseCount = testcases.length;
+
+    const toLog = await redisClient.hGetAll(`channel:${channelId}`);
+    console.log("Channel data after setting status:", toLog);
+
+    // Start processing test cases
+    processTestcases(channelId, testcases, codeAttempt, questionId);
 
     // Respond to client with test case count
     res.status(200).json({
       statusCode: 200,
       message: `Executing test cases for questionId: ${questionId}`,
-      data: { testCaseCount: testCaseCount },
+      data: { testCaseCount: testCaseCount }
     });
-
-    // Start processing test cases
-    processTestcases(channelId, testcases, codeAttempt, questionId);
   } catch (error) {
     console.log("ERROR: ", error)
     if (error instanceof BaseError) {
-      console.log("error!#JNEJ:", error.message)
-      return res.status(error.statusCode).json({ statusCode: error.statusCode, message: error.message });
+      console.log("Error while executing testcase:", error.message);
+      return res
+        .status(error.statusCode)
+        .json({ statusCode: error.statusCode, message: error.message });
     }
     res.status(500).json({ error: "Failed to execute test cases" });
   }

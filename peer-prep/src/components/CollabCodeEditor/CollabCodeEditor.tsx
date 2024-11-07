@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Editor from "@monaco-editor/react";
 
 import "./CollabCodeEditor.module.css";
-import { Select } from '@mantine/core';
+import { Select } from "@mantine/core";
 
 /**
  * Generate a random colour. Adapted from https://css-tricks.com/snippets/javascript/random-hex-color/
@@ -27,12 +27,12 @@ interface CodeEditorProps {
 }
 
 const languageOptions = [
-  { value: 'python', label: 'Python' },
-  { value: 'javascript', label: 'JavaScript' },
-  { value: 'cpp', label: 'C++' },
-  { value: 'sql', label: 'SQL' },
-  { value: 'java', label: 'Java' },
-  { value: 'csharp', label: 'C#' },
+  { value: "python", label: "Python" },
+  { value: "javascript", label: "JavaScript" },
+  { value: "cpp", label: "C++" },
+  { value: "sql", label: "SQL" },
+  { value: "java", label: "Java" },
+  { value: "csharp", label: "C#" },
 ];
 
 /**
@@ -128,6 +128,7 @@ export default function CodeEditor({
         language={selectedLanguage}
         onMount={(editor) => {
           setEditor(editor);
+          currentValueRef.current = editor.getValue();
         }}
         onChange={(value, event) => {
           currentValueRef.current = value;

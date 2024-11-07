@@ -32,10 +32,10 @@ async function test() {
 
     // Simulate two clients subscribing to the SSE channel
     const client1 = new EventSource(
-      `${RUN_SERVICE_URL}/subscribe/${channelId}`
+      `${RUN_SERVICE_URL}/subscribe/${channelId}?userId=user1&otherUserId=user2`
     );
     const client2 = new EventSource(
-      `${RUN_SERVICE_URL}/subscribe/${channelId}`
+      `${RUN_SERVICE_URL}/subscribe/${channelId}?userId=user2&otherUserId=user1`
     );
 
     const handleMessage = (event, clientName) => {
@@ -131,6 +131,8 @@ async function test() {
       {
         codeAttempt: question.question.solutionCode,
         channelId: channelId,
+        firstUserId: "user1",
+        secondUserId: "user2",
       }
     );
     console.log(
@@ -148,6 +150,8 @@ async function test() {
         {
           codeAttempt: secondQuestion.question.solutionCode,
           channelId: secondChannelId,
+          firstUserId: "user2",
+          secondUserId: "user1",
         }
       );
       console.log(
@@ -176,6 +180,8 @@ async function test() {
         {
           codeAttempt: thirdQuestion.question.solutionCode,
           channelId: channelId,
+          firstUserId: "user1",
+          secondUserId: "user2",
         }
       );
       console.log(
@@ -191,7 +197,8 @@ async function test() {
       );
       console.error("Error from test:", error.response.data.message);
     } else {
-      console.error("Error from test:", error.message);
+      //console.error("Error from test:", error.message);
+      console.error("Error from test:", error);
     }
   }
 }

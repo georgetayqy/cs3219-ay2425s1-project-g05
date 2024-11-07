@@ -8,6 +8,7 @@ export type TestCase = {
   isPublic: boolean;
   expectedOutput: string;
   meta: { [key: string]: any };
+  input: string
 };
 
 export type QuestionOlsd = {
@@ -32,8 +33,20 @@ export type Question = {
   templateCode: string;
   link: string;
   testCases: TestCase[];
+  meta: { [key: string]: any };
   __v: number;
 };
+
+// AttemptQuestion is a subset of Question, it does not store test cases, template code, isDeleted, categories, and __v.
+export type AttemptQuestion = {
+  _id: string;
+  title: string;
+  description: { descriptionText: string, descriptionHtml: string };
+  categoriesId: number[];
+  difficulty: Complexity;
+  solutionCode: string;
+  link: string;
+}
 
 export interface QuestionResponseData {
   question?: Question;
