@@ -1,9 +1,9 @@
 .wrapper {
   min-height: calc(100vh - 60px - var(--mantine-spacing-md));
   align-items: baseline;
+  padding: 1rem;
 
-  padding: 20rem;
-  padding-top: 2rem;
+  padding-bottom: 16rem;
 
   flex-direction: column;
   gap: 2rem;
@@ -17,7 +17,9 @@
   padding: 1rem;
 }
 
-pre, .codeBlock, .testCases {
+pre,
+.codeBlock,
+.testCases {
   margin: 0;
   padding: 0.5rem;
   border-radius: 0.25rem;
@@ -60,4 +62,3 @@ pre, .codeBlock, .testCases {
   padding: 0.5rem;
   border: 1px solid #ccc;
 }
-

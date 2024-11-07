@@ -7,6 +7,7 @@ import {
   Group,
   Paper,
   ScrollArea,
+  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -18,12 +19,21 @@ import classes from "./SessionSummaryPage.module.css";
 import { useEffect, useState } from "react";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { Question } from "../../../types/question";
-import { IconChevronRight, IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
+import {
+  IconChevronRight,
+  IconCircleCheckFilled,
+  IconCircleXFilled,
+} from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import CodeEditorWithLanguageSelector from "../../../components/Questions/CodeEditor/CodeEditor";
-import { AttemptData, TestCaseResult, UserAttempt } from "../../../types/attempts";
+import {
+  AttemptData,
+  TestCaseResult,
+  UserAttempt,
+} from "../../../types/attempts";
 import { useLocation } from "react-router-dom";
 import { UserResponseData } from "../../../types/user";
+import { CodeHighlight } from "@mantine/code-highlight";
 
 export default function SessionSummaryPage() {
   const { fetchData } = useApi();
@@ -46,41 +56,40 @@ export default function SessionSummaryPage() {
   const [toSave, setToSave] = useState(false);
 
   const [userSolution, setUserSolution] = useState("");
-  const [testCaseResults, setTestCaseResults] = useState<TestCaseResult[]>(
-    []
-  );
+  const [testCaseResults, setTestCaseResults] = useState<TestCaseResult[]>([]);
   const [privateTestsPassed, setPrivateTestsPassed] = useState(true);
-
 
   // Retrieve session summary and details of other user on page load
   useEffect(() => {
-      getSessionSummary();
-      getOtherUser();
+    getSessionSummary();
+    getOtherUser();
   }, []);
 
   const getSessionSummary = async () => {
     try {
       fetchData<ServerResponse<AttemptData>>(
-          `/history-service/attempt/${roomId}`,
-          SERVICE.HISTORY
-        ).then((response) => {
-          const attempt = response.data.attempt[0];
-          setAttempt(attempt);
+        `/history-service/attempt/${roomId}`,
+        SERVICE.HISTORY
+      ).then((response) => {
+        const attempt = response.data.attempt[0];
+        setAttempt(attempt);
 
-          const question = attempt.question as Question;
-          setQuestionTitle(question.title);
-          setQuestionDescription(question.description.descriptionHtml);
+        const question = attempt.question as Question;
+        setQuestionTitle(question.title);
+        setQuestionDescription(question.description.descriptionHtml);
 
-          setCompletedAt(formatDateTime(attempt.createdAt));
-          if (attempt.notes !== " ") {
-            setNotes(attempt.notes);
-          }
+        setCompletedAt(formatDateTime(attempt.createdAt));
+        if (attempt.notes !== " ") {
+          setNotes(attempt.notes);
+        }
 
-          setUserSolution(attempt.attemptCode);
+        setUserSolution(attempt.attemptCode);
 
-          setTestCaseResults(attempt.testCaseResults);
-          setPrivateTestsPassed(calculateSummary(attempt.testCaseResults).failed === 0);
-        });
+        setTestCaseResults(attempt.testCaseResults);
+        setPrivateTestsPassed(
+          calculateSummary(attempt.testCaseResults).failed === 0
+        );
+      });
     } catch (error: any) {
       console.error("Error getting session summary:", error);
       notifications.show({
@@ -88,9 +97,9 @@ export default function SessionSummaryPage() {
         color: "red",
       });
     }
-  }
-  
-  const getOtherUser = async () => { 
+  };
+
+  const getOtherUser = async () => {
     try {
       fetchData<ServerResponse<UserResponseData>>(
         `/user-service/users/${attempt.otherUserId}`,
@@ -106,7 +115,7 @@ export default function SessionSummaryPage() {
         color: "red",
       });
     }
-  }
+  };
 
   // Helper function to calculate passed/failed summary
   const calculateSummary = (results: TestCaseResult[]) => {
@@ -117,7 +126,7 @@ export default function SessionSummaryPage() {
   const formatDateTime = (dateTime: string) => {
     const date = new Date(dateTime);
     return date.toLocaleString();
-  }
+  };
 
   const { passed, failed } = calculateSummary(testCaseResults);
 
@@ -151,6 +160,18 @@ export default function SessionSummaryPage() {
     }
   };
 
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(
+    "python"
+  );
+
+  const [render, setRender] = useState(false);
+  useEffect(() => {
+    setRender(false);
+    setTimeout(() => {
+      setRender(true);
+    }, 0);
+  }, [selectedLanguage]);
+
   return (
     <Flex className={classes.wrapper}>
       <Stack align="flex-start">
@@ -165,7 +186,9 @@ export default function SessionSummaryPage() {
             </Avatar>
             <div>
               <Text size="sm">{otherUserDisplayName}</Text>
-              <Text size="xs" color="dimmed">{otherUserEmail}</Text>
+              <Text size="xs" color="dimmed">
+                {otherUserEmail}
+              </Text>
             </div>
             <Badge color="teal" size="sm" variant="filled" ml="xs">
               Collaborator
@@ -206,7 +229,10 @@ export default function SessionSummaryPage() {
             maxRows={15}
             placeholder="Write your notes here"
             value={notes}
-            onChange={(event) => { setNotes(event.currentTarget.value); setToSave(true); }}
+            onChange={(event) => {
+              setNotes(event.currentTarget.value);
+              setToSave(true);
+            }}
           />
           <Button onClick={handleSaveNotes} mt={20} disabled={!toSave}>
             Save
@@ -214,16 +240,34 @@ export default function SessionSummaryPage() {
         </Paper>
       </Flex>
 
-
       <Paper w={"100%"}>
-        <Title order={4}>Your Solution</Title>
-        <CodeEditorWithLanguageSelector
+        <Group mb="sm">
+          <Title order={4} flex={1}>
+            Your Solution
+          </Title>
+          <Select
+            value={selectedLanguage}
+            onChange={setSelectedLanguage}
+            label="Language"
+            defaultValue="python"
+            data={["python", "sql"]}
+          />
+        </Group>
+        {/* <CodeEditorWithLanguageSelector
           label=""
           code={userSolution}
           onCodeChange={setUserSolution}
           required={false}
           isReadOnly={true}
-        />
+        /> */}
+        {render && (
+          <CodeHighlight
+            code={userSolution}
+            copyLabel="Copy button code"
+            copiedLabel="Copied!"
+            language={selectedLanguage}
+          />
+        )}
       </Paper>
 
       <Paper radius="md" withBorder className={classes.testCases}>
