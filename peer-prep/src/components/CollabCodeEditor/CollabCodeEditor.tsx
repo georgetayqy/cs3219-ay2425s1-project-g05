@@ -125,7 +125,7 @@ export default function CodeEditor({
         theme={theme}
         defaultValue={defaultValue}
         defaultLanguage="python"
-        language={language}
+        language={selectedLanguage}
         onMount={(editor) => {
           setEditor(editor);
         }}
