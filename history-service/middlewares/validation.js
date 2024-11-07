@@ -80,9 +80,9 @@ const joiDescriptionSchema = Joi.object(
 
 const joiAttemptSchema = Joi.object({
   otherUserId: Joi.string().trim().min(1).required().messages({
-    "string.empty": "Other User's email cannot be empty",
-    "string.min": "Other User's email must be at least 1 character long",
-    "any.required": "Other User's email is required",
+    "string.empty": "otherUserId cannot be empty",
+    "string.min": "otherUserId must be at least 1 character long",
+    "any.required": "otherUserId is required",
   }),
   question: Joi.object({
     title: Joi.string().required().messages({
