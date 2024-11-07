@@ -49,6 +49,7 @@ import { useInViewport, useTimeout } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { formatTime } from "../../../utils/utils";
 import VideoChatWidget from "../Video/VideoChatWidget";
+import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 
 enum ChatState {
   DISCONNECTED,
@@ -91,9 +92,19 @@ type ChatRoomUser = {
 type ChatRoomUpdateEvent = {
   users: ChatRoomUser[];
 };
+
+type IntegrationError = {
+ [integrationId: string]: { error: string } 
+}
+
 interface TextChatWidgetProps {
   roomId: string;
 }
+
+interface AiChatResponse {
+  reply: string;
+}
+
 export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   const { user } = useAuth();
 
@@ -114,6 +125,8 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
   const [unreadMessages, setUnreadMessages] = useState(0);
+
+  const [integrationErrorState, setIntegrationErrorState] = useState<IntegrationError> ({})
 
   const resetState = () => {
     setReplyToMessage(null);
@@ -200,14 +213,18 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     setMessageState(MessageState.SENDING);
   };
 
+  const { fetchData } = useApi();
+
   const onSendAiMessage = () => {
     if (draftMessage.trim() === "") return;
 
     const messageToSend = draftMessage.trim();
+
     // get the message from the endpoint
     // if no token, open a modal popup to get the token and save in local storage
     const responseText = "This is a response from chatgpt";
     const integration = "gemini_1.0";
+
     setMessageState(MessageState.SENDING);
     socket.emit("chat-message", {
       roomId: roomId,
@@ -215,7 +232,51 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       replyToId: replyToMessage?.messageId,
       integration: integration,
     });
+
+    try {
+      fetchData<ServerResponse<AiChatResponse>>(`/ai-chat-service/chat`, SERVICE.AI, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: messageToSend,
+        }),
+      }).then((res) => {
+        console.log("AI response", res);
+
+        if (res.statusCode === 200) {
+          const responseText = 'Gemini: \n' + res.data.reply;
+          setMessageState(MessageState.SENDING);
+          socket.emit("chat-message", {
+            roomId: roomId,
+            message: responseText,
+            replyToId: replyToMessage?.messageId,
+          });
+        } else {
+          const errorMessage = res.message || "Error chatting with AI";
+          handleIntegrationError(integration, errorMessage); 
+        }
+      });
+    } catch (e) {
+      const errorMessage = "Error sending message. Please check your internet connection.";
+      handleIntegrationError(integration, errorMessage); 
+
+      notifications.show({
+        title: "Error chatting with AI",
+        message: errorMessage,
+        color: "red",
+      });
+    }
   };
+
+  const handleIntegrationError = (integrationId: string, errorMessage: string) => {
+    setIntegrationErrorState((prevErrors) => ({
+      ...prevErrors,
+      [integrationId]: { error: errorMessage },
+    }));
+  };
+
 
   const onViewReply = (msg: Message) => {
     // find the reply
