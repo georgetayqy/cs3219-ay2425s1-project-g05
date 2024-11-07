@@ -30,6 +30,7 @@ import { socket } from "../../../websockets/communication/socket";
 import {
   IconArrowDown,
   IconArrowNarrowDown,
+  IconBrandGithubCopilot,
   IconCamera,
   IconCancel,
   IconCaretUpFilled,
@@ -197,6 +198,23 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
       replyToId: replyToMessage?.messageId,
     });
     setMessageState(MessageState.SENDING);
+  };
+
+  const onSendAiMessage = () => {
+    if (draftMessage.trim() === "") return;
+
+    const messageToSend = draftMessage.trim();
+    // get the message from the endpoint
+    // if no token, open a modal popup to get the token and save in local storage
+    const responseText = "This is a response from chatgpt";
+    const integration = "gemini_1.0";
+    setMessageState(MessageState.SENDING);
+    socket.emit("chat-message", {
+      roomId: roomId,
+      message: draftMessage,
+      replyToId: replyToMessage?.messageId,
+      integration: integration,
+    });
   };
 
   const onViewReply = (msg: Message) => {
@@ -581,6 +599,16 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                   loading={messageState === MessageState.SENDING}
                 >
                   <IconSend2 />
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  onClick={onSendAiMessage}
+                  style={{ padding: "6px" }}
+                  size={"lg"}
+                  color="gray"
+                  loading={messageState === MessageState.SENDING}
+                >
+                  <IconBrandGithubCopilot />
                 </ActionIcon>
 
                 <Box className={classes.additions}>
