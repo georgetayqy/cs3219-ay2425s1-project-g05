@@ -235,7 +235,6 @@ export default function SessionPage() {
   useEffect(() => {
     // Call checkRoomStatus every 5 seconds
     const intervalId = setInterval(() => {
-      return;
       checkRoomStatus();
     }, 5000);
 
