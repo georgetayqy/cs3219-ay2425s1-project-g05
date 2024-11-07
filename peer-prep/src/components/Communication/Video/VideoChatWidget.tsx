@@ -60,19 +60,6 @@ export default function VideoChatWidget({
 }) {
   const auth = useAuth();
 
-  const [domReady, setDomReady] = useState(false);
-
-  useEffect(() => {
-    console.log("LOG: PAGE LOADED 🔥🔥🔥");
-    setDomReady(true);
-
-    return () => {
-      if (callStatusRef.current !== CALL_STATUS.IDLE) {
-        onEndCall();
-      }
-    };
-  }, []);
-
   const [callStatus, setCallStatus] = useState<CALL_STATUS>(CALL_STATUS.IDLE);
   const callStatusRef = useRef<CALL_STATUS>(CALL_STATUS.IDLE);
   function setCallStatusWrapper(status: CALL_STATUS) {
@@ -82,9 +69,6 @@ export default function VideoChatWidget({
 
   const selfVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const remoteStreamRef = useRef<MediaStream | null>(null);
 
   // only when this is populated are we ready to make a call (connection wise)
   const [peerId, setPeerId] = useState(null);
@@ -125,7 +109,6 @@ export default function VideoChatWidget({
         audio: true,
       });
 
-      localStreamRef.current = stream;
       selfVideoRef.current.srcObject = stream;
       selfVideoRef.current.play();
       selfVideoRef.current.muted = true;
@@ -135,8 +118,6 @@ export default function VideoChatWidget({
         console.log("DEBUG: remote stream received", remoteStream);
         remoteVideoRef.current.srcObject = remoteStream;
         remoteVideoRef.current.play();
-
-        remoteStreamRef.current = remoteStream;
       });
 
       call.on("close", () => {
@@ -154,16 +135,6 @@ export default function VideoChatWidget({
   }, [auth.user._id]);
 
   const call = async () => {
-    if (!otherUser) {
-      console.log("DEBUG: no other user");
-      notifications.show({
-        message:
-          "No other user to call, please wait until they've joined the room!",
-        title: "Error",
-        color: "red",
-      });
-      return;
-    }
     if (!peerInstance.current) init();
     // remote peer id is the user id
     if (callStatusRef.current === CALL_STATUS.IDLE) {
@@ -181,8 +152,6 @@ export default function VideoChatWidget({
       audio: true,
     });
 
-    localStreamRef.current = stream;
-
     selfVideoRef.current.srcObject = stream;
     selfVideoRef.current.play();
     selfVideoRef.current.muted = true;
@@ -194,8 +163,6 @@ export default function VideoChatWidget({
       console.log("DEBUG: remote stream received", remoteStream);
       remoteVideoRef.current.srcObject = remoteStream;
       remoteVideoRef.current.play();
-
-      remoteStreamRef.current = remoteStream;
     });
 
     call.on("close", () => {
@@ -206,21 +173,7 @@ export default function VideoChatWidget({
 
   function onEndCall() {
     // cleanup
-    console.log("DEBUG(VIDEO): CLEANING UP");
     setCallStatusWrapper(CALL_STATUS.IDLE);
-
-    // https://stackoverflow.com/questions/64012898/how-to-completely-turn-off-camera-on-mediastream-javascript
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop());
-      localStreamRef.current.getVideoTracks()[0].stop();
-      localStreamRef.current = null;
-    }
-    if (remoteStreamRef.current) {
-      remoteStreamRef.current.getTracks().forEach((track) => track.stop());
-      remoteStreamRef.current.getVideoTracks()[0].stop();
-      remoteStreamRef.current = null;
-    }
-
     if (selfVideoRef.current) selfVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
@@ -586,83 +539,82 @@ export default function VideoChatWidget({
       </Group>
 
       {/* Portal to outside of the Collapse element */}
-      {domReady &&
-        createPortal(
+      {createPortal(
+        <Box
+          className={classes.videoContainer}
+          ref={containerRef}
+          display={callStatus === CALL_STATUS.IDLE ? "none" : "block"}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          style={{
+            bottom: `${position.bottom}px`,
+            right: `${position.right}px`,
+          }}
+        >
+          {/* <h1>Video Chat Widget</h1> */}
+
           <Box
-            className={classes.videoContainer}
-            ref={containerRef}
-            display={callStatus === CALL_STATUS.IDLE ? "none" : "block"}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            style={{
-              bottom: `${position.bottom}px`,
-              right: `${position.right}px`,
-            }}
+            className={classes.selfVideoContainer}
+            key={"self"}
+            style={{ display: showSelf ? "block" : "none" }}
           >
-            {/* <h1>Video Chat Widget</h1> */}
-
-            <Box
-              className={classes.selfVideoContainer}
-              key={"self"}
-              style={{ display: showSelf ? "block" : "none" }}
+            <Text className={classes.selfVideoDescriptor}>
+              {" "}
+              {auth.user.displayName} (You)
+            </Text>
+            <AspectRatio
+              ratio={1080 / 720}
+              maw={300}
+              mx="auto"
+              className={classes.selfVideo}
             >
-              <Text className={classes.selfVideoDescriptor}>
-                {" "}
-                {auth.user.displayName} (You)
-              </Text>
-              <AspectRatio
-                ratio={1080 / 720}
-                maw={300}
-                mx="auto"
-                className={classes.selfVideo}
-              >
-                <video ref={selfVideoRef} autoPlay />
-              </AspectRatio>
-              <Button
-                size="xs"
-                variant="filled"
-                color="dark"
-                className={classes.selfEndCallButton}
-                onClick={onEndCall}
-              >
-                {" "}
-                End call{" "}
-              </Button>
-            </Box>
-
-            <Box
-              className={classes.otherVideoContainer}
-              key="other"
-              style={{ display: !showSelf ? "block" : "none" }}
+              <video ref={selfVideoRef} autoPlay />
+            </AspectRatio>
+            <Button
+              size="xs"
+              variant="filled"
+              color="dark"
+              className={classes.selfEndCallButton}
+              onClick={onEndCall}
             >
-              <Text className={classes.otherVideoDescriptor}>
-                {" "}
-                {otherUser?.name}
-              </Text>
-              <AspectRatio
-                ratio={1080 / 720}
-                maw={300}
-                mx="auto"
-                className={classes.otherVideo}
-              >
-                <video ref={remoteVideoRef} autoPlay />
-              </AspectRatio>
-              <Button
-                size="xs"
-                variant="filled"
-                color="dark"
-                className={classes.otherEndCallButton}
-                onClick={onEndCall}
-              >
-                {" "}
-                End call{" "}
-              </Button>
-            </Box>
-          </Box>,
-          document.getElementById("video-chat-widget")
-        )}
+              {" "}
+              End call{" "}
+            </Button>
+          </Box>
+
+          <Box
+            className={classes.otherVideoContainer}
+            key="other"
+            style={{ display: !showSelf ? "block" : "none" }}
+          >
+            <Text className={classes.otherVideoDescriptor}>
+              {" "}
+              {otherUser?.name}
+            </Text>
+            <AspectRatio
+              ratio={1080 / 720}
+              maw={300}
+              mx="auto"
+              className={classes.otherVideo}
+            >
+              <video ref={remoteVideoRef} autoPlay />
+            </AspectRatio>
+            <Button
+              size="xs"
+              variant="filled"
+              color="dark"
+              className={classes.otherEndCallButton}
+              onClick={onEndCall}
+            >
+              {" "}
+              End call{" "}
+            </Button>
+          </Box>
+        </Box>,
+        document.getElementById("video-chat-widget")
+      )}
     </Box>
   );
 }
