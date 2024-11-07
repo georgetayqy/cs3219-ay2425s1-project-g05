@@ -36,6 +36,7 @@ import { kBtoMb, secondsToMsIfappropriate } from "../../utils/utils";
 import { CodeHighlight } from "@mantine/code-highlight";
 
 import "@mantine/code-highlight/styles.css";
+import { useAuth } from "../../hooks/useAuth";
 
 type TestCasesWrapperProps = {
   testCases: TestCase[]; // array of test cases
@@ -46,6 +47,8 @@ type TestCasesWrapperProps = {
   // runAllTestCases: () => void;
 
   currentValueRef: React.MutableRefObject<string>;
+  otherUserId: string;
+  userId: string;
 };
 
 const STATUS_PARTIAL = 206;
@@ -59,6 +62,9 @@ export default function TestCasesWrapper({
   // runAllTestCases,
   questionId,
   currentValueRef,
+
+  userId,
+  otherUserId,
 }: TestCasesWrapperProps) {
   const [currentTestCase, setCurrentTestCase] = useState<TestCase | null>(
     testCases[0]
@@ -180,7 +186,9 @@ export default function TestCasesWrapper({
     if (!channelId) return;
     // subscribe to eventsource SSE
     const eventSource = new EventSourcePolyfill(
-      `${import.meta.env.VITE_API_URL_RUN}/run-service/subscribe/${channelId}`,
+      `${
+        import.meta.env.VITE_API_URL_RUN
+      }/run-service/subscribe/${channelId}?userId=${userId}&otherUserId=${otherUserId}`,
       {
         headers: {
           "Content-Type": "text/event-stream",
@@ -221,6 +229,8 @@ export default function TestCasesWrapper({
       body: JSON.stringify({
         codeAttempt: currentValueRef.current,
         channelId,
+        firstUserId: userId,
+        secondUserId: otherUserId,
       }),
       headers: {
         "Content-Type": "application/json",

@@ -45,13 +45,13 @@ type QuestionCategory =
 
 // Map of category to color for badges
 const categoryColorMap: { [key in QuestionCategory]: string } = {
-  "ALGORITHMS": "blue",
-  "DATABASES": "green",
+  ALGORITHMS: "blue",
+  DATABASES: "green",
   "DATA STRUCTURES": "orange",
-  "BRAINTEASER": "red",
-  "STRINGS": "purple",
+  BRAINTEASER: "red",
+  STRINGS: "purple",
   "BIT MANIPULATION": "cyan",
-  "RECURSION": "teal",
+  RECURSION: "teal",
 };
 interface CheckRoomDetailsResponse {
   [roomId: string]: {
@@ -61,20 +61,20 @@ interface CheckRoomDetailsResponse {
 
 const dummyTestCaseResults = [
   {
-      "testCaseId": "first testcase",
-      "isPassed": true,
-      "input": "first qn",
-      "output": "xxx",
-      "expectedOutput": "first ans"
+    testCaseId: "first testcase",
+    isPassed: true,
+    input: "first qn",
+    output: "xxx",
+    expectedOutput: "first ans",
   },
   {
-      "testCaseId": "sec testcase",
-      "isPassed": true,
-      "input": "first qn",
-      "output": "xxx",
-      "expectedOutput": "second ans"
-  }
-]
+    testCaseId: "sec testcase",
+    isPassed: true,
+    input: "first qn",
+    output: "xxx",
+    expectedOutput: "second ans",
+  },
+];
 
 const LOCAL_WEBSOCKET = import.meta.env.VITE_COLLAB_WS_URL_LOCAL;
 
@@ -97,9 +97,12 @@ export default function SessionPage() {
   const {
     questionReceived,
     roomIdReceived,
-    otherUserIdReceived
-  }: { questionReceived: Question; roomIdReceived: string, otherUserIdReceived: string } =
-    location.state || {};
+    otherUserIdReceived,
+  }: {
+    questionReceived: Question;
+    roomIdReceived: string;
+    otherUserIdReceived: string;
+  } = location.state || {};
 
   const roomId = useParams().roomId;
 
@@ -115,9 +118,13 @@ export default function SessionPage() {
   const [questionCategories, setQuestionCategories] = useState<
     QuestionCategory[]
   >([]);
-  const [questionDifficulty, setQuestionDifficulty] = useState(question.difficulty);
+  const [questionDifficulty, setQuestionDifficulty] = useState(
+    question.difficulty
+  );
   const [questionTitle, setQuestionTitle] = useState(question.title);
-  const [questionDescription, setQuestionDescription] = useState(question.description.descriptionHtml);
+  const [questionDescription, setQuestionDescription] = useState(
+    question.description.descriptionHtml
+  );
   const [leetCodeLink, setLeetCodeLink] = useState(question.link);
 
   const [templateCode, setTemplateCode] = useState(question.templateCode);
@@ -306,12 +313,21 @@ export default function SessionPage() {
 
     // call history service to create an attempt
     try {
-      const { _id, testCases, meta, templateCode, isDeleted, __v, categories, ...questionForAttempt } = question;
+      const {
+        _id,
+        testCases,
+        meta,
+        templateCode,
+        isDeleted,
+        __v,
+        categories,
+        ...questionForAttempt
+      } = question;
 
-      console.log(currentValueRef)
+      console.log(currentValueRef);
       fetchData<ServerResponse<HistoryResponse>>(
-        `/history-service/attempt`, 
-        SERVICE.HISTORY, 
+        `/history-service/attempt`,
+        SERVICE.HISTORY,
         {
           method: "POST",
           headers: {
@@ -332,7 +348,9 @@ export default function SessionPage() {
         console.log("Attempt", attempt);
 
         // navigate to session summary page
-        navigate(`/session/summary/${roomId}`, { state: { roomIdReceived: roomId, attemptReceived: attempt } });
+        navigate(`/session/summary/${roomId}`, {
+          state: { roomIdReceived: roomId, attemptReceived: attempt },
+        });
       });
     } catch (error: any) {
       console.error("Error ending session", error);
@@ -341,7 +359,6 @@ export default function SessionPage() {
         color: "red",
       });
     }
-
   };
 
   const handleWait = () => {
@@ -363,7 +380,9 @@ export default function SessionPage() {
             </Avatar>
             <div>
               <Text size="sm">{otherUserDisplayName}</Text>
-              <Text size="xs" color="dimmed">{otherUserEmail}</Text>
+              <Text size="xs" color="dimmed">
+                {otherUserEmail}
+              </Text>
             </div>
             <Badge color="teal" size="sm" variant="filled" ml="xs">
               Collaborator
@@ -463,6 +482,8 @@ export default function SessionPage() {
               channelId={channelId}
               questionId={question._id}
               currentValueRef={currentValueRef}
+              otherUserId={otherUserId}
+              userId={user._id}
             />
           </Stack>
         </Flex>

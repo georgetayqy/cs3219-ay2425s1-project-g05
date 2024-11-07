@@ -221,8 +221,7 @@ const executeTest = async (req, res) => {
     res.status(200).json({
       statusCode: 200,
       message: `Executing test cases for questionId: ${questionId}`,
-      data: { testCaseCount: testCaseCount },
-      w,
+      data: { testCaseCount: testCaseCount }
     });
   } catch (error) {
     console.log("ERROR: ", error)
