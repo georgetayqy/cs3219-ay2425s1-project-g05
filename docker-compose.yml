@@ -50,6 +50,13 @@ services:
     ports:
       - '8007:8007'
 
+  ai-chat-service:
+    build:
+      context: ./ai-chat-service
+      dockerfile: Dockerfile
+    ports:
+      - '8008:8008'
+
   frontend:
     build:
       context: ./peer-prep
