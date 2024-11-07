@@ -206,7 +206,13 @@ export default function EditQuestionPage() {
   const addTestCase = () => {
     setTestCases([
       ...testCases,
-      { testCode: "", isPublic: false, meta: {}, expectedOutput: "" },
+      {
+        testCode: "",
+        isPublic: false,
+        meta: {},
+        expectedOutput: "",
+        input: "",
+      },
     ]);
   };
 
@@ -319,6 +325,19 @@ export default function EditQuestionPage() {
         <Stack>
           {testCases.map((testCase, index) => (
             <Card key={index} shadow="sm" padding="lg" radius="md">
+              <Textarea
+                mt={8}
+                label={`Input`}
+                value={testCase.input}
+                onChange={(event) =>
+                  handleTestCaseChange(
+                    index,
+                    "input",
+                    event.currentTarget.value
+                  )
+                }
+                minRows={8}
+              />
               <CodeEditorWithLanguageSelector
                 label={`Test Code ${index + 1}`}
                 code={testCase.testCode}
