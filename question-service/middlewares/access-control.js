@@ -29,6 +29,7 @@ export function checkAdmin(req, res, next) {
   } else {
     throw new ForbiddenError("Non-admin users are not allowed to perform this action");
   }
+  //next();
 };
 
 // TODO: Add middleware to check if API Call is made by run service 

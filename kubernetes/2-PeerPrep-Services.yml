@@ -1,0 +1,32 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: peerprep
+spec:
+  selector:
+    app: peerprep
+  ports:
+    - name: user-service
+      protocol: TCP
+      port: 8001
+      targetPort: 8001
+
+    - name: matching-service
+      protocol: TCP
+      port: 8002
+      targetPort: 8002
+
+    - name: question-service
+      protocol: TCP
+      port: 8003
+      targetPort: 8003
+    
+    - name: collaboration-service
+      protocol: TCP
+      port: 8004
+      targetPort: 8004
+
+    - name: elasticache
+      protocol: TCP
+      port: 6379
+      targetPort: 6379

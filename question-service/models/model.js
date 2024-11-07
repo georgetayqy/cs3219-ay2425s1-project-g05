@@ -6,6 +6,10 @@ const testCaseSchema = new Schema({
     type: String,
     required: [true, "Test code is required"],
   },
+  input: {
+    type: String,
+    required: [true, "Input is required"],
+  },
   isPublic:{
     type: Boolean,
     required: [true, "isPublic status is required"]
