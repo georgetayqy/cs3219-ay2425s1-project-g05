@@ -12,6 +12,7 @@ import {
   Rating,
   ScrollArea,
   SimpleGrid,
+  Space,
   Stack,
   Text,
   Textarea,
@@ -20,13 +21,13 @@ import {
 } from "@mantine/core";
 import classes from "./SessionPage.module.css";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import CodeEditor from "../../../components/CollabCodeEditor/CollabCodeEditor";
 import AvatarWithDetailsButton from "../../../components/AvatarIcon/AvatarWithDetailsButton";
 import { IconChevronRight } from "@tabler/icons-react";
 import { Question, TestCaseResult } from "../../../types/question";
-import { useLocalStorage, useSessionStorage } from "@mantine/hooks";
+import { useLocalStorage, useSessionStorage, useTimeout } from "@mantine/hooks";
 import { modals, ModalsProvider } from "@mantine/modals";
 import TextChatWidget from "../../../components/Communication/Text/TextChatWidget";
 import { notifications } from "@mantine/notifications";
@@ -35,6 +36,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { UserResponseData } from "../../../types/user";
 
 import { TestCaseResult as TestCaseResultDb } from "../../../types/attempts";
+import AlertBox from "../../../components/Alert/AlertBox";
 
 type QuestionCategory =
   | "ALGORITHMS"
@@ -114,75 +116,128 @@ export default function SessionPage() {
 
   const [templateCode, setTemplateCode] = useState(question.templateCode);
   const [attemptCode, setAttemptCode] = useState(question.templateCode);
-  const [latestResults, setLatestResults] = useState<TestCaseResult[]>([]);
+  const latestResultsRef = useRef<TestCaseResult[]>([]);
 
   // when true, don't show modal when # users in room < 2
   // const [isWaitingForRejoin, setIsWaitingForRejoin] = useState(false);
   const isWaitingForRejoinRef = useRef(false);
-
+  console.log("LOG: in session page, latestAttempt = ", {
+    latestResultsRef: latestResultsRef.current,
+  });
   // don't need to rerender!
   const currentValueRef = useRef("");
-  useEffect(() => {
-    try {
-      fetchData<ServerResponse<UserResponseData>>(
-        `/user-service/users/${otherUserId}`,
-        SERVICE.USER
-      ).then((response) => {
-        setOtherUserDisplayName(response.data.user.displayName);
-        setOtherUserEmail(response.data.user.email);
-      });
-    } catch (error: any) {
-      console.error("Error getting details of other user:", error);
-      notifications.show({
-        message: error.message,
-        color: "red",
-      });
-    }
-  }, []);
+  const peopleInRoomFromCollabServiceRef = useRef<number>(0);
 
-  // ONMOUNT: get room information based on roomId
+  const { start: startRedirectToHome, clear: clearRedirectToHome } = useTimeout(
+    () => {
+      navigate("/dashboard", {
+        replace: true,
+      });
+    },
+    5000
+  );
+
   useEffect(() => {
-    // TODO ERROR HANDLING
-    fetchData<
-      ServerResponse<{
-        [roomId: string]: {
-          users: string[];
-        };
-      }>
-    >(`/collaboration-service/rooms/${roomId}`, SERVICE.COLLAB)
-      .then((res1) => {
-        console.log({ res1 });
-        console.log("LOG✅: Room details", res1);
-        const otherUserId =
-          res1.data[roomId].users.find((id) => id !== user?._id) || "";
-        setOtherUserId(otherUserId);
+    // step 1: check if room is deleted
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      if (peopleInRoomFromCollabServiceRef.current === 1) {
+        // show a confirmation dialog, saying that if they leave the page, the session will be destroyed and they cannot come back anymore
+        event.preventDefault();
+
+        // for legacy
+        event.returnValue = true;
+      }
+    }
+    (async () => {
+      try {
+        const response = await fetchData<ServerResponse<{ deleted: boolean }>>(
+          `/collaboration-service/rooms/status/${roomId}`,
+          SERVICE.COLLAB
+        );
+        if (response.data.deleted) {
+          // room is deleted
+          // force redirect the user to the home page
+          openSessionDestroyedModal();
+          startRedirectToHome();
+
+          return;
+        }
+
+        console.log("LOG: room not deleted");
+
+        addEventListener("beforeunload", onBeforeUnload);
 
         fetchData<
           ServerResponse<{
-            channelId: string;
+            [roomId: string]: {
+              users: string[];
+            };
           }>
-        >(`/run-service/session`, SERVICE.RUN, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            firstUserId: user?._id,
-            secondUserId: otherUserId,
-          }),
-        })
+        >(`/collaboration-service/rooms/${roomId}`, SERVICE.COLLAB)
+          .then((res1) => {
+            console.log({ res1 });
+            console.log("LOG✅: Room details", res1);
+            const otherUserId =
+              res1.data[roomId].users.find((id) => id !== user?._id) || "";
+            setOtherUserId(otherUserId);
+
+            fetchData<
+              ServerResponse<{
+                channelId: string;
+              }>
+            >(`/run-service/session`, SERVICE.RUN, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                firstUserId: user?._id,
+                secondUserId: otherUserId,
+              }),
+            })
+              .then((response) => {
+                console.log(
+                  "LOG✅: Session created with CHANNEL ID",
+                  response.data.channelId
+                );
+                setChannelId(response.data.channelId);
+              })
+              .catch((error) => {
+                console.error(error);
+              });
+          })
+          .catch(console.error);
+
+        fetchData<ServerResponse<UserResponseData>>(
+          `/user-service/users/${otherUserId}`,
+          SERVICE.USER
+        )
           .then((response) => {
-            console.log(
-              "LOG✅: Session created with CHANNEL ID",
-              response.data.channelId
-            );
-            setChannelId(response.data.channelId);
+            setOtherUserDisplayName(response.data.user.displayName);
+            setOtherUserEmail(response.data.user.email);
           })
           .catch((error) => {
-            console.error(error);
+            console.error("Error getting details of other user:", error);
+            notifications.show({
+              message: error.message,
+              color: "red",
+            });
           });
-      })
-      .catch(console.error);
+      } catch (e) {
+        console.error("Error checking if room is deleted", e);
+        notifications.show({
+          message: e.message,
+          color: "red",
+        });
+      }
+    })();
+
+    return () => {
+      clearRedirectToHome();
+
+      // unregister the event listener
+      removeEventListener("beforeunload", onBeforeUnload);
+    };
   }, []);
 
   const renderComplexity = () => {
@@ -205,6 +260,7 @@ export default function SessionPage() {
 
       const users = response.data[roomId].users;
 
+      peopleInRoomFromCollabServiceRef.current = users.length;
       if (users.length < 2 && !isWaitingForRejoinRef.current) {
         // other user has left the room
         openSessionEndedModal();
@@ -225,10 +281,10 @@ export default function SessionPage() {
       }
     } catch (error: any) {
       console.error("Error checking room status", error);
-      notifications.show({
-        message: error.message,
-        color: "red",
-      });
+      // notifications.show({
+      //   message: error.message,
+      //   color: "red",
+      // });
     }
   };
 
@@ -254,6 +310,65 @@ export default function SessionPage() {
     });
   };
 
+  const openSessionDestroyedModal = () => {
+    console.log("LOG: Session Destroyed");
+
+    modals.open({
+      title: "Session has been destroyed",
+      children: (
+        <Stack>
+          <AlertBox type="error">
+            {" "}
+            <Stack
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Center>
+                <Text
+                  style={{
+                    textAlign: "center",
+                  }}
+                >
+                  The session has been destroyed as both users had left the
+                  room.
+                </Text>
+              </Center>
+              <Center>
+                <Text
+                  style={{
+                    textAlign: "center",
+                  }}
+                >
+                  You will be redirected to the home page in 5 seconds.
+                </Text>
+              </Center>
+            </Stack>
+          </AlertBox>
+
+          <Group>
+            <Space flex={1} />
+            <Button
+              variant="light"
+              onClick={() => {
+                navigate("/dashboard", {
+                  replace: true,
+                });
+              }}
+            >
+              Go to home
+            </Button>
+          </Group>
+        </Stack>
+      ),
+
+      withCloseButton: false,
+      closeOnClickOutside: false,
+      closeOnEscape: false,
+    });
+  };
+
   const openSessionEndedModal = () => {
     console.log("Session Ended");
     modals.open({
@@ -265,7 +380,8 @@ export default function SessionPage() {
           </Text>
           <Text mt="lg">
             You can choose to wait for the other user to join back, or end the
-            session.
+            session. If you choose to wait, do note that if you refresh the
+            page, your progress may be lost.
           </Text>
           <Text mt="sm">
             You'll be notified when the other user joins back.
@@ -292,9 +408,7 @@ export default function SessionPage() {
     });
   };
 
-  const handleEndSession = () => {
-    modals.closeAll();
-
+  const handleEndSession = async () => {
     // call history service to create an attempt
     try {
       const {
@@ -309,24 +423,28 @@ export default function SessionPage() {
       } = question;
 
       console.log(currentValueRef);
-      console.log("LOG: latestResults = ", { latestResults });
-
-      const results: TestCaseResultDb[] = [];
-      latestResults.forEach((result) => {
-        results.push({
-          testCaseId: result.testCaseDetails.testCaseId,
-          expectedOutput: result.testCaseDetails.expectedOutput || " ",
-          input: result.testCaseDetails.input,
-          isPassed: result.isPassed,
-          output: result.stdout || " ",
-          error: result.stderr || " ",
-          meta: {
-            memory: result.memory,
-            time: result.time,
-          },
-        });
+      console.log("LOG: latestResults = ", {
+        latestResultsRef: latestResultsRef.current,
       });
-      fetchData<ServerResponse<HistoryResponse>>(
+
+      const results: TestCaseResultDb[] = latestResultsRef.current.map(
+        (result) => {
+          return {
+            testCaseId: result.testCaseDetails.testCaseId,
+            expectedOutput: result.testCaseDetails.expectedOutput || " ",
+            input: result.testCaseDetails.input,
+            isPassed: result.isPassed,
+            output: result.stdout || " ",
+            error: result.stderr || " ",
+            meta: {
+              memory: result.memory,
+              time: result.time,
+            },
+          };
+        }
+      );
+
+      const response = await fetchData<ServerResponse<HistoryResponse>>(
         `/history-service/attempt`,
         SERVICE.HISTORY,
         {
@@ -345,23 +463,38 @@ export default function SessionPage() {
             question: questionForAttempt,
           }),
         }
-      ).then((response) => {
-        console.log("Attempt created", response);
+      );
+      console.log("Attempt created", response);
 
-        const attempt = response.data.attempt;
-        console.log("Attempt", attempt);
+      // "end" the session
+      fetchData(
+        `/collaboration-service/rooms/status/${roomId}`,
+        SERVICE.COLLAB,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      ).catch(console.warn);
 
-        // navigate to session summary page
-        navigate(`/session/summary/${roomId}`, {
-          state: { roomIdReceived: roomId, attemptReceived: attempt },
-        });
+      const attempt = response.data.attempt;
+      console.log("Attempt", attempt);
+
+      // navigate to session summary page
+      navigate(`/session/summary/${roomId}`, {
+        state: { roomIdReceived: roomId, attemptReceived: attempt },
+        replace: true,
       });
     } catch (error: any) {
       console.error("Error ending session", error);
       notifications.show({
+        title: "Error ending session",
         message: error.message,
         color: "red",
       });
+    } finally {
+      // modals.closeAll();
     }
   };
 
@@ -488,8 +621,7 @@ export default function SessionPage() {
               currentValueRef={currentValueRef}
               userId={user._id}
               otherUserId={otherUserId}
-              latestResults={latestResults}
-              setLatestResults={setLatestResults}
+              latestResultsRef={latestResultsRef}
             />
           </Stack>
         </Flex>

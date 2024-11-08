@@ -50,8 +50,7 @@ type TestCasesWrapperProps = {
   otherUserId: string;
   userId: string;
 
-  latestResults: TestCaseResult[];
-  setLatestResults: React.Dispatch<React.SetStateAction<TestCaseResult[]>>;
+  latestResultsRef: React.MutableRefObject<TestCaseResult[]>;
 };
 
 const STATUS_PARTIAL = 206;
@@ -69,9 +68,10 @@ export default function TestCasesWrapper({
   userId,
   otherUserId,
 
-  latestResults,
-  setLatestResults,
+  latestResultsRef,
 }: TestCasesWrapperProps) {
+  const [latestResults, setLatestResults] = useState<TestCaseResult[]>([]);
+
   const [currentTestCase, setCurrentTestCase] = useState<TestCase | null>(
     testCases[0]
   );
@@ -127,7 +127,9 @@ export default function TestCasesWrapper({
       case STATUS_PARTIAL:
         const result = (message.data as PartialResult).result;
         console.log("INFO: One result", result);
+        latestResultsRef.current = [...latestResultsRef.current, result];
         setLatestResults((prev) => [...prev, result]);
+
         break;
       case STATUS_COMPLETE:
         console.log("INFO: Complete result received");
@@ -140,6 +142,7 @@ export default function TestCasesWrapper({
         });
 
         setLatestResults(results);
+        latestResultsRef.current = results;
 
         setAttemptCodeMap((prev) => ({
           ...prev,
@@ -175,6 +178,7 @@ export default function TestCasesWrapper({
 
         // latest results should have already been copied into all results
         setLatestResults([]);
+        latestResultsRef.current = [];
         startRunningTimeout();
         break;
       default:
@@ -231,6 +235,7 @@ export default function TestCasesWrapper({
     console.log("LOG: Current code value", currentValueRef.current);
     setIsRunning(true);
     setLatestResults([]);
+    latestResultsRef.current = [];
     setIsError(false);
     fetchData<
       ServerResponse<{

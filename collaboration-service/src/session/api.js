@@ -116,10 +116,10 @@ const getRoomDetails = async (request, response, next) => {
 
 const getRoomStatus = async (request, response, next) => {
   try {
-    const { roomId } = request.query;
+    const { roomId } = request.params;
     return response.status(200).json({
       statusCode: 200,
-      data: deleted.has(roomId),
+      data: { deleted: deleted.has(roomId) },
     });
   } catch (err) {
     if (err instanceof BaseError) {

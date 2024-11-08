@@ -83,8 +83,6 @@ export default function VideoChatWidget({
   const peerInstance = useRef(null);
   const mediaConnection = useRef(null);
 
-  console.log({ auth }, " nasjdkasjkdhjka user");
-
   function init() {
     console.log("DEBUG: auth.user", auth.user);
     if (!auth.user) {

@@ -23,10 +23,10 @@ router.route('/users/').get(getUserDetails);
 router.route('/rooms/:roomId').get(getRoomDetails);
 
 // check if room is deleted or not
-router.route('rooms/status/:roomId').get(getRoomStatus);
+router.route('/rooms/status/:roomId').get(getRoomStatus);
 
 // mark a room as deleted
-router.route('rooms/status/:roomId').post(updateRoomStatus);
+router.route('/rooms/status/:roomId').post(updateRoomStatus);
 
 // create a room
 router.route('/create-room').post(createRoom);
