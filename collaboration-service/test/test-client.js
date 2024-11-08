@@ -1,9 +1,7 @@
 import * as assert from 'assert';
 import LocalClient from '../src/session/client.js';
 import UserAlreadyFoundInRoomError from '../src/errors/UserAlreadyFoundInRoomError.js';
-import UserNotFoundInRoomError from '../src/errors/UserNotFoundInRoomError.js';
 import RoomNotFoundError from '../src/errors/RoomNotFoundError.js';
-import RoomCapacityError from '../src/errors/RoomCapacityError.js';
 
 describe('Collaboration Service LocalClient', () => {
   describe('#purge(void)', () => {

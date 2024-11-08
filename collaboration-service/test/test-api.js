@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import { app } from '../server.js';
 import request from 'supertest';
 import LocalClient from '../src/session/client.js';
+import { deleted } from '../src/server/utils.js';
 
 describe('Collaboration Service API', () => {
   describe('Test healthz Endpoint', () => {
@@ -146,13 +147,55 @@ describe('Collaboration Service API', () => {
         .expect('Content-Type', /json/);
 
       const result = await request(app)
-        .get(
-          `/api/collaboration-service/rooms/${create.body.data.roomId}`
-        )
+        .get(`/api/collaboration-service/rooms/${create.body.data.roomId}`)
         .expect(200)
         .expect('Content-Type', /json/);
 
       assert.ok(result.body.data !== null || result.body.data !== undefined);
+    });
+  });
+
+  describe('#getRoomStatus', () => {
+    it('can get non-existent room', async () => {
+      const result = await request(app)
+        .get('/api/collaboration-service/rooms/status/123123123')
+        .expect(200)
+        .expect('Content-Type', /json/);
+
+      assert.equal(result.body.data.deleted, false);
+    });
+
+    it('can get existing room', async () => {
+      deleted.add('abde123');
+      const result = await request(app)
+        .get('/api/collaboration-service/rooms/status/abde123')
+        .expect(200)
+        .expect('Content-Type', /json/);
+
+      assert.equal(result.body.data.deleted, true);
+      deleted.clear();
+    });
+  });
+
+  describe('#updateRoomStatus', () => {
+    it('cannot delete non-existent room', async () => {
+      const result = await request(app)
+        .post('/api/collaboration-service/rooms/status/123123123')
+        .expect(404)
+        .expect('Content-Type', /json/);
+
+      assert.equal(result.body.message, 'Room not found');
+    });
+
+    it('can delete existing room', async () => {
+      LocalClient.docToUser.set('abde123', ['user1', 'user2']);
+      const result = await request(app)
+        .post('/api/collaboration-service/rooms/status/abde123')
+        .expect(200)
+        .expect('Content-Type', /json/);
+
+      assert.equal(result.body.message, 'Updated successfully');
+      LocalClient.docToUser.clear();
     });
   });
 
