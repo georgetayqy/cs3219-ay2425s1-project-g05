@@ -138,7 +138,7 @@ const getRoomStatus = async (request, response, next) => {
 
 const updateRoomStatus = async (request, response, next) => {
   try {
-    const { roomId } = request.query;
+    const { roomId } = request.params;
 
     if (LocalClient.docToUser.has(roomId)) {
       deleted.add(roomId);
