@@ -6,6 +6,7 @@ import UserDeregistrationError from '../errors/UserDeregistrationError.js';
 import UserNotFoundError from '../errors/UserNotFoundError.js';
 import UserRegistrationError from '../errors/UserRegistrationError.js';
 import LocalClient from './client.js';
+import { deleted } from '../server/utils.js';
 
 // create the client and export it
 // await RedisClient.deleteIfPresent();
@@ -97,6 +98,60 @@ const getRoomDetails = async (request, response, next) => {
           users: users,
         },
       },
+    });
+  } catch (err) {
+    if (err instanceof BaseError) {
+      return response.status(err.statusCode).json({
+        statusCode: err.statusCode,
+        message: err.message,
+      });
+    } else {
+      return response.status(500).json({
+        statusCode: 500,
+        message: `Unable to query: ${err}`,
+      });
+    }
+  }
+};
+
+const getRoomStatus = async (request, response, next) => {
+  try {
+    const { roomId } = request.query;
+    return response.status(200).json({
+      statusCode: 200,
+      data: deleted.has(roomId),
+    });
+  } catch (err) {
+    if (err instanceof BaseError) {
+      return response.status(err.statusCode).json({
+        statusCode: err.statusCode,
+        message: err.message,
+      });
+    } else {
+      return response.status(500).json({
+        statusCode: 500,
+        message: `Unable to query: ${err}`,
+      });
+    }
+  }
+};
+
+const updateRoomStatus = async (request, response, next) => {
+  try {
+    const { roomId } = request.query;
+
+    if (LocalClient.docToUser.has(roomId)) {
+      deleted.add(roomId);
+    } else {
+      return response.status(404).json({
+        statusCode: 404,
+        message: 'Room not found',
+      });
+    }
+
+    return response.status(200).json({
+      statusCode: 200,
+      message: 'Updated successfully',
     });
   } catch (err) {
     if (err instanceof BaseError) {
@@ -230,4 +285,6 @@ export {
   deleteRoom,
   registerUser,
   deregisterUser,
+  getRoomStatus,
+  updateRoomStatus,
 };

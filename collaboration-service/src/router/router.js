@@ -6,6 +6,8 @@ import {
   deleteRoom,
   registerUser,
   deregisterUser,
+  getRoomStatus,
+  updateRoomStatus,
 } from '../session/api.js';
 
 // disable admin checks for now
@@ -19,6 +21,12 @@ router.route('/users/').get(getUserDetails);
 
 // retrieve details about the user
 router.route('/rooms/:roomId').get(getRoomDetails);
+
+// check if room is deleted or not
+router.route('rooms/status/:roomId').get(getRoomStatus);
+
+// mark a room as deleted
+router.route('rooms/status/:roomId').post(updateRoomStatus);
 
 // create a room
 router.route('/create-room').post(createRoom);

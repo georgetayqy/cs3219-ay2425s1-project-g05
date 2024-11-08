@@ -3,6 +3,7 @@ import UserNotFoundInRoomError from '../errors/UserNotFoundInRoomError.js';
 import UserAlreadyFoundInRoomError from '../errors/UserAlreadyFoundInRoomError.js';
 import { v7 } from 'uuid';
 import InvalidArgumentError from '../errors/InvalidArgumentError.js';
+import { deleted } from '../server/utils.js';
 
 /**
  * Interface to track the current users connected to yjs
@@ -69,7 +70,7 @@ class LocalClient {
     // likely O(1) operation, since hash collisions are rare
     let uuid = v7();
 
-    while (LocalClient.docToUser.has(uuid)) {
+    while (LocalClient.docToUser.has(uuid) || deleted.has(uuid)) {
       uuid = v7();
     }
 
