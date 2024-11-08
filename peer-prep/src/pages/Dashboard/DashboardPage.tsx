@@ -6,6 +6,7 @@ import {
   Container,
   Flex,
   Group,
+  Loader,
   SimpleGrid,
   Stack,
   Text,
@@ -29,9 +30,11 @@ export default function DashboardPage() {
   const { fetchData } = useApi();
 
   const [userAttempts, setUserAttempts] = useState<UserAttempt[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const getUserAttempts = async () => {
     try {
+      setIsLoading(true);
       const response = await fetchData<ServerResponse<AttemptsData>>(
         "/history-service/user/attempts",
         SERVICE.HISTORY
@@ -45,6 +48,8 @@ export default function DashboardPage() {
         message: error.message,
         color: "red",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -58,7 +63,11 @@ export default function DashboardPage() {
       <section>
         <Container mt={"4rem"}>
           <Group>
-            <Avatar size="8rem" name={user?.displayName}></Avatar>
+            <Avatar
+              size="8rem"
+              name={user?.displayName}
+              color="initials"
+            ></Avatar>
             <Stack ml={12} flex={1}>
               <Title> {user?.displayName} </Title>
               <Text> {user?.email}</Text>
@@ -72,42 +81,59 @@ export default function DashboardPage() {
         </Container>
       </section>
       <section>
-        {/* <Container mt="4rem"> */}
-        <Box px={"xl"} mt="4rem">
-          <Flex
-            className={classes["question-list"]}
-            justify={"center"}
-            align={"center"}
-          >
-            {userAttempts.length > 0 ? (
-              userAttempts.map((attempt, key) => (
-                <AttemptCard
-                  key={key}
-                  attempt={attempt}
-                  question={attempt.question}
-                  difficulty={attempt.question.difficulty}
-                  roomId={attempt.roomId}
-                />
-              ))
-            ) : (
-              <Center style={{ flexDirection: "column", padding: "2rem" }}>
-                <IconClipboardCheck size={64} color="gray" />
-                <Text size="lg" color="dimmed" mt="md">
-                  You have not completed any questions yet!
-                </Text>
-                <Button
-                  mt="lg"
-                  component={Link}
-                  to="/session/create"
-                  variant="light"
+        <Container mt="4rem">
+          <Box>
+            <Flex
+              className={classes["question-list"]}
+              justify={"center"}
+              align={"center"}
+            >
+              {userAttempts.length > 0 ? (
+                userAttempts.map((attempt, key) => (
+                  <AttemptCard
+                    key={key}
+                    attempt={attempt}
+                    question={attempt.question}
+                    difficulty={attempt.question.difficulty}
+                    roomId={attempt.roomId}
+                  />
+                ))
+              ) : !isLoading ? (
+                <Center style={{ flexDirection: "column", padding: "2rem" }}>
+                  <IconClipboardCheck size={64} color="gray" />
+                  <Text size="lg" color="dimmed" mt="md">
+                    You have not completed any questions yet!
+                  </Text>
+                  <Button
+                    mt="lg"
+                    component={Link}
+                    to="/session/create"
+                    variant="light"
+                  >
+                    Start a session
+                  </Button>
+                </Center>
+              ) : (
+                <Box
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "20rem",
+                    width: "100%",
+                    flexDirection: "column",
+                    gap: "1.5rem",
+                  }}
                 >
-                  Start a session
-                </Button>
-              </Center>
-            )}
-          </Flex>
-        </Box>
-        {/* </Container> */}
+                  <Center>
+                    <Loader size={50} />
+                  </Center>
+                  <Center>Loading your attempts...</Center>
+                </Box>
+              )}
+            </Flex>
+          </Box>
+        </Container>
       </section>
     </>
   );
