@@ -350,7 +350,7 @@ export default function SessionPage() {
           <Group>
             <Space flex={1} />
             <Button
-              variant="light"
+              variant="filled"
               onClick={() => {
                 navigate("/dashboard", {
                   replace: true,

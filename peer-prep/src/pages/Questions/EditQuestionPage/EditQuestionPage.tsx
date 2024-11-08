@@ -251,7 +251,12 @@ export default function EditQuestionPage() {
             <Button size="sm" variant="subtle" color="gray" onClick={close}>
               Cancel
             </Button>
-            <Button size="sm" color="red" onClick={() => handleDelete()}>
+            <Button
+              size="sm"
+              color="red"
+              onClick={() => handleDelete()}
+              variant="filled"
+            >
               Delete
             </Button>
           </Group>

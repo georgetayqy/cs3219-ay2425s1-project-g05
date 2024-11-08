@@ -145,6 +145,13 @@ const theme = createTheme({
   defaultRadius: "md",
   cursorType: "pointer",
   primaryColor: "cyan",
+  components: {
+    Button: {
+      defaultProps: {
+        variant: "light",
+      },
+    },
+  },
 });
 
 createRoot(document.getElementById("root")!).render(

@@ -194,7 +194,7 @@ export default function CreateSessionPage() {
 
             // Get the other user id from match object returned
             const userIds = data["userIds"];
-            const otherUser = userIds.find((id : String) => id !== user._id);
+            const otherUser = userIds.find((id: String) => id !== user._id);
 
             console.log("room id after creating room ", roomId);
             console.log("question after creating room", question);
@@ -215,8 +215,8 @@ export default function CreateSessionPage() {
             console.error("Error creating room", error);
             notifications.show({
               message: error.message,
-              color: 'red'
-            })
+              color: "red",
+            });
           });
 
         // stop the timer
@@ -311,7 +311,11 @@ export default function CreateSessionPage() {
 
   function goToRoom(question, roomId, otherUserId) {
     navigate(`/session/${roomId}`, {
-      state: { questionReceived: question, roomIdReceived: roomId, otherUserIdReceived: otherUserId },
+      state: {
+        questionReceived: question,
+        roomIdReceived: roomId,
+        otherUserIdReceived: otherUserId,
+      },
     });
   }
 
@@ -431,6 +435,7 @@ export default function CreateSessionPage() {
           style={{ pointerEvents: !canSearch ? "none" : "unset" }}
           onClick={() => search()}
           loading={status === Status.WAITING_FOR_REPLY}
+          variant="filled"
         >
           Begin search
         </Button>
@@ -513,7 +518,9 @@ export default function CreateSessionPage() {
           </Stack>
         </SimpleGrid>
         <Center>
-          <Button onClick={() => changeCriteria()}>Change criteria</Button>
+          <Button onClick={() => changeCriteria()} variant="filled">
+            Change criteria
+          </Button>
         </Center>
       </Stack>
     </>
@@ -549,6 +556,7 @@ export default function CreateSessionPage() {
                 onClick={() => {
                   continueSearch();
                 }}
+                variant="filled"
               >
                 {" "}
                 Continue searching{" "}

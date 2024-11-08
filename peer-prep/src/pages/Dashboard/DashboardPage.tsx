@@ -46,8 +46,8 @@ export default function DashboardPage() {
         color: "red",
       });
     }
-  }
-  
+  };
+
   // Fetch the data when the component mounts
   useEffect(() => {
     getUserAttempts();
@@ -64,7 +64,7 @@ export default function DashboardPage() {
               <Text> {user?.email}</Text>
             </Stack>
             <Center>
-              <Button component={Link} to="/session/create">
+              <Button component={Link} to="/session/create" variant="filled">
                 Start a session
               </Button>
             </Center>
@@ -74,13 +74,17 @@ export default function DashboardPage() {
       <section>
         {/* <Container mt="4rem"> */}
         <Box px={"xl"} mt="4rem">
-          <Flex className={classes["question-list"]} justify={"center"} align={"center"}>
+          <Flex
+            className={classes["question-list"]}
+            justify={"center"}
+            align={"center"}
+          >
             {userAttempts.length > 0 ? (
               userAttempts.map((attempt, key) => (
                 <AttemptCard
                   key={key}
                   attempt={attempt}
-                  question={attempt.question} 
+                  question={attempt.question}
                   difficulty={attempt.question.difficulty}
                   roomId={attempt.roomId}
                 />
@@ -91,7 +95,12 @@ export default function DashboardPage() {
                 <Text size="lg" color="dimmed" mt="md">
                   You have not completed any questions yet!
                 </Text>
-                <Button mt="lg" component={Link} to="/session/create" variant="light">
+                <Button
+                  mt="lg"
+                  component={Link}
+                  to="/session/create"
+                  variant="light"
+                >
                   Start a session
                 </Button>
               </Center>

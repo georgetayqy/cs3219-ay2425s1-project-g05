@@ -336,7 +336,7 @@ export function Navbar() {
                     <Button variant="default">Log in</Button>
                   </Link>
                   <Link to="/login?register=true">
-                    <Button>Sign up</Button>
+                    <Button variant="filled">Sign up</Button>
                   </Link>
                 </Group>
               </Group>

@@ -337,7 +337,7 @@ export default function CreateQuestionPage() {
         <Divider my="md" />
 
         <Center mb={"4rem"}>
-          <Button type="submit" disabled={!canSubmit}>
+          <Button type="submit" disabled={!canSubmit} variant="filled">
             Submit
           </Button>
         </Center>

@@ -226,7 +226,7 @@ export default function LoginOrRegisterPage() {
           {!loginMode && checks}
           <Checkbox label="Keep me logged in" mt="xl" size="md" />
           {loginMode ? (
-            <Button fullWidth mt="xl" size="md" type="submit">
+            <Button fullWidth mt="xl" size="md" type="submit" variant="filled">
               Login
             </Button>
           ) : (
@@ -236,6 +236,7 @@ export default function LoginOrRegisterPage() {
               mt="xl"
               size="md"
               type="submit"
+              variant="filled"
             >
               Register
             </Button>
