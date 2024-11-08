@@ -16,6 +16,7 @@ import {
   Collapse,
   Flex,
   Group,
+  Indicator,
   Input,
   Kbd,
   Menu,
@@ -515,12 +516,39 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
             Chat
             {/* ({`${messages.length - readMessages}`} unread){" "} */}
           </Text>
+
           <Space flex={1} />
           {unreadMessages > 0 && (
             <Badge variant="filled" color="orange" radius="xs">
               {" "}
               {`${unreadMessages}`} unread
             </Badge>
+          )}
+          <Center id="video-call-incoming"></Center>
+          {usersInRoom.length > 1 && !isChatOpen && (
+            <Box>
+              <Indicator
+                color="green"
+                size={7}
+                position="bottom-end"
+                offset={3}
+                withBorder
+                styles={{
+                  indicator: {
+                    borderWidth: "1px",
+                  },
+                }}
+              >
+                <Avatar
+                  src={""}
+                  radius="xl"
+                  name={otherUser?.name}
+                  color={"white"}
+                  size={"sm"}
+                  autoContrast={false}
+                />
+              </Indicator>
+            </Box>
           )}
           <Group>
             <ActionIcon variant="transparent" color="initials">
@@ -534,14 +562,52 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
 
         <Collapse in={isChatOpen}>
           <Group className={classes.chatContentColored}>
-            <Avatar
-              src={""}
-              radius="xl"
-              name={otherUser?.name}
-              color={"white"}
-              size={"md"}
-              autoContrast={false}
-            />
+            {usersInRoom.length > 1 ? (
+              <Indicator
+                color="green"
+                size={9}
+                position="bottom-end"
+                offset={5}
+                withBorder
+                styles={{
+                  indicator: {
+                    borderWidth: "1px",
+                  },
+                }}
+              >
+                <Avatar
+                  src={""}
+                  radius="xl"
+                  name={otherUser?.name}
+                  color={"white"}
+                  size={"md"}
+                  autoContrast={false}
+                />
+              </Indicator>
+            ) : (
+              <Indicator
+                color="gray"
+                size={9}
+                position="bottom-end"
+                offset={5}
+                withBorder
+                styles={{
+                  indicator: {
+                    borderWidth: "1px",
+                  },
+                }}
+              >
+                <Avatar
+                  src={""}
+                  radius="xl"
+                  name={""}
+                  color={"white"}
+                  size={"md"}
+                  autoContrast={false}
+                />
+              </Indicator>
+            )}
+
             <Text style={{ color: "white" }}>
               {usersInRoom.length < 2
                 ? "Waiting for other users to join..."
@@ -550,7 +616,6 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
             <Space flex={1} />
             {renderVideo && (
               <VideoChatWidget
-                roomId={roomId}
                 onVideoCallDisconnect={onVideoCallDisconnect}
                 otherUser={otherUser}
               />
