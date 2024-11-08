@@ -178,20 +178,20 @@ const executeTest = async (req, res) => {
     }
 
     // If another client is not subscribed to the channel, throw an error
-    if (initialChannelData) {
-      if (
-        initialChannelData[firstUserId] !== "connected" ||
-        initialChannelData[secondUserId] !== "connected"
-      ) {
-        console.log(
-          "Another user is not connected to the channel. Try again later error thrown"
-        );
-        throw new ConflictError(
-          "Another user is not connected to the channel. Try again later."
-        );
-        return;
-      }
-    }
+    // if (initialChannelData) {
+    //   if (
+    //     initialChannelData[firstUserId] !== "connected" ||
+    //     initialChannelData[secondUserId] !== "connected"
+    //   ) {
+    //     console.log(
+    //       "Another user is not connected to the channel. Try again later error thrown"
+    //     );
+    //     throw new ConflictError(
+    //       "Another user is not connected to the channel. Try again later."
+    //     );
+    //     return;
+    //   }
+    // }
 
     // Retrieve testcases for the question
     console.log("Executing test cases for questionId:", questionId);

@@ -90,7 +90,7 @@ export default function TestCasesWrapper({
         color: "red",
       });
     },
-    10000
+    20000
   );
 
   const [isError, setIsError] = useState<boolean>(false);
@@ -154,6 +154,12 @@ export default function TestCasesWrapper({
 
         console.log("INFO: ✅ Test Cases Ran Successfuly");
         console.log({ attemptCodeMap });
+
+        // check for TLE
+        // if (results.some((result) => result.isPassed === false && Number(result.time) > 4.96)){
+        //   // time limit exceeded
+        // }
+
         break;
       case STATUS_CONNECTED:
         break;
