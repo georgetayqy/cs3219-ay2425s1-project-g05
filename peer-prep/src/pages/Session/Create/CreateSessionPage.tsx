@@ -20,7 +20,7 @@ import {
   Progress,
 } from "@mantine/core";
 import classes from "./CreateSessionPage.module.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   capitalizeFirstLetter,
   convertToCombinedCategoryId,
@@ -79,7 +79,8 @@ export default function CreateSessionPage() {
 
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [intervalTimer, setIntervalTimer] = useState<NodeJS.Timeout | null>();
-  let timer: NodeJS.Timeout | null = null;
+
+  const timer = useRef<NodeJS.Timeout | null>(null);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
 
   const [redirectCountdown, setRedirectCountdown] = useState(3);
@@ -156,11 +157,11 @@ export default function CreateSessionPage() {
       setActive(1);
 
       // clear old timer
-      if (timer) {
-        clearInterval(timer);
+      if (timer.current) {
+        clearInterval(timer.current);
       }
       // setup a timer
-      timer = setInterval(() => {
+      timer.current = setInterval(() => {
         setTimeElapsed((prev) => prev + 1);
       }, 1000);
     }
@@ -220,8 +221,8 @@ export default function CreateSessionPage() {
           });
 
         // stop the timer
-        if (timer) {
-          clearInterval(timer);
+        if (timer.current) {
+          clearInterval(timer.current);
         }
       } catch (error: any) {
         console.error("Error creating room", error);
@@ -239,8 +240,8 @@ export default function CreateSessionPage() {
       setActive(2);
 
       // stop the timer
-      if (timer) {
-        clearInterval(timer);
+      if (timer.current) {
+        clearInterval(timer.current);
       }
     }
 
@@ -289,8 +290,8 @@ export default function CreateSessionPage() {
 
     // reset timer
     setTimeElapsed(0);
-    if (timer) {
-      clearInterval(timer);
+    if (timer.current) {
+      clearInterval(timer.current);
     }
 
     // setSelectedCategories([]);
