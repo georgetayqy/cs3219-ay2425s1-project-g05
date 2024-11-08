@@ -17,6 +17,7 @@ import {
   Flex,
   Group,
   Input,
+  Kbd,
   Menu,
   Radio,
   rem,
@@ -649,28 +650,40 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                           }}
                         ></div>
                       </Menu.Target>
-                      <ActionIcon
-                        variant="subtle"
-                        onClick={onSendButtonClick}
-                        style={{ padding: "6px" }}
-                        size={"lg"}
-                        color="gray"
-                        loading={messageState === MessageState.SENDING}
-                        onContextMenu={onSendButtonClick}
+                      <Tooltip
+                        label={`Right-click opens additional options for sending messages!`}
+                        multiline
+                        w={200}
+                        position="right"
                       >
-                        {defaultSendTo === "person" ? (
-                          <IconSend2 />
-                        ) : (
-                          <IconMailAi />
-                        )}
-                      </ActionIcon>
+                        <ActionIcon
+                          variant="subtle"
+                          onClick={onSendButtonClick}
+                          style={{ padding: "6px" }}
+                          size={"lg"}
+                          color="gray"
+                          loading={messageState === MessageState.SENDING}
+                          onContextMenu={onSendButtonClick}
+                        >
+                          {defaultSendTo === "person" ? (
+                            <IconSend2 />
+                          ) : (
+                            <IconMailAi />
+                          )}
+                        </ActionIcon>
+                      </Tooltip>
                     </Box>
                     <Menu.Dropdown>
                       <Menu.Label>
                         <Group>
                           {" "}
-                          <div style={{ flex: 1 }}>Send to </div>{" "}
-                          <div> Default </div>
+                          <div style={{ flex: 1 }}>
+                            Default send target{" "}
+                          </div>{" "}
+                          <div>
+                            {" "}
+                            <Kbd>ENTER</Kbd> to send{" "}
+                          </div>
                         </Group>
                       </Menu.Label>
                       <Menu.Item
@@ -692,7 +705,11 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                             </Box>
                           </Group>
                         }
-                        onClick={onSendMessage}
+                        // onClick={onSendMessage}
+                        onClick={() => {
+                          setDefaultSendTo("person");
+                          setIsSendToMenuOpen(false);
+                        }}
                       >
                         <div style={{ flex: 1 }}>
                           {otherUser?.name || "Other users"}
@@ -715,7 +732,11 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                             <Radio value="gemini_1.0" />
                           </Box>
                         }
-                        onClick={onSendAiMessage}
+                        // onClick={onSendAiMessage}
+                        onClick={() => {
+                          setDefaultSendTo("gemini_1.0");
+                          setIsSendToMenuOpen(false);
+                        }}
                       >
                         <Group
                           style={{
@@ -729,6 +750,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                             variant="gradient"
                             gradient={{ from: "violet", to: "blue", deg: 135 }}
                             radius={"xs"}
+                            style={{ cursor: "pointer" }}
                           >
                             AI
                           </Badge>
