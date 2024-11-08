@@ -62,7 +62,7 @@ if (typeof persistenceDir === 'string') {
         ldb.storeUpdate(docName, update);
       });
     },
-    writeState: async (_docName, _ydoc) => { },
+    writeState: async (_docName, _ydoc) => {},
   };
 }
 
@@ -85,6 +85,11 @@ const getPersistence = () => persistence;
  * @type {Map<string,WSSharedDoc>}
  */
 const docs = new Map();
+
+/**
+ * To export to allow others to see the set of deleted rooms
+ */
+const deleted = new Set();
 
 const messageSync = 0;
 const messageAwareness = 1;
@@ -174,12 +179,12 @@ class WSSharedDoc extends Doc {
     };
 
     this.awareness.on('update', awarenessChangeHandler);
-    this.on('update', /** @type {any} */(updateHandler));
+    this.on('update', /** @type {any} */ (updateHandler));
 
     if (isCallbackSet) {
       this.on(
         'update',
-        /** @type {any} */(
+        /** @type {any} */ (
           debounce(callbackHandler, CALLBACK_DEBOUNCE_WAIT, {
             maxWait: CALLBACK_DEBOUNCE_MAXWAIT,
           })
@@ -277,12 +282,14 @@ const closeConn = (doc, userId, conn) => {
         doc.destroy();
       });
 
+      deleted.add(doc.name);
       LocalClient.removeQuestion(doc.name);
       docs.delete(doc.name);
     } else if (doc.conns.size === 0 && persistence === null) {
       // if the doc is in memory, delete it, do not persist it at all
       const currentDoc = docs.get(doc.name);
       try {
+        deleted.add(doc.name);
         currentDoc.destroy();
         docs.delete(doc.name);
         LocalClient.removeQuestion(doc.name);
@@ -361,7 +368,7 @@ const setupWSConnection = (
   // listen and reply to events
   conn.on(
     'message',
-    /** @param {ArrayBuffer} message */(message) => {
+    /** @param {ArrayBuffer} message */ (message) => {
       return messageListener(conn, doc, new Uint8Array(message));
     }
   );
@@ -459,4 +466,5 @@ export {
   WSSharedDoc,
   getYDoc,
   setupWSConnection,
+  deleted
 };
