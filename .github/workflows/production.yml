@@ -38,7 +38,7 @@ jobs:
         run: npm run build
 
       - name: Test User Service
-        working-directory: user-sevice
+        working-directory: user-service
         run: |
           npm ci
           npm run test
@@ -51,7 +51,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test Question Service
-        working-directory: question-sevice
+        working-directory: question-service
         run: |
           npm ci
           npm run test
@@ -64,7 +64,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test Matching Service
-        working-directory: matching-sevice
+        working-directory: matching-service
         run: |
           npm ci
           npm run test
@@ -77,7 +77,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test Collaboration Service
-        working-directory: collaboration-sevice
+        working-directory: collaboration-service
         run: |
           npm ci
           npm run test
@@ -90,7 +90,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test Communication Service
-        working-directory: communication-sevice
+        working-directory: communication-service
         run: |
           npm ci
           npm run test
@@ -103,7 +103,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test Run Service
-        working-directory: run-sevice
+        working-directory: run-service
         run: |
           npm ci
           npm run test
@@ -116,7 +116,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test History Service
-        working-directory: history-sevice
+        working-directory: history-service
         run: |
           npm ci
           npm run test
@@ -129,7 +129,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test AI Chat Service
-        working-directory: ai-chat-sevice
+        working-directory: ai-chat-service
         run: |
           npm ci
           npm run test

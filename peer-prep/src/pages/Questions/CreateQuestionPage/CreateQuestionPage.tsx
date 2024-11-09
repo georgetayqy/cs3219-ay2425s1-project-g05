@@ -244,7 +244,7 @@ export default function CreateQuestionPage() {
           label="Template Code"
           code={templateCode}
           onCodeChange={setTemplateCode}
-          required={false}
+          required={true}
         />
 
         <TextInput
@@ -275,6 +275,7 @@ export default function CreateQuestionPage() {
                   )
                 }
                 minRows={8}
+                required={true}
               />
               <CodeEditorWithLanguageSelector
                 label={`Test Code ${index + 1}`}
@@ -282,7 +283,7 @@ export default function CreateQuestionPage() {
                 onCodeChange={(value) =>
                   handleTestCaseChange(index, "testCode", value)
                 }
-                required={false}
+                required={true}
                 height="130px"
               />
               <Textarea
