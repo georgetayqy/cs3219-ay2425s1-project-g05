@@ -24,7 +24,6 @@ const joiTestCaseSchema = Joi.object({
     "boolean.base": "isPublic must be a boolean",
     "any.required": "isPublic is required",
   }),
-  meta: Joi.any().optional(), // assuming optional for now
   expectedOutput: Joi.string()
     .trim()
     .min(1)
