@@ -622,6 +622,8 @@ export default function SessionPage() {
               userId={user._id}
               otherUserId={otherUserId}
               latestResultsRef={latestResultsRef}
+              roomId={roomId}
+              question={question.description.descriptionText}
             />
           </Stack>
         </Flex>

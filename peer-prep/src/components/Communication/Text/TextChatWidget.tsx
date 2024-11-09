@@ -313,6 +313,8 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
           },
           body: JSON.stringify({
             message: messageToSend,
+            roomId: roomId,
+            apiKey: 'AIzaSyBdY9ADmW5RrlLrHP_9ikir7SwIKIPUenU', // TODO: retrieve api key from env? 
           }),
         }
       ).then((res) => {
