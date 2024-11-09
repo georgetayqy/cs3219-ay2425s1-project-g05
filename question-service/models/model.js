@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
+
+const categories = [ 0, 1, 2, 3, 4, 5, 6, 7 ];
 const testCaseSchema = new Schema({
   testCode: {
     type: String,
@@ -50,10 +52,11 @@ const questionSchema = new Schema({
   },
   categoriesId: {
     type: [Number],
+    enum: categories,
     required: [true, "Categories is required"],
     validate: {
       validator: (value) => {
-        return value.length > 0;
+        return value.every((category) => categories.includes(category));
       },
     },
   },
