@@ -746,7 +746,10 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                   placeholder="Type a message... (ENTER) to send"
                   w={"100%"}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" && event.ctrlKey) {
+                    if (
+                      event.key === "Enter" &&
+                      (event.ctrlKey || event.shiftKey)
+                    ) {
                       // onSendMessage();
                       // add newlinw
                       setDraftMessage((prev) => prev + "\n");
@@ -756,7 +759,9 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                       onBeforeSendMessage();
                     }
                   }}
-
+                  autosize={isChatFullscreen}
+                  maxRows={7}
+                  minRows={3}
                   // disabled={messageState === MessageState.SENDING}
                 />
                 <Menu

@@ -32,7 +32,7 @@
   &.fullScreen {
     width: calc(100% - 8rem);
     .chatContents {
-      height: calc(100vh - 256px);
+      height: calc(100vh - 320px);
     }
   }
 
