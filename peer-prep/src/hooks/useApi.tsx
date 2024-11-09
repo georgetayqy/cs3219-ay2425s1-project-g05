@@ -85,9 +85,13 @@ export default function useApi() {
       //   return;
       // }
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         setUser(null);
         navigate("/login");
+
+        throw {
+          message: "Login expired or not logged in. Please log in again!",
+        };
       }
 
       const data: Q = await response.json();
