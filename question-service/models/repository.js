@@ -32,13 +32,13 @@ const updateQuestionById = async (id, question) => {
   return Question.findOneAndUpdate({_id: { $eq: id } }, sanitizedQuestion, { new: true });
 };
 
-const getFilteredQuestions = async (body) => {
-  const { categoriesId, difficulty } = body;
-  let filter = { isDeleted: false };
-  console.log(categoriesId)
+
+const getRandomQuestionByCategoriesAndDifficulty = async (body) => {
+  const {categoriesId, difficulty} = body;
+  let filter = {isDeleted: false};
   if (categoriesId) {
     filter.categoriesId = {
-      $in: categoriesId, 
+      $in: categoriesId,
     };
   }
   if (difficulty) {
@@ -46,8 +46,12 @@ const getFilteredQuestions = async (body) => {
       $in: difficulty.map((difficulty) => difficulty.toUpperCase()),
     };
   }
-  return Question.find(filter);
-};
+  const [randomQuestion] = await Question.aggregate([
+    { $match: filter },
+    { $sample: { size: 1 } }
+  ]);
+  return randomQuestion;
+}
 
 const getQuestionsByDescription = async (description) => {
   return Question.find({ description: { $eq: description }, isDeleted: false });};
@@ -79,8 +83,8 @@ export {
   getQuestionById,
   deleteQuestionById,
   updateQuestionById,
-  getFilteredQuestions,
   getQuestionsByDescription,
   getQuestionsByTitleAndDifficulty,
   getDistinctCategories,
+  getRandomQuestionByCategoriesAndDifficulty
 };

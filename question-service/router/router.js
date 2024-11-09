@@ -5,7 +5,6 @@ import {
   getQuestionById,
   deleteQuestionById,
   updateQuestionById,
-  getFilteredQuestions,
   findQuestion,
   getDistinctCategoriesId,
   getTestCasesWithId,
@@ -35,8 +34,6 @@ router
   .route("/id/:id")
   .put(checkAdmin, validateUpdatedQuestion, updateQuestionById);
 
-// GET ALL QUESTIONS BY CATEGORY & DIFFICULTY (CAN HAVE MULTIPLE/NO CATEGORIES/DIFFICULTIES)
-router.route("/filter/").get(getFilteredQuestions);
 
 // GET A RANDOM QUESTION BY CATEGORY &/OR DIFFICULTY (CAN HAVE MULTIPLE/NO CATEGORIES/DIFFICULTIES)
 // IF BOTH CATEGORIES & DIFFICULTY ARE PROVIDED, NEED TO SATISFY EITHER ONE OF EACH

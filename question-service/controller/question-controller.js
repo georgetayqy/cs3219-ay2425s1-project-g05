@@ -9,7 +9,6 @@ import {
   ormGetQuestionById as _getQuestionById,
   ormDeleteQuestionById as _deleteQuestionById,
   ormUpdateQuestionById as _updateQuestionById,
-  ormGetFilteredQuestions as _getFilteredQuestions,
   ormFindQuestion as _findQuestion,
   ormGetQuestionsByDescription as _getQuestionsByDescription,
   ormGetQuestionsByTitleAndDifficulty as _getQuestionByTitleAndDifficulty,
@@ -293,87 +292,6 @@ const updateQuestionById = async (req, res, next) => {
   }
 };
 
-const getFilteredQuestions = async (req, res, next) => {
-  try {
-    const { categoriesId, difficulty } = req.query;
-
-    let categoriesIdInt = null;
-
-    if (categoriesId) {
-      if (!Array.isArray(categoriesId)) {
-        throw new BadRequestError("CategoriesId should be an array!");
-      }
-      // check whether categories exist
-      let distinctCategories = await _getDistinctCategoriesId();
-      categoriesIdInt = categoriesId.map((id) => parseInt(id));
-      const invalidCategories = categoriesIdInt.filter(
-        (category) => !distinctCategories.includes(category)
-      );
-      if (invalidCategories.length > 0) {
-        throw new BadRequestError(
-          `Questions with categoriesId specified do not exist: ${invalidCategories.join(
-            ", "
-          )}`
-        );
-      }
-    }
-
-    if (difficulty) {
-      if (!Array.isArray(difficulty)) {
-        throw new BadRequestError("Difficulty should be an array!");
-      }
-      if (
-        difficulty.some(
-          (diff) => !["EASY", "MEDIUM", "HARD"].includes(diff.toUpperCase())
-        )
-      ) {
-        throw new BadRequestError(
-          "Difficulty should be either EASY, MEDIUM or HARD!"
-        );
-      }
-    }
-
-    let filteredQuestions = await _getFilteredQuestions({
-      categoriesId: categoriesIdInt,
-      difficulty,
-    });
-
-    // No questions found that match both categories and difficulty
-    if (filteredQuestions.length === 0) {
-      return res.status(200).json({
-        statusCode: 204,
-        message: "No questions found with matching categories and difficulty",
-        data: { questions: [] },
-      });
-    }
-
-    filteredQuestions = filteredQuestions.map((question) => {
-      const categories = getCategoriesWithId(question.categoriesId);
-      return {
-        ...question.toObject(),
-        categories,
-      };
-    });
-
-    // add testcase ids to question.meta
-    filteredQuestions = filteredQuestions.map((question) =>
-      addTestcaseIdToQuestion(question)
-    );
-
-    return res.status(200).json({
-      statusCode: 200,
-      message: "Questions found successfully",
-      data: { questions: filteredQuestions },
-    });
-  } catch (err) {
-    next(
-      err instanceof BaseError
-        ? err
-        : new BaseError(500, "Error filtering question")
-    );
-  }
-};
-
 const findQuestion = async (req, res, next) => {
   try {
     const { categoriesId, difficulty } = req.query;
@@ -429,7 +347,7 @@ const findQuestion = async (req, res, next) => {
     }
 
     foundQuestion = {
-      ...foundQuestion.toObject(),
+      ...foundQuestion,
       categories: getCategoriesWithId(foundQuestion.categoriesId),
     };
     // add testcase ids to question.meta
@@ -552,7 +470,6 @@ export {
   getQuestionById,
   deleteQuestionById,
   updateQuestionById,
-  getFilteredQuestions,
   findQuestion,
   getDistinctCategoriesId,
   getTestCasesWithId,
