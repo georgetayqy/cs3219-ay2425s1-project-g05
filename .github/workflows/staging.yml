@@ -127,7 +127,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:staging-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:staging-${{ github.sha }}
 
       - name: Build Question Service Image
@@ -139,7 +139,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:staging-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:staging-${{ github.sha }}
 
       - name: Build Matching Service Image
@@ -151,7 +151,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:staging-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:staging-${{ github.sha }}
 
       - name: Build Collaboration Service Image
@@ -163,7 +163,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:staging-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:staging-${{ github.sha }}
 
       - name: Build Communication Service Image
@@ -175,7 +175,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:staging-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:staging-${{ github.sha }}
 
       - name: Build Run Service Image
@@ -187,7 +187,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:staging-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:${{ github.sha }}
 
       - name: Build History Service Image
@@ -199,20 +199,20 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:staging-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:${{ github.sha }}
 
-      - name: Build AI Chat Service Image
+      - name: Build Gen AI Service Image
         uses: docker/build-push-action@v6
         with:
-          context: ./ai-chat-service
-          file: ./ai-chat-service/Dockerfile
+          context: ./gen-ai-service
+          file: ./gen-ai-service/Dockerfile
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-ai-chat-service:staging-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ vars.DOCKER_IMAGE_VERSION }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-ai-chat-service:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:${{ github.sha }}
 
   deploy:
     needs: build

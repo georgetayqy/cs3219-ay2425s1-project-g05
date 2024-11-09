@@ -125,7 +125,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:${{ github.sha }}
 
       - name: Build Question Service Image
@@ -137,7 +137,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:${{ github.sha }}
 
       - name: Build Matching Service Image
@@ -149,7 +149,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:${{ github.sha }}
 
       - name: Build Collaboration Service Image
@@ -161,7 +161,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:${{ github.sha }}
 
       - name: Build Communication Service Image
@@ -173,7 +173,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:${{ github.sha }}
 
       - name: Build Run Service Image
@@ -185,7 +185,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:${{ github.sha }}
       
       - name: Build History Service Image
@@ -197,20 +197,20 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:${{ github.sha }}
 
-      - name: Build AI Chat Service Image
+      - name: Build Gen AI Service Image
         uses: docker/build-push-action@v6
         with:
-          context: ./ai-chat-service
-          file: ./ai-chat-service/Dockerfile
+          context: ./gen-ai-service
+          file: ./gen-ai-service/Dockerfile
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-ai-chat-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:${{ vars.DOCKER_IMAGE_VERSION }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-ai-chat-service:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:${{ github.sha }}
 
   deploy:
     needs: build
