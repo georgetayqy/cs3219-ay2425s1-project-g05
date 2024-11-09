@@ -13,6 +13,7 @@ import {
   Box,
   Button,
   Center,
+  Code,
   Collapse,
   Flex,
   Group,
@@ -1082,14 +1083,36 @@ function TextMessage({
   const textObjects = messageContentSplit.map((textObj, i) => {
     switch (textObj.type) {
       case "code":
+        // look in textObj.content for the matching language
+        const languages = {
+          js: /\b(javascript|js|function|const|let|=>|console\.log|document)\b/,
+          python: /\b(python|def|print\(|import|class|lambda|self)\b/,
+          java: /\b(java|public\s+class|System\.out\.print|void\s+main|new\s+[A-Z])/,
+          c: /\b(cpp|#include|int\s+main|printf|scanf)\b/,
+          html: /<html>|<body>|<\/html>|<\/body>/,
+          css: /\b(color:|background-color:|font-size:|margin:|padding:)\b/,
+          sql: /\b(sql|SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)\b/,
+          // Add more languages and patterns here as needed
+        };
+
+        let codeLang = "";
+
+        // Check each language pattern against the text
+        for (const [language, pattern] of Object.entries(languages)) {
+          if (pattern.test(textObj.content)) {
+            codeLang = language;
+          }
+        }
         return (
           <CodeHighlight
             code={textObj.content}
-            language="python"
+            language={codeLang}
             copyLabel="Copy"
             copiedLabel="Copied"
             key={i}
+            onClick={(e) => e.stopPropagation()}
           />
+          // <Code block>{textObj.content}</Code>
         );
         break;
       case "plain":
