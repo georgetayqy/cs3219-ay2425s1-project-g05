@@ -73,7 +73,8 @@ const questionSchema = new Schema({
     },
   },
   templateCode: {
-    type: String
+    type: String,
+    required: [true, "Template code is required"],
   },
   solutionCode: {
     type: String,

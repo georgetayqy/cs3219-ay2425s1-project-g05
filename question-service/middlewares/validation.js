@@ -96,11 +96,11 @@ const joiQuestionSchema = Joi.object({
     "any.required":
       "Test cases are required and should have testCode, isPublic, and expectedOutput",
   }),
-  templateCode: Joi.string().optional().trim().min(1).messages({
+  templateCode: Joi.string().required().trim().min(1).messages({
     "string.min": "Template code cannot be empty",
     "string.empty": "Template code cannot be empty",
   }),
-  solutionCode: Joi.string().optional().trim().min(1).messages({
+  solutionCode: Joi.string().required().trim().min(1).messages({
     "string.min": "Solution cannot be empty",
     "string.empty": "Solution code cannot be empty",
   }),
