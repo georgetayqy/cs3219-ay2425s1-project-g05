@@ -29,6 +29,14 @@
   z-index: 40;
 
   border: light-dark(0px, 1px solid var(--mantine-color-dark-7));
+  &.fullScreen {
+    width: calc(100% - 8rem);
+    .chatContents {
+      height: calc(100vh - 256px);
+    }
+  }
+
+  transition: all 0.175s ease-out;
 }
 
 .chatHeader {
@@ -302,4 +310,20 @@
   .chatFooter {
     background: var(--mantine-color-dark-7);
   }
+}
+
+.collapse {
+  position: relative;
+}
+
+.resizeHandlerE {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+
+  background-color: var(--mantine-color-gray-2);
+  /* cursor: e-resize; */
+  z-index: 50;
 }

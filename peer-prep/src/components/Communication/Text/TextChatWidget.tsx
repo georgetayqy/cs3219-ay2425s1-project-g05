@@ -39,6 +39,8 @@ import {
   IconArrowDown,
   IconArrowNarrowDown,
   IconArrowsLeftRight,
+  IconArrowsMaximize,
+  IconArrowsMinimize,
   IconBrandGithubCopilot,
   IconCamera,
   IconCancel,
@@ -62,7 +64,12 @@ import {
   IconVideo,
   IconX,
 } from "@tabler/icons-react";
-import { useInViewport, useTimeout } from "@mantine/hooks";
+import {
+  useInViewport,
+  useLocalStorage,
+  useMouse,
+  useTimeout,
+} from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { formatTime } from "../../../utils/utils";
 import VideoChatWidget from "../Video/VideoChatWidget";
@@ -504,9 +511,40 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     }, 100);
   }
 
+  const [isChatFullscreen, setIsChatFullscreen] = useState(false);
+  // const { x, y } = useMouse();
+  // const [preferredWidth, setPreferredWidth] = useLocalStorage<number>({
+  //   key: "preferredWidth",
+  // });
+  // const [preferredWidth, setPreferredWidth] = useState(0);
+  // const [isResizingChatE, setIsResizingChatE] = useState(false);
+  // const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  //   setIsResizingChatE(true);
+  // };
+
+  // const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  //   if (isResizingChatE) {
+  //     // formula: mouseX / windowWidth * 100 - 4 rem (4 rem is 64px)
+  //     const newWidth =
+  //       (x / window.innerWidth) * 100 - (64 / window.innerWidth) * 100;
+  //     setPreferredWidth(newWidth);
+  //   }
+  // };
+
+  // const handleMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  //   setIsResizingChatE(false);
+  // };
+
   return (
     <Box className={classes.container}>
-      <Box className={classes.chatContainer}>
+      <Box
+        className={`${classes.chatContainer} ${
+          isChatFullscreen && isChatOpen && classes.fullScreen
+        }`}
+        // style={{
+        //   width: preferredWidth === 0 ? "inherit" : `calc(${preferredWidth}vw)`,
+        // }}
+      >
         <Flex
           className={classes.chatHeader}
           onClick={() => setIsChatOpen((prev) => !prev)}
@@ -551,6 +589,42 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
             </Box>
           )}
           <Group>
+            {isChatOpen &&
+              (isChatFullscreen ? (
+                <Tooltip label="Compact the chat window">
+                  <ActionIcon
+                    variant="transparent"
+                    color="initials"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsChatFullscreen(false);
+                    }}
+                  >
+                    <IconArrowsMinimize
+                      width="1.25rem"
+                      className={`${classes.icon}`}
+                    />
+                  </ActionIcon>
+                </Tooltip>
+              ) : (
+                <Tooltip label="Maximize the chat window">
+                  <ActionIcon
+                    variant="transparent"
+                    color="initials"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsChatFullscreen(true);
+                    }}
+                  >
+                    <IconArrowsMaximize
+                      width="1.25rem"
+                      className={`${classes.icon}`}
+                    />
+                  </ActionIcon>
+                </Tooltip>
+              ))}
             <ActionIcon variant="transparent" color="initials">
               <IconCaretUpFilled
                 width="1.25rem"
@@ -560,7 +634,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
           </Group>
         </Flex>
 
-        <Collapse in={isChatOpen}>
+        <Collapse in={isChatOpen} className={classes.collapse}>
           <Group className={classes.chatContentColored}>
             {usersInRoom.length > 1 ? (
               <Indicator
@@ -942,6 +1016,14 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
               </Center>
             )}
           </Box>
+
+          {/* <div
+            className={classes.resizeHandlerE}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          ></div> */}
         </Collapse>
         <div id="video-chat-widget"> </div>
       </Box>
