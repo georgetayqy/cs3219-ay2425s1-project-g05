@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { categoriesIdToCategories } from "../constants/categories.js";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
@@ -14,6 +15,7 @@ import {
   ormGetQuestionsByTitleAndDifficulty as _getQuestionByTitleAndDifficulty,
   ormGetDistinctCategoriesId as _getDistinctCategoriesId,
 } from "../models/orm.js";
+import { getCategoriesWithId } from "../utils/index.js";
 
 const createQuestion = async (req, res, next) => {
   try {
@@ -41,30 +43,11 @@ const createQuestion = async (req, res, next) => {
       );
     }
 
-    // count number of isPublic test cases, !isPublic test cases, and total test cases
-    const metaData = {
-      publicTestCaseCount: req.body.testCases.filter(
-        (testCase) => testCase.isPublic
-      ).length,
-      privateTestCaseCount: req.body.testCases.filter(
-        (testCase) => !testCase.isPublic
-      ).length,
-      totalTestCaseCount: req.body.testCases.length,
-    };
+    const createdQuestion = await _createQuestion(req.body);
 
-    const newQuestion = {
-      ...req.body,
-      meta: metaData,
-    };
-
-    const createdQuestion = await _createQuestion(newQuestion);
-    const createdQuestionCategories = {
-      ...createdQuestion.toObject(),
-      categories: getCategoriesWithId(createdQuestion.categoriesId),
-    };
     return res
       .status(201)
-      .json({ statusCode: 201, data: { question: createdQuestionCategories } });
+      .json({ statusCode: 201, data: { question: createdQuestion } });
   } catch (err) {
     console.log(err);
     next(
@@ -87,19 +70,6 @@ const getAllQuestions = async (req, res, next) => {
       });
     }
 
-    // for all questions, get the categories with the categoriesId
-    allQuestions = allQuestions.map((question) => {
-      const categories = getCategoriesWithId(question.categoriesId);
-      return {
-        ...question.toObject(),
-        categories,
-      };
-    });
-    // for all questions, add testcase ids to question.meta
-    allQuestions = allQuestions.map((question) =>
-      addTestcaseIdToQuestion(question)
-    );
-
     return res.status(200).json({
       statusCode: 200,
       message: "All questions found successfully.",
@@ -119,36 +89,16 @@ const getQuestionById = async (req, res, next) => {
   const { id } = req.params;
 
   try {
+    // check if id is valid mongoose id
+    if (!mongoose.isValidObjectId(id)) {
+      throw new NotFoundError("Question not found due to invalid id.");
+    }
+
     let foundQuestion = await _getQuestionById(id);
 
-    if (foundQuestion.length === 0) {
+    if (!foundQuestion) {
       throw new NotFoundError("Question not found");
     }
-    // if (!req.user) {
-    //   throw new ForbiddenError("Please login to perform this action");
-    // }
-    // TODO: remove private test cases if not run service
-    // if (true) {
-    //     const { testCases, ...rest } = foundQuestion[0].toObject();
-    //     const publicTestCases = testCases.filter(
-    //       (testCase) => testCase.isPublic
-    //     );
-    //     foundQuestion = {
-    //       ...rest,
-    //       testCases: publicTestCases,
-    //     };
-
-    // }
-
-    // get the categories with the categoriesId
-    const categories = getCategoriesWithId(foundQuestion[0].categoriesId);
-    foundQuestion = {
-      ...foundQuestion[0].toObject(),
-      categories,
-    };
-
-    // add testcase ids to question.meta
-    foundQuestion = addTestcaseIdToQuestion(foundQuestion);
 
     return res.status(200).json({
       statusCode: 200,
@@ -169,8 +119,12 @@ const deleteQuestionById = async (req, res, next) => {
   const { id } = req.params;
 
   try {
+    if (!mongoose.isValidObjectId(id)) {
+      throw new NotFoundError("Question not found due to invalid id.");
+    }
+
     const questionToDelete = await _getQuestionById(id);
-    if (questionToDelete.length === 0) {
+    if (!questionToDelete) {
       throw new NotFoundError("Question not found");
     }
 
@@ -179,12 +133,6 @@ const deleteQuestionById = async (req, res, next) => {
     if (!result) {
       throw new NotFoundError("Question not found");
     }
-    result = {
-      ...result.toObject(),
-      categories: getCategoriesWithId(result.categoriesId),
-    };
-    // add testcase ids to question.meta
-    result = addTestcaseIdToQuestion(result);
 
     return res.status(200).json({
       statusCode: 200,
@@ -206,6 +154,9 @@ const updateQuestionById = async (req, res, next) => {
   const { description, title, difficulty, categoriesId, testCases } = req.body;
 
   try {
+    if (!mongoose.isValidObjectId(id)) {
+      throw new NotFoundError("Question not found due to invalid id.");
+    }
     // CHECK WHETHER QUESTION TO UPDATE EXISTS (AND NOT DELETED)
     const questionToUpdate = await _getQuestionById(id);
 
@@ -232,8 +183,8 @@ const updateQuestionById = async (req, res, next) => {
 
     // CHECK FOR DUPLICATE TITLE AND DIFFICULTY IF PROVIDED
     if (title || difficulty) {
-      const titleToCheck = title || questionToUpdate[0].title;
-      const difficultyToCheck = difficulty || questionToUpdate[0].difficulty;
+      const titleToCheck = title || questionToUpdate.title;
+      const difficultyToCheck = difficulty || questionToUpdate.difficulty;
 
       const duplicateTitleAndDifficultyQuestions =
         await _getQuestionByTitleAndDifficulty(titleToCheck, difficultyToCheck);
@@ -251,33 +202,12 @@ const updateQuestionById = async (req, res, next) => {
 
     let updatedQuestionDetails = req.body;
 
-    if (testCases) {
-      const metaData = {
-        publicTestCaseCount: testCases.filter((testCase) => testCase.isPublic)
-          .length,
-        privateTestCaseCount: testCases.filter((testCase) => !testCase.isPublic)
-          .length,
-        totalTestCaseCount: testCases.length,
-      };
-      updatedQuestionDetails = {
-        ...updatedQuestionDetails,
-        meta: metaData,
-      };
-    }
 
     let updatedQuestion = await _updateQuestionById(id, updatedQuestionDetails);
 
     if (!updatedQuestion) {
       throw new NotFoundError("Question not found");
     }
-
-    updatedQuestion = {
-      ...updatedQuestion.toObject(),
-      categories: getCategoriesWithId(updatedQuestion.categoriesId),
-    };
-
-    // add testcase ids to question.meta
-    updatedQuestion = addTestcaseIdToQuestion(updatedQuestion);
 
     return res
       .status(200)
@@ -405,15 +335,20 @@ const getTestCasesWithId = async (req, res, next) => {
   const { id } = req.params;
 
   try {
+
+    if (!mongoose.isValidObjectId(id)) {
+      throw new NotFoundError("Question not found due to invalid id.");
+    }
+    
     let foundQuestion = await _getQuestionById(id);
 
-    if (foundQuestion.length === 0) {
+    if (!foundQuestion) {
       throw new NotFoundError("Question not found");
     }
 
     if (
-      !foundQuestion[0].testCases ||
-      foundQuestion[0].testCases.length === 0
+      !foundQuestion.testCases ||
+      foundQuestion.testCases.length === 0
     ) {
       return res.status(200).json({
         statusCode: 204,
@@ -423,7 +358,7 @@ const getTestCasesWithId = async (req, res, next) => {
     }
 
     // get all testCases from foundQuestion
-    const testCases = foundQuestion[0].testCases;
+    const testCases = foundQuestion.testCases;
 
     return res.status(200).json({
       statusCode: 200,
@@ -438,11 +373,6 @@ const getTestCasesWithId = async (req, res, next) => {
         : new BaseError(500, "Error retrieving question")
     );
   }
-};
-
-// move to utils
-const getCategoriesWithId = (categoriesId) => {
-  return categoriesId.map((id) => categoriesIdToCategories[id]);
 };
 
 const addTestcaseIdToQuestion = (question) => {
