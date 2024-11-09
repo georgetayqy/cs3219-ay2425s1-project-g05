@@ -77,6 +77,7 @@ import { User } from "../../../types/user";
 
 import GeminiIcon from "../../../assets/integrations/google-gemini-icon.svg";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
+import { CodeHighlight } from "@mantine/code-highlight";
 
 enum ChatState {
   DISCONNECTED,
@@ -1074,6 +1075,28 @@ function TextMessage({
       );
     }
   }
+
+  const messageContentSplit = splitTextIntoObjects(msg.content);
+  console.log({ messageContentSplit });
+
+  const textObjects = messageContentSplit.map((textObj, i) => {
+    switch (textObj.type) {
+      case "code":
+        return (
+          <CodeHighlight
+            code={textObj.content}
+            language="python"
+            copyLabel="Copy"
+            copiedLabel="Copied"
+            key={i}
+          />
+        );
+        break;
+      case "plain":
+        return <Text key={i}> {textObj.content} </Text>;
+        break;
+    }
+  });
   return (
     <Box
       id={msg.messageId}
@@ -1145,13 +1168,14 @@ function TextMessage({
               size={"md"}
             /> */}
             {getAvatar(msg.integration)}
-            <Text className={`${classes.textBox}`}>
+            <Box className={`${classes.textBox}`}>
               {" "}
-              {msg.content}{" "}
+              {/* {msg.content}{" "} */}
+              {textObjects}
               <span className={`${classes.timestamp}`}>
                 {formatTime(new Date(msg.timestamp))}{" "}
               </span>{" "}
-            </Text>
+            </Box>
           </Box>
         </Box>
       ) : (
@@ -1207,7 +1231,8 @@ function TextMessage({
             </Flex>
           )}
           <Box className={`${classes.entry} ${classes.send}`}>
-            <Text className={`${classes.textBox}`}> {msg.content} </Text>
+            {/* <Text className={`${classes.textBox}`}> {msg.content} </Text> */}
+            <Box className={classes.textBox}>{textObjects}</Box>
             <Text
               className={`${classes.timestamp}`}
               onClick={() => console.log(msg)}
@@ -1220,4 +1245,65 @@ function TextMessage({
       )}
     </Box>
   );
+}
+
+type FormattableTextOption = "plain" | "code";
+
+type FormattableText = {
+  content: string;
+  type: FormattableTextOption;
+};
+function splitTextIntoObjects(text: string): FormattableText[] {
+  const result = [];
+
+  // Define patterns for different types, making it easy to expand in the future
+  const patterns = {
+    code: /```([^`]*)```/g,
+    // Future patterns like bold, underline can be added here
+    // bold: /\*\*([^*]+)\*\*/g,
+    // underline: /__(.*?)__/g
+  };
+
+  let lastIndex = 0;
+  let match;
+
+  // Function to process a pattern match
+  const processMatch = (match, type, startIndex, endIndex) => {
+    // Add any plain text before the matched pattern
+    if (startIndex > lastIndex) {
+      result.push({
+        content: text.slice(lastIndex, startIndex),
+        type: "plain",
+      });
+    }
+
+    // Add the matched content as the specified type
+    result.push({
+      content: match.trim() + "\n",
+      type: type,
+    });
+
+    // Update lastIndex to continue after this matched pattern
+    lastIndex = endIndex;
+  };
+
+  // Loop through each pattern type
+  for (const [type, pattern] of Object.entries(patterns)) {
+    // Reset lastIndex for each pattern search
+    lastIndex = 0;
+
+    while ((match = pattern.exec(text)) !== null) {
+      processMatch(match[1], type, match.index, pattern.lastIndex);
+    }
+  }
+
+  // Add any remaining plain text after the last match
+  if (lastIndex < text.length) {
+    result.push({
+      content: text.slice(lastIndex),
+      type: "plain",
+    });
+  }
+
+  return result;
 }
