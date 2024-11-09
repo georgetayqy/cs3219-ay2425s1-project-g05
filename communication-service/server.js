@@ -56,7 +56,6 @@ function storeMessage(roomId, message) {
 
 function cleanupRoom(roomId) {
   delete rooms[roomId]
-  delete calls[roomId]
 }
 
 
