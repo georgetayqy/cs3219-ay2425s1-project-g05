@@ -16,10 +16,6 @@ const testCaseSchema = new Schema({
     type: Boolean,
     required: [true, "isPublic status is required"]
   },
-  meta: {
-    type: Schema.Types.Mixed,
-    // required: [true, "Meta is required"], -- Assuming optional for now
-  },
   expectedOutput: {
     type: String,
     required: [true, "Expected output is required"],
