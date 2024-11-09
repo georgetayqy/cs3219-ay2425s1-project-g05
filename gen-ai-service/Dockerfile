@@ -9,7 +9,7 @@ FROM node:20
 EXPOSE 8008
 
 # Set work dir to prevent retarts
-WORKDIR /ai-chat-service
+WORKDIR /gen-ai-service
 
 # copy all files into the Docker container
 COPY . .
