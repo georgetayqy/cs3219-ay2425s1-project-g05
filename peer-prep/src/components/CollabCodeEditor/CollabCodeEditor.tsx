@@ -88,14 +88,17 @@ export default function CodeEditor({
       return;
     }
 
+    console.log("LOG(COLLAB): provider = ", {
+      provideraware: provider?.awareness,
+    });
     const awareness = provider?.awareness;
     const colour = getColour();
     const user = name + colour;
 
-    awareness.setLocalStateField("user", {
-      name: user,
-      color: `#${colour}`,
-    });
+    // awareness.setLocalStateField("user", {
+    //   name: "Monaco" + new Date().getTime(),
+    //   color: "#ffb61e",
+    // });
 
     const binding = new MonacoBinding(
       doc.getText(),
