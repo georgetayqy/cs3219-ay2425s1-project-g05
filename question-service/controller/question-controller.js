@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { categoriesIdToCategories } from "../constants/categories.js";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
@@ -16,6 +15,7 @@ import {
   ormGetDistinctCategoriesId as _getDistinctCategoriesId,
 } from "../models/orm.js";
 import { getCategoriesWithId } from "../utils/index.js";
+import { isValidObjectId } from "../utils/services.js";
 
 const createQuestion = async (req, res, next) => {
   try {
@@ -90,7 +90,7 @@ const getQuestionById = async (req, res, next) => {
 
   try {
     // check if id is valid mongoose id
-    if (!mongoose.isValidObjectId(id)) {
+    if (!isValidObjectId(id)) {
       throw new NotFoundError("Question not found due to invalid id.");
     }
 
@@ -119,7 +119,7 @@ const deleteQuestionById = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    if (!mongoose.isValidObjectId(id)) {
+    if (!isValidObjectId(id)) {
       throw new NotFoundError("Question not found due to invalid id.");
     }
 
@@ -154,7 +154,7 @@ const updateQuestionById = async (req, res, next) => {
   const { description, title, difficulty, categoriesId, testCases } = req.body;
 
   try {
-    if (!mongoose.isValidObjectId(id)) {
+    if (!isValidObjectId(id)) {
       throw new NotFoundError("Question not found due to invalid id.");
     }
     // CHECK WHETHER QUESTION TO UPDATE EXISTS (AND NOT DELETED)
@@ -336,10 +336,10 @@ const getTestCasesWithId = async (req, res, next) => {
 
   try {
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (!isValidObjectId(id)) {
       throw new NotFoundError("Question not found due to invalid id.");
     }
-    
+
     let foundQuestion = await _getQuestionById(id);
 
     if (!foundQuestion) {
