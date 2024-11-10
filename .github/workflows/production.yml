@@ -85,6 +85,7 @@ jobs:
 
   build:
     # build container for both x86 and arm platforms
+    environment: production
     needs: test
     name: Build Production Containers and Push to Docker Hub
     runs-on: ubuntu-latest
@@ -187,7 +188,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:${{ github.sha }}
-      
+
       - name: Build History Service Image
         uses: docker/build-push-action@v6
         with:
@@ -214,7 +215,7 @@ jobs:
 
   deploy:
     needs: build
-    environment: staging
+    environment: production
     name: Deploy Production Environment
     runs-on: ubuntu-latest
     steps:
@@ -287,7 +288,7 @@ jobs:
             npm install
             npm run build
             mv dist/* /var/www/peerprep.marcussoh.com/
-            
+
             # delete to prevent node module conflicts
             rm -rf node_modules
             cd ..

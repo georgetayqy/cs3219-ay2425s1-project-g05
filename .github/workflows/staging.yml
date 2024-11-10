@@ -88,6 +88,7 @@ jobs:
   build:
     # build container for both x86 and arm platforms
     needs: test
+    environment: staging
     name: Build Staging Containers and Push to Docker Hub
     runs-on: ubuntu-latest
     strategy:
