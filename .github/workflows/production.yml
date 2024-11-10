@@ -230,6 +230,7 @@ jobs:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@1.1.0
         env:
+          CURR_BRANCH: ${{ github.head_ref }}
           USER_SERVICE_SECRETS: ${{ secrets.USER_SERVICE_SECRETS }}
           QUESTION_SERVICE_SECRETS: ${{ secrets.QUESTION_SERVICE_SECRETS }}
           MATCHING_SERVICE_SECRETS: ${{ secrets.MATCHING_SERVICE_SECRETS }}
@@ -244,10 +245,10 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: USER_SERVICE_SECRETS,QUESTION_SERVICE_SECRETS,MATCHING_SERVICE_SECRETS,COLLABORATION_SERVICE_SECRETS,COMMUNICATION_SERVICE_SECRETS,HISTORY_SERVICE_SECRETS,RUN_SERVICE_SECRETS,FRONTEND_SECRETS,AI_CHAT_SERVICE_SECRETS
+          envs: CURR_BRANCH,USER_SERVICE_SECRETS,QUESTION_SERVICE_SECRETS,MATCHING_SERVICE_SECRETS,COLLABORATION_SERVICE_SECRETS,COMMUNICATION_SERVICE_SECRETS,HISTORY_SERVICE_SECRETS,RUN_SERVICE_SECRETS,FRONTEND_SECRETS,AI_CHAT_SERVICE_SECRETS
           script: |
             cd cs3219-ay2425s1-project-g05
-            git checkout -b main
+            git checkout "$CURR_BRANCH"
             git pull
 
             # echo in .env vars and save them into the directories
@@ -275,8 +276,8 @@ jobs:
             echo "$RUN_SERVICE_SECRETS" | base64 --decode > .env
             cd ..
 
-            cd ai-chat-service
-            echo "$AI_CHAT_SERVICE_SECRETS" | base64 --decode > .env
+            cd gen-ai-service
+            echo "$GEN_AI_SERVICE_SECRETS" | base64 --decode > .env
             cd ..
 
             cd user-service
@@ -294,5 +295,5 @@ jobs:
             cd ..
 
             # handle docker compose
-            docker compose down
-            docker compose up --build -d
+            docker compose -f docker-compose.yml down
+            docker compose -f docker-compose.yml up --build -d
