@@ -694,6 +694,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
               <VideoChatWidget
                 onVideoCallDisconnect={onVideoCallDisconnect}
                 otherUser={otherUser}
+                roomId={roomId}
               />
             )}
             <ActionIcon
