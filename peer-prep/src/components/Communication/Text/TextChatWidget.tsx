@@ -244,7 +244,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     if (roomId.trim() === "") return;
     console.log(`Room ID: ${roomId}`);
 
-    socket.emit("joinRoom", {
+    socket.emit("join-room", {
       roomId,
       user: {
         userId: user._id,
