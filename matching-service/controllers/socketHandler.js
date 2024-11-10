@@ -1,9 +1,11 @@
-import { onDisconnect, onCancelMatch, onCreateMatch } from "./controller.js";
+import { onDisconnect, onCancelMatch, onCreateMatch, onConnect } from "./controller.js";
 
 export async function socketHandler(io) {
 
-    io.on("connection", (socket) => {
-        console.log(`Socket connected: ${socket.id}`);
+    io.on("connection", async (socket) => {
+
+        // Connect event
+        await onConnect(socket, socket.handshake.auth.token);
 
         // Disconnect event
         socket.on("disconnect", async () => onDisconnect(socket));

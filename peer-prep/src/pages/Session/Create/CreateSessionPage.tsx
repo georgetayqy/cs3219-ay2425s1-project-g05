@@ -249,6 +249,10 @@ export default function CreateSessionPage() {
     socket.on("finding-match", onWaitingForMatch);
     socket.on("found-match", onFoundMatch);
     socket.on("no-match", onNoMatch);
+    socket.on("unauthorized", () => {
+        console.log("unauthorized in FE");
+        }
+    );
 
     return () => {
       // clear up socket

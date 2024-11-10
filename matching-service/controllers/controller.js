@@ -8,6 +8,19 @@ import {
     ormDeletePendingUserByDocId
 } from "../models/orm.js";
 import axios from 'axios';
+import { verifyAccessToken } from "../services.js";
+
+export async function onConnect(socket, accessToken) {
+    const result = verifyAccessToken(accessToken);
+    if (!result) {
+        console.log(`Unauthorized token ${accessToken}, disconnecting socket`);
+        socket.emit('unauthorized');
+        socket.disconnect();
+    } else {
+        console.log(`Authorized socket connection`);
+        socket.emit('connected');
+    }
+}
 
 export async function onDisconnect(socket) {
     try {
