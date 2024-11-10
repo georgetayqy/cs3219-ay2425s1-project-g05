@@ -1,5 +1,6 @@
 import {
   Accordion,
+  Anchor,
   Avatar,
   Badge,
   Box,
@@ -9,6 +10,7 @@ import {
   Flex,
   Group,
   Paper,
+  PasswordInput,
   Rating,
   ScrollArea,
   SimpleGrid,
@@ -408,6 +410,52 @@ export default function SessionPage() {
     });
   };
 
+  // TODO: Open modal when user uses gen ai related functions. 
+  // To create an endpoint in backend to take in the api key and use it to call the google ai api
+  const openSendApiKeyModal = () => {
+    modals.open({
+      children: (
+        <Stack style={{ padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+            <Title order={3} style={{ marginBottom: '10px' }}>
+                Enter Your Google AI API Key
+            </Title>
+            <Text size="sm" color="dimmed">
+                Before we can continue, please enter your Google AI API key. You can retrieve it from the 
+                <Anchor href="https://aistudio.google.com/app/apikey" target="_blank" underline="always" style={{ marginLeft: '5px' }}>
+                    Google AI Studio
+                </Anchor>.
+            </Text>
+            <PasswordInput
+                placeholder="API Key"
+                onChange={(event) => setChannelId(event.currentTarget.value)}
+                style={{ marginTop: '10px' }}
+            />
+            <Button
+                variant="gradient"
+                gradient={{ from: 'blue', to: 'cyan' }}
+                onClick={() => {
+                    modals.closeAll();
+                }}
+                style={{ marginTop: '15px' }}
+            >
+                Send API Key
+            </Button>
+        </Stack>
+      ),
+    });
+  }
+
+  useEffect(() => {
+    // Set timeout to 10 seconds, after which the API key modal will be shown
+    // THIS IS A TEMPORARY SOLUTION
+    const timer = setTimeout(() => {
+      openSendApiKeyModal();
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, []); 
+
+  
   const handleEndSession = async () => {
     // call history service to create an attempt
     try {
@@ -507,7 +555,7 @@ export default function SessionPage() {
 
   return (
     <ModalsProvider>
-      <TextChatWidget roomId={roomId} />
+      <TextChatWidget roomId={roomId} question={question.description.descriptionHtml} solutionCode={currentValueRef.current}/>
       <Box className={classes.wrapper}>
         {/* Collaborator Details */}
         <Group mb="md" style={{ alignItems: "center" }}>

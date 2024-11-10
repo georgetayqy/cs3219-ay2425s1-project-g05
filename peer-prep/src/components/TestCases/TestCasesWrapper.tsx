@@ -641,16 +641,22 @@ export const TestCasesDisplay = ({
             errorLogs,
             solutionCode,
             roomId,
-            apiKey: 'AIzaSyBdY9ADmW5RrlLrHP_9ikir7SwIKIPUenU', // TODO: retrieve api key from env?
+            apiKey: import.meta.env.GEMINI_API_KEY,
           }),
         }
       ).then((res) => {
-        console.log('AI Analysis:', res.data.reply);
-        setAnalysisResult(res.data.reply);
+        if (res.statusCode === 200) {
+          console.log('AI Analysis:', res.data.reply);
+          setAnalysisResult(res.data.reply);
 
-        const lines = res.data.reply.trim().split('\n');
-        displayLines(lines);
-        setAnalysisResult(res.data.reply);
+          const lines = res.data.reply.trim().split('\n');
+          displayLines(lines);
+          setAnalysisResult(res.data.reply);
+        } else {
+          console.error('Error fetching AI analysis:', res.data.reply);
+          setAnalysisResult('Failed to fetch AI analysis. Please try again.');
+          setErrorRetrieving(true);
+        }
       });
 
     } catch (error) {
@@ -708,16 +714,22 @@ export const TestCasesDisplay = ({
             solutionCode,
             question,
             roomId,
-            apiKey: 'AIzaSyBdY9ADmW5RrlLrHP_9ikir7SwIKIPUenU' // TODO: retrieve api key from env?
+            apiKey: import.meta.env.GEMINI_API_KEY,
           }),
         }
       ).then((res) => {
-        console.log('AI Analysis:', res.data.reply);
-        setAnalysisResultTestCaseAnalysis(res.data.reply);
+        if (res.statusCode === 200) {
+          console.log('AI Analysis:', res.data.reply);
+          setAnalysisResultTestCaseAnalysis(res.data.reply);
 
-        const lines = res.data.reply.trim().split('\n');
-        displayFailedTestCaseLines(lines);
-        setAnalysisResultTestCaseAnalysis(res.data.reply);
+          const lines = res.data.reply.trim().split('\n');
+          displayFailedTestCaseLines(lines);
+          setAnalysisResultTestCaseAnalysis(res.data.reply);
+        } else {
+          console.error('Error fetching failed test case analysis:', res.data.reply);
+          setAnalysisResultTestCaseAnalysis('Failed to fetch failed test case analysis. Please try again.');
+          setErrorRetrievingTestCaseAnalysis(true);
+        }
       });
     } catch (error) {
       console.error('Error fetching failed test case analysis:', error);
@@ -882,16 +894,30 @@ export const TestCasesDisplay = ({
           </Code>
           {!getTestCaseResult(currentTestCase._id.toString(), 1)?.isPassed && getTestCaseResult(currentTestCase._id.toString(), 1)?.stdout && (
             <>
-              <Button onClick={handleFailedTestCaseAnalyseClick} mt={8} disabled={loadingTestCaseAnalysis}>
+              <Button
+                onClick={handleFailedTestCaseAnalyseClick}
+                mt={8}
+                disabled={loadingTestCaseAnalysis}
+                variant="gradient" 
+                gradient={{ from: "violet", to: "blue", deg: 135 }}
+                style={{
+                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)', 
+                  borderRadius: '12px', 
+                  transition: 'all 0.3s ease',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'} 
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
                 <>
-                  {loadingTestCaseAnalysis && <Loader size="xs" mr={8} color="grey"/>}
-                  {generatedTestCaseAnalysis && !loadingTestCaseAnalysis ? 'Re-analyse Failing TC with Google Gemini' : 'Analyse Failing TC with Google Gemini'}
+                  {loadingTestCaseAnalysis && <Loader size="xs" mr={8} color="grey" />}
+                  {generatedTestCaseAnalysis && !loadingTestCaseAnalysis ? 
+                    'Re-analyse Failing TC with Google Gemini' : 
+                    'Analyse Failing TC with Google Gemini'}
                   <Badge
                     variant="gradient"
                     gradient={{ from: "violet", to: "blue", deg: 135 }}
                     radius={"xs"}
-                    style={{ cursor: "pointer" }}
-                    ml={8}
+                    style={{ cursor: "pointer", marginLeft: '8px' }} 
                   >
                     AI
                   </Badge>
@@ -938,16 +964,28 @@ export const TestCasesDisplay = ({
 
           {getTestCaseResult(currentTestCase._id.toString(), 1)?.stderr && (
             <>
-              <Button onClick={handleAnalyseClick} mt={8} disabled={loading}>
+              <Button
+                onClick={handleAnalyseClick}
+                mt={8}
+                disabled={loading}
+                variant="gradient"
+                gradient={{ from: "violet", to: "blue", deg: 135 }}
+                style={{
+                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
+                  borderRadius: '12px',
+                  transition: 'all 0.3s ease',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
                 <>
-                  {loading && <Loader size="xs" mr={8} color="grey"/>}
+                  {loading && <Loader size="xs" mr={8} color="grey" />}
                   {generated && !loading ? 'Re-analyse Errors with Google Gemini' : 'Analyse Errors with Google Gemini'}
                   <Badge
                     variant="gradient"
                     gradient={{ from: "violet", to: "blue", deg: 135 }}
                     radius={"xs"}
-                    style={{ cursor: "pointer" }}
-                    ml={8}
+                    style={{ cursor: "pointer", marginLeft: '8px' }}
                   >
                     AI
                   </Badge>

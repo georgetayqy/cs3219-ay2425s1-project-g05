@@ -76,6 +76,9 @@ setInterval(() => {
   });
 }, SESSION_TIMEOUT_MS);
 
+
+// TODO: Create a new endpoint to take in user's api key, and create a new chat session for them
+
 // Chat endpoint
 app.post('/api/ai-chat-service/chat', async (req, res) => {
   const { message, roomId, apiKey } = req.body;
