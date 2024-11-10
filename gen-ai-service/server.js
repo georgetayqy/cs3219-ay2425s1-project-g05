@@ -21,6 +21,9 @@ app.get('/healthz', (request, response) => {
   });
 });
 
+// Automatically delete sessions after 60 minutes of inactivity
+const SESSION_TIMEOUT_MS = 60 * 60 * 1000; 
+
 // In-memory store for chat sessions. 
 const userSessions = new Map();
 
@@ -62,6 +65,16 @@ function createNewChatSession(apiKey) {
   });
   return chatSession;
 }
+
+// Periodically clean up inactive sessions
+setInterval(() => {
+  const now = Date.now();
+  userSessions.forEach((value, key) => {
+    if (now - value.lastActive > SESSION_TIMEOUT_MS) {
+      userSessions.delete(key);
+    }
+  });
+}, SESSION_TIMEOUT_MS);
 
 // Chat endpoint
 app.post('/api/ai-chat-service/chat', async (req, res) => {
