@@ -248,7 +248,7 @@ jobs:
           envs: CURR_BRANCH,USER_SERVICE_SECRETS,QUESTION_SERVICE_SECRETS,MATCHING_SERVICE_SECRETS,COLLABORATION_SERVICE_SECRETS,COMMUNICATION_SERVICE_SECRETS,HISTORY_SERVICE_SECRETS,RUN_SERVICE_SECRETS,FRONTEND_SECRETS,AI_CHAT_SERVICE_SECRETS
           script: |
             cd cs3219-ay2425s1-project-g05
-            git checkout -b "$CURR_BRANCH"
+            git checkout "$CURR_BRANCH"
             git pull
 
             # echo in .env vars and save them into the directories
