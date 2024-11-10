@@ -275,8 +275,8 @@ jobs:
             echo "$RUN_SERVICE_SECRETS" | base64 --decode > .env
             cd ..
 
-            cd ai-chat-service
-            echo "$AI_CHAT_SERVICE_SECRETS" | base64 --decode > .env
+            cd gen-ai-service
+            echo "$GEN_AI_SERVICE_SECRETS" | base64 --decode > .env
             cd ..
 
             cd user-service
