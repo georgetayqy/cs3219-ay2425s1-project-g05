@@ -1,4 +1,4 @@
-# PeerPrep AI Chat Service Dockerfile
+# PeerPrep Gen AI Service Dockerfile
 # 
 # References:
 # https://github.com/awslabs/aws-lambda-web-adapter/tree/main/examples/expressjs
@@ -9,7 +9,7 @@ FROM node:20
 EXPOSE 8008
 
 # Set work dir to prevent retarts
-WORKDIR /ai-chat-service
+WORKDIR /gen-ai-service
 
 # copy all files into the Docker container
 COPY . .

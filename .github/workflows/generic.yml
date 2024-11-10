@@ -80,8 +80,8 @@ jobs:
           npm ci
           npm run test
 
-      - name: Test AI Chat Service
-        working-directory: ai-chat-service
+      - name: Test Gen AI Service
+        working-directory: gen-ai-service
         run: |
           npm ci
           npm run test

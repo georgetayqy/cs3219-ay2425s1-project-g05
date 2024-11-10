@@ -31,13 +31,11 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Install Frontend Node Dependencies
+      - name: Test Build Frontend
         working-directory: peer-prep
-        run: npm ci
-
-      - name: Test Build on Frontend
-        working-directory: peer-prep
-        run: npm run build
+        run: |
+          npm ci
+          npm run build
 
       - name: Test User Service
         working-directory: user-service
@@ -45,25 +43,11 @@ jobs:
           npm ci
           npm run test
 
-      - name: Upload User Service Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          directory: ./user-service/coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Test Question Service
         working-directory: question-service
         run: |
           npm ci
           npm run test
-
-      - name: Upload Question Service Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          directory: ./question-service/coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test Matching Service
         working-directory: matching-service
@@ -71,25 +55,11 @@ jobs:
           npm ci
           npm run test
 
-      - name: Upload Matching Service Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          directory: ./matching-service/coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Test Collaboration Service
         working-directory: collaboration-service
         run: |
           npm ci
           npm run test
-
-      - name: Upload Collaboration Service Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          directory: ./collaboration-service/coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test Communication Service
         working-directory: communication-service
@@ -97,25 +67,11 @@ jobs:
           npm ci
           npm run test
 
-      - name: Upload Communication Service Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          directory: ./communication-service/coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Test Run Service
         working-directory: run-service
         run: |
           npm ci
           npm run test
-
-      - name: Upload Run Service Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          directory: ./run-service/coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test History Service
         working-directory: history-service
@@ -123,25 +79,11 @@ jobs:
           npm ci
           npm run test
 
-      - name: Upload History Service Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          directory: ./history-service/coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Test AI Chat Service
-        working-directory: ai-chat-service
+      - name: Test Gen AI Service
+        working-directory: gen-ai-service
         run: |
           npm ci
           npm run test
-
-      - name: Upload AI Chat Service Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          directory: ./ai-chat-service/coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     # build container for both x86 and arm platforms
@@ -173,6 +115,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-frontend:staging-${{ github.sha }}
 
       - name: Build User Service Image
@@ -184,6 +127,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-user-service:staging-${{ github.sha }}
 
       - name: Build Question Service Image
@@ -195,6 +139,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-question-service:staging-${{ github.sha }}
 
       - name: Build Matching Service Image
@@ -206,6 +151,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-matching-service:staging-${{ github.sha }}
 
       - name: Build Collaboration Service Image
@@ -217,6 +163,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-collaboration-service:staging-${{ github.sha }}
 
       - name: Build Communication Service Image
@@ -228,6 +175,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-communication-service:staging-${{ github.sha }}
 
       - name: Build Run Service Image
@@ -239,6 +187,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-run-service:${{ github.sha }}
 
       - name: Build History Service Image
@@ -250,18 +199,20 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-history-service:${{ github.sha }}
 
-      - name: Build AI Chat Service Image
+      - name: Build Gen AI Service Image
         uses: docker/build-push-action@v6
         with:
-          context: ./ai-chat-service
-          file: ./ai-chat-service/Dockerfile
+          context: ./gen-ai-service
+          file: ./gen-ai-service/Dockerfile
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-ai-chat-service:staging-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-ai-chat-service:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:staging-${{ vars.DOCKER_IMAGE_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:${{ github.sha }}
 
   deploy:
     needs: build
@@ -287,7 +238,7 @@ jobs:
           COMMUNICATION_SERVICE_SECRETS: ${{ secrets.COMMUNICATION_SERVICE_SECRETS }}
           HISTORY_SERVICE_SECRETS: ${{ secrets.HISTORY_SERVICE_SECRETS }}
           RUN_SERVICE_SECRETS: ${{ secrets.RUN_SERVICE_SECRETS }}
-          AI_CHAT_SERVICE_SECRETS: ${{ secrets.AI_CHAT_SERVICE_SECRETS }}
+          GEN_AI_SERVICE_SECRETS: ${{ secrets.GEN_AI_SERVICE_SECRETS }}
           FRONTEND_SECRETS: ${{ secrets.FRONTEND_SECRETS }}
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -325,8 +276,8 @@ jobs:
             echo "$RUN_SERVICE_SECRETS" | base64 --decode > .env
             cd ..
 
-            cd ai-chat-service
-            echo "$AI_CHAT_SERVICE_SECRETS" | base64 --decode > .env
+            cd gen-ai-service
+            echo "$GEN_AI_SERVICE_SECRETS" | base64 --decode > .env
             cd ..
 
             cd user-service

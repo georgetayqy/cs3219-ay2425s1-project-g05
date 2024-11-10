@@ -13,6 +13,7 @@ import {
   Box,
   Button,
   Center,
+  Code,
   Collapse,
   Flex,
   Group,
@@ -39,6 +40,8 @@ import {
   IconArrowDown,
   IconArrowNarrowDown,
   IconArrowsLeftRight,
+  IconArrowsMaximize,
+  IconArrowsMinimize,
   IconBrandGithubCopilot,
   IconCamera,
   IconCancel,
@@ -62,7 +65,12 @@ import {
   IconVideo,
   IconX,
 } from "@tabler/icons-react";
-import { useInViewport, useTimeout } from "@mantine/hooks";
+import {
+  useInViewport,
+  useLocalStorage,
+  useMouse,
+  useTimeout,
+} from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { formatTime } from "../../../utils/utils";
 import VideoChatWidget from "../Video/VideoChatWidget";
@@ -70,6 +78,7 @@ import { User } from "../../../types/user";
 
 import GeminiIcon from "../../../assets/integrations/google-gemini-icon.svg";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
+import { CodeHighlight } from "@mantine/code-highlight";
 
 enum ChatState {
   DISCONNECTED,
@@ -504,9 +513,40 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     }, 100);
   }
 
+  const [isChatFullscreen, setIsChatFullscreen] = useState(false);
+  // const { x, y } = useMouse();
+  // const [preferredWidth, setPreferredWidth] = useLocalStorage<number>({
+  //   key: "preferredWidth",
+  // });
+  // const [preferredWidth, setPreferredWidth] = useState(0);
+  // const [isResizingChatE, setIsResizingChatE] = useState(false);
+  // const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  //   setIsResizingChatE(true);
+  // };
+
+  // const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  //   if (isResizingChatE) {
+  //     // formula: mouseX / windowWidth * 100 - 4 rem (4 rem is 64px)
+  //     const newWidth =
+  //       (x / window.innerWidth) * 100 - (64 / window.innerWidth) * 100;
+  //     setPreferredWidth(newWidth);
+  //   }
+  // };
+
+  // const handleMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  //   setIsResizingChatE(false);
+  // };
+
   return (
     <Box className={classes.container}>
-      <Box className={classes.chatContainer}>
+      <Box
+        className={`${classes.chatContainer} ${
+          isChatFullscreen && isChatOpen && classes.fullScreen
+        }`}
+        // style={{
+        //   width: preferredWidth === 0 ? "inherit" : `calc(${preferredWidth}vw)`,
+        // }}
+      >
         <Flex
           className={classes.chatHeader}
           onClick={() => setIsChatOpen((prev) => !prev)}
@@ -551,6 +591,42 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
             </Box>
           )}
           <Group>
+            {isChatOpen &&
+              (isChatFullscreen ? (
+                <Tooltip label="Compact the chat window">
+                  <ActionIcon
+                    variant="transparent"
+                    color="initials"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsChatFullscreen(false);
+                    }}
+                  >
+                    <IconArrowsMinimize
+                      width="1.25rem"
+                      className={`${classes.icon}`}
+                    />
+                  </ActionIcon>
+                </Tooltip>
+              ) : (
+                <Tooltip label="Maximize the chat window">
+                  <ActionIcon
+                    variant="transparent"
+                    color="initials"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsChatFullscreen(true);
+                    }}
+                  >
+                    <IconArrowsMaximize
+                      width="1.25rem"
+                      className={`${classes.icon}`}
+                    />
+                  </ActionIcon>
+                </Tooltip>
+              ))}
             <ActionIcon variant="transparent" color="initials">
               <IconCaretUpFilled
                 width="1.25rem"
@@ -560,7 +636,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
           </Group>
         </Flex>
 
-        <Collapse in={isChatOpen}>
+        <Collapse in={isChatOpen} className={classes.collapse}>
           <Group className={classes.chatContentColored}>
             {usersInRoom.length > 1 ? (
               <Indicator
@@ -670,7 +746,10 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                   placeholder="Type a message... (ENTER) to send"
                   w={"100%"}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" && event.ctrlKey) {
+                    if (
+                      event.key === "Enter" &&
+                      (event.ctrlKey || event.shiftKey)
+                    ) {
                       // onSendMessage();
                       // add newlinw
                       setDraftMessage((prev) => prev + "\n");
@@ -680,7 +759,9 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
                       onBeforeSendMessage();
                     }
                   }}
-
+                  autosize={isChatFullscreen}
+                  maxRows={7}
+                  minRows={3}
                   // disabled={messageState === MessageState.SENDING}
                 />
                 <Menu
@@ -942,6 +1023,14 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
               </Center>
             )}
           </Box>
+
+          {/* <div
+            className={classes.resizeHandlerE}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          ></div> */}
         </Collapse>
         <div id="video-chat-widget"> </div>
       </Box>
@@ -992,6 +1081,50 @@ function TextMessage({
       );
     }
   }
+
+  const messageContentSplit = splitTextIntoObjects(msg.content);
+  console.log({ messageContentSplit });
+
+  const textObjects = messageContentSplit.map((textObj, i) => {
+    switch (textObj.type) {
+      case "code":
+        // look in textObj.content for the matching language
+        const languages = {
+          js: /\b(javascript|js|function|const|let|=>|console\.log|document)\b/,
+          python: /\b(python|def|print\(|import|class|lambda|self)\b/,
+          java: /\b(java|public\s+class|System\.out\.print|void\s+main|new\s+[A-Z])/,
+          c: /\b(cpp|#include|int\s+main|printf|scanf)\b/,
+          html: /<html>|<body>|<\/html>|<\/body>/,
+          css: /\b(color:|background-color:|font-size:|margin:|padding:)\b/,
+          sql: /\b(sql|SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)\b/,
+          // Add more languages and patterns here as needed
+        };
+
+        let codeLang = "";
+
+        // Check each language pattern against the text
+        for (const [language, pattern] of Object.entries(languages)) {
+          if (pattern.test(textObj.content)) {
+            codeLang = language;
+          }
+        }
+        return (
+          <CodeHighlight
+            code={textObj.content}
+            language={codeLang}
+            copyLabel="Copy"
+            copiedLabel="Copied"
+            key={i}
+            onClick={(e) => e.stopPropagation()}
+          />
+          // <Code block>{textObj.content}</Code>
+        );
+        break;
+      case "plain":
+        return <Text key={i}> {textObj.content} </Text>;
+        break;
+    }
+  });
   return (
     <Box
       id={msg.messageId}
@@ -1063,13 +1196,14 @@ function TextMessage({
               size={"md"}
             /> */}
             {getAvatar(msg.integration)}
-            <Text className={`${classes.textBox}`}>
+            <Box className={`${classes.textBox}`}>
               {" "}
-              {msg.content}{" "}
+              {/* {msg.content}{" "} */}
+              {textObjects}
               <span className={`${classes.timestamp}`}>
                 {formatTime(new Date(msg.timestamp))}{" "}
               </span>{" "}
-            </Text>
+            </Box>
           </Box>
         </Box>
       ) : (
@@ -1125,7 +1259,8 @@ function TextMessage({
             </Flex>
           )}
           <Box className={`${classes.entry} ${classes.send}`}>
-            <Text className={`${classes.textBox}`}> {msg.content} </Text>
+            {/* <Text className={`${classes.textBox}`}> {msg.content} </Text> */}
+            <Box className={classes.textBox}>{textObjects}</Box>
             <Text
               className={`${classes.timestamp}`}
               onClick={() => console.log(msg)}
@@ -1138,4 +1273,65 @@ function TextMessage({
       )}
     </Box>
   );
+}
+
+type FormattableTextOption = "plain" | "code";
+
+type FormattableText = {
+  content: string;
+  type: FormattableTextOption;
+};
+function splitTextIntoObjects(text: string): FormattableText[] {
+  const result = [];
+
+  // Define patterns for different types, making it easy to expand in the future
+  const patterns = {
+    code: /```([^`]*)```/g,
+    // Future patterns like bold, underline can be added here
+    // bold: /\*\*([^*]+)\*\*/g,
+    // underline: /__(.*?)__/g
+  };
+
+  let lastIndex = 0;
+  let match;
+
+  // Function to process a pattern match
+  const processMatch = (match, type, startIndex, endIndex) => {
+    // Add any plain text before the matched pattern
+    if (startIndex > lastIndex) {
+      result.push({
+        content: text.slice(lastIndex, startIndex),
+        type: "plain",
+      });
+    }
+
+    // Add the matched content as the specified type
+    result.push({
+      content: match.trim() + "\n",
+      type: type,
+    });
+
+    // Update lastIndex to continue after this matched pattern
+    lastIndex = endIndex;
+  };
+
+  // Loop through each pattern type
+  for (const [type, pattern] of Object.entries(patterns)) {
+    // Reset lastIndex for each pattern search
+    lastIndex = 0;
+
+    while ((match = pattern.exec(text)) !== null) {
+      processMatch(match[1], type, match.index, pattern.lastIndex);
+    }
+  }
+
+  // Add any remaining plain text after the last match
+  if (lastIndex < text.length) {
+    result.push({
+      content: text.slice(lastIndex),
+      type: "plain",
+    });
+  }
+
+  return result;
 }

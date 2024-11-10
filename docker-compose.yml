@@ -62,9 +62,9 @@ services:
     ports:
       - '8007:8007'
 
-  ai-chat-service:
+  gen-ai-service:
     build:
-      context: ./ai-chat-service
+      context: ./gen-ai-service
       dockerfile: Dockerfile
     ports:
       - '8008:8008'
