@@ -39,49 +39,49 @@ jobs:
         run: npm run build
 
       - name: Test User Service
-        working-directory: user-sevice
+        working-directory: user-service
         run: |
           npm ci
           npm run test
 
       - name: Test Question Service
-        working-directory: question-sevice
+        working-directory: question-service
         run: |
           npm ci
           npm run test
 
       - name: Test Matching Service
-        working-directory: matching-sevice
+        working-directory: matching-service
         run: |
           npm ci
           npm run test
 
       - name: Test Collaboration Service
-        working-directory: collaboration-sevice
+        working-directory: collaboration-service
         run: |
           npm ci
           npm run test
 
       - name: Test Communication Service
-        working-directory: communication-sevice
+        working-directory: communication-service
         run: |
           npm ci
           npm run test
 
       - name: Test Run Service
-        working-directory: run-sevice
+        working-directory: run-service
         run: |
           npm ci
           npm run test
 
       - name: Test History Service
-        working-directory: history-sevice
+        working-directory: history-service
         run: |
           npm ci
           npm run test
 
-      - name: Test AI Chat Service
-        working-directory: ai-chat-sevice
+      - name: Test Gen AI Service
+        working-directory: gen-ai-service
         run: |
           npm ci
           npm run test

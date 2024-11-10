@@ -1,4 +1,4 @@
-# PeerPrep AI Chat Service Dockerfile
+# PeerPrep Gen AI Service Dockerfile
 # 
 # References:
 # https://github.com/awslabs/aws-lambda-web-adapter/tree/main/examples/expressjs

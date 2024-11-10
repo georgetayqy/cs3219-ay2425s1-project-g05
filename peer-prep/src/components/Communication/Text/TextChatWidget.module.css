@@ -29,6 +29,14 @@
   z-index: 40;
 
   border: light-dark(0px, 1px solid var(--mantine-color-dark-7));
+  &.fullScreen {
+    width: calc(100% - 8rem);
+    .chatContents {
+      height: calc(100vh - 320px);
+    }
+  }
+
+  transition: all 0.175s ease-out;
 }
 
 .chatHeader {
@@ -308,4 +316,20 @@
   background: linear-gradient(135deg, #8f94fb, #4e54c8);
   transform: scale(1.05);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.collapse {
+  position: relative;
+}
+
+.resizeHandlerE {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+
+  background-color: var(--mantine-color-gray-2);
+  /* cursor: e-resize; */
+  z-index: 50;
 }
