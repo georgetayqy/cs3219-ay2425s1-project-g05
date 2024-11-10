@@ -11,8 +11,4 @@ export const socket = io(URL, {
   transports: ['websocket'],
   autoConnect: false,
   withCredentials: true,
-  auth: {
-    // token: 'sometoken',
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImVtYWlsQGVtYWlsLmNvbSIsImRpc3BsYXlOYW1lIjoibmFtZSIsImlzQWRtaW4iOnRydWUsImlhdCI6MTcyNzE3MzkwOH0.W1KldNaTZp_ztTRqxqBTbEuUf5bKNDYMza1v8ZGWLw0',
-  }
 });
