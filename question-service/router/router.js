@@ -9,7 +9,7 @@ import {
   getDistinctCategoriesId,
   getTestCasesWithId,
 } from "../controller/question-controller.js";
-import { checkAdmin } from "../middlewares/access-control.js";
+import { checkAdmin, checkUser } from "../middlewares/access-control.js";
 import {
   validateNewQuestion,
   validateUpdatedQuestion,
@@ -21,10 +21,10 @@ const router = express.Router();
 router.post("/", checkAdmin, validateNewQuestion, createQuestion);
 
 // GET ALL QUESTIONS
-router.route("/").get(getAllQuestions);
+router.route("/").get(checkUser, getAllQuestions);
 
 // GET QUESTION BY ID
-router.route("/id/:id").get(getQuestionById);
+router.route("/id/:id").get(checkUser, getQuestionById);
 
 // DELETE QUESTION BY ID
 router.route("/id/:id").delete(checkAdmin, deleteQuestionById);
@@ -40,7 +40,7 @@ router
 router.route("/random/").get(findQuestion);
 
 // GET ALL DISTINCT CATEGORIES
-router.route("/categories").get(getDistinctCategoriesId);
+router.route("/categories").get(checkUser, getDistinctCategoriesId);
 
 // GET TESTCASES (For run-service)
 router.route("/testcases/:id").get(getTestCasesWithId);

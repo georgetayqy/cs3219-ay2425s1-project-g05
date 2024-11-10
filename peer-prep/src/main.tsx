@@ -66,7 +66,9 @@ const router = createBrowserRouter([
                       fetch(
                         `${
                           import.meta.env.VITE_API_URL_QUESTION
-                        }/question-service`
+                        }/question-service`, {
+                          credentials: 'include',
+                        }
                       ),
                     // fetch(
                     //   `https://virtserver.swaggerhub.com/PeerPrep/question-service/1.0.0/api/question-service`
@@ -87,7 +89,10 @@ const router = createBrowserRouter([
                       fetch(
                         `${
                           import.meta.env.VITE_API_URL_QUESTION
-                        }/question-service/id/${params.id}`
+                        }/question-service/id/${params.id}`,
+                        {
+                          credentials: 'include',
+                        }
                       ),
                   },
                 ],
