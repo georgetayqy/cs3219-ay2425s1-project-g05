@@ -230,7 +230,7 @@ jobs:
           node-version: 20
 
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@1.1.0
+        uses: appleboy/ssh-action@v1.1.0
         env:
           CURR_BRANCH: ${{ github.head_ref }}
           USER_SERVICE_SECRETS: ${{ secrets.USER_SERVICE_SECRETS }}
