@@ -39,6 +39,8 @@ function createNewChatSession(apiKey, userId, roomId) {
     },
   });
 
+  console.log('Chat session created successfully:', chatSession);
+
   // Store the chat session in the userSessions map
   if (userSessions.has(userId)) {
     userSessions.get(userId).set(roomId, chatSession);
@@ -75,10 +77,12 @@ setInterval(() => {
 
 // Create chat session endpoint
 app.post('/api/ai-chat-service/create-session', async (req, res) => {
-  const { userId, roomId } = req.body;
+  console.log('creating sessionnn')
 
-  // retrieve API Key from request headers
-  const apiKey = req.headers['x-api-key'];
+  const { userId, roomId, apiKey } = req.body;
+  console.log('User ID:', userId);
+  console.log('Room ID:', roomId);
+  console.log('API Key:', apiKey);
 
   if (!apiKey) {
     return res
@@ -98,7 +102,7 @@ app.post('/api/ai-chat-service/create-session', async (req, res) => {
     res.status(200).json({
       statusCode: 200,
       message: 'Chat session created successfully',
-      data: null,
+      data: { userId, roomId },
     });
   } catch (error) {
     console.error("Error creating chat session:", error);
@@ -163,6 +167,8 @@ app.post('/api/ai-chat-service/chat', async (req, res) => {
   try {
     // Attempt to retrieve the chat session
     let chatSession = retrieveChatSession(userId, roomId);
+
+    console.log('Chat session retrieved successfully:', chatSession);
 
     // Send the user message to Gemini and get the response
     const result = await chatSession.sendMessage(message);

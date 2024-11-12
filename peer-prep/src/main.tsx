@@ -31,6 +31,7 @@ import SessionPage from "./pages/Session/SessionPage/SessionPage.tsx";
 
 import "@fontsource/inter";
 import TempSessionPage from "./pages/Session/Temp/TempSessionPage.tsx";
+import { AIProvider } from "./hooks/useAI.tsx";
 
 const router = createBrowserRouter([
   {
@@ -158,7 +159,9 @@ createRoot(document.getElementById("root")!).render(
   // <StrictMode>
   <MantineProvider theme={theme}>
     <Notifications />
-    <RouterProvider router={router}></RouterProvider>
+    <AIProvider>
+      <RouterProvider router={router}></RouterProvider>
+    </AIProvider>
   </MantineProvider>
 
   // </StrictMode>
