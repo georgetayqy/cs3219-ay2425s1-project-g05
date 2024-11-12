@@ -75,6 +75,27 @@ setInterval(() => {
 }, SESSION_TIMEOUT_MS);
 
 
+// Endpoint to check if active chat session exists
+app.post('/api/ai-chat-service/check-active-session', async (req, res) => {
+  const { userId, roomId } = req.body;
+
+  if (!userId || !roomId) {
+    return res
+      .status(400)
+      .json({ statusCode: 400, message: 'User ID and Room ID are required' });
+  }
+
+  const userChatSessions = userSessions.get(userId);
+  const hasActiveSession = userChatSessions && userChatSessions.has(roomId);
+
+  res.status(200).json({
+    statusCode: 200,
+    message: 'Active session check successful',
+    data: { hasActiveSession },
+  });
+});
+
+
 // Create chat session endpoint
 app.post('/api/ai-chat-service/create-session', async (req, res) => {
   console.log('creating sessionnn')

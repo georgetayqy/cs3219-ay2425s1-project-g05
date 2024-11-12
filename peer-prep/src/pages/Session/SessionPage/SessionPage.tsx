@@ -42,8 +42,7 @@ import { UserResponseData } from "../../../types/user";
 
 import { TestCaseResult as TestCaseResultDb } from "../../../types/attempts";
 import AlertBox from "../../../components/Alert/AlertBox";
-import { AIProvider, useAI } from "../../../hooks/useAI";
-import ApiKeyModal from "../../../components/AiChat/ApiKeyModal";
+import { AIProvider, useAI } from "../../../hooks/useAi";
 
 type QuestionCategory =
   | "ALGORITHMS"
@@ -419,6 +418,31 @@ export default function SessionPage() {
 
   const apiKeyInput = useRef<HTMLInputElement>(null);
   const [sendingApiKey, setSendingApiKey] = useState(false);
+
+  // Check if user has already sent their API key
+  useEffect(() => {
+    fetchData<ServerResponse<{ hasActiveSession: boolean }>>(
+      `/ai-chat-service/check-active-session`,
+      SERVICE.AI,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          roomId: roomId,
+        }),
+      }
+    ).then((response) => {
+      console.log("LOG: hasActiveSession = ", response.data.hasActiveSession);
+      if (response.data.hasActiveSession) {
+        setHasApiKey(true);
+      }
+    }).catch((error: any) => {
+      console.error("Error checking active session", error);
+    });
+  }, []);
 
   const openSendApiKeyModal = () => {
     modals.open({
