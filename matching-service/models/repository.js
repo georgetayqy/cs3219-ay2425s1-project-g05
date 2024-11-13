@@ -1,21 +1,21 @@
 import PendingUserModel from "./pendingUser-model.js";
 
-export async function _findPendingUserByCriteria({ difficulties, categories, email }) {
+export async function _findPendingUserByCriteria({ difficulties, categoriesId, userId }) {
     return PendingUserModel
         .findOne({
             difficulties: { $in: difficulties },
-            categories: { $in: categories },
-            email: { $ne: email }
+            categoriesId: { $in: categoriesId },
+            userId: { $ne: userId }
         })
         .sort({ priority: -1 });
 }
 
-export async function _deletePendingUserByEmail(email) {
-    return PendingUserModel.findOneAndDelete({ email: email });
+export async function _deletePendingUserByUserId(id) {
+    return PendingUserModel.findOneAndDelete({ userId: id });
 }
 
-export async function _findPendingUserByEmail(email) {
-    return PendingUserModel.findOne({ email: email });
+export async function _findPendingUserByUserId(id) {
+    return PendingUserModel.findOne({ userId: id });
 }
 
 export async function _createPendingUser(param) {
