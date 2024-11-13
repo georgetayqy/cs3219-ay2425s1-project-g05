@@ -41,7 +41,11 @@ import { EventSourcePolyfill } from "event-source-polyfill";
 import { useColorScheme, useTimeout } from "@mantine/hooks";
 import { clear } from "console";
 import { IconDatabase, IconHourglassEmpty } from "@tabler/icons-react";
-import { kBtoMb, secondsToMsIfappropriate } from "../../utils/utils";
+import {
+  generateReactObjects,
+  kBtoMb,
+  secondsToMsIfappropriate,
+} from "../../utils/utils";
 import { CodeHighlight } from "@mantine/code-highlight";
 
 import "@mantine/code-highlight/styles.css";
@@ -704,7 +708,6 @@ export const TestCasesDisplay = ({
           setAnalysisResult(res.data.reply);
 
           const lines = res.data.reply.trim().split("\n");
-          displayLines(lines);
 
           setGenerated(true);
           setLoading(false);
@@ -730,16 +733,6 @@ export const TestCasesDisplay = ({
           setLoading(false);
         }, 1500); // 1.5 second delay before handling the error
       });
-  };
-
-  // Function to display AI analysis line by line
-  const displayLines = (lines) => {
-    let index = 0;
-    const interval = setInterval(() => {
-      setDisplayedLines((prevLines) => [...prevLines, lines[index]]);
-      index++;
-      if (index >= lines.length) clearInterval(interval);
-    }, 500);
   };
 
   const handleFailedTestCaseAnalyseClick = async () => {
@@ -854,6 +847,7 @@ export const TestCasesDisplay = ({
         setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
       }, 500);
     } else {
+      clearInterval(interval);
       setDots("");
     }
     return () => clearInterval(interval);
@@ -866,6 +860,7 @@ export const TestCasesDisplay = ({
         setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
       }, 500);
     } else {
+      clearInterval(interval);
       setDots("");
     }
     return () => clearInterval(interval);
@@ -1063,10 +1058,13 @@ export const TestCasesDisplay = ({
                     {/* Display AI analysis result line by line */}
                     {!loadingTestCaseAnalysis &&
                       analysisResultTestCaseAnalysis &&
+                      generateReactObjects(analysisResultTestCaseAnalysis)}
+                    {/* {!loadingTestCaseAnalysis &&
+                      analysisResultTestCaseAnalysis &&
                       displayedLinesTestCaseAnalysis.length > 0 &&
                       displayedLinesTestCaseAnalysis.map((line, index) => (
                         <ReactMarkdown key={index}>{line}</ReactMarkdown>
-                      ))}
+                      ))} */}
 
                     {/* Fallback message if no analysis is available */}
                     {!loadingTestCaseAnalysis &&
@@ -1147,10 +1145,15 @@ export const TestCasesDisplay = ({
                   {/* Display AI analysis result line by line */}
                   {!loading &&
                     analysisResult &&
+                    generateReactObjects(analysisResult)}
+                  {/*
+                  {!loading &&
+                    analysisResult &&
                     displayedLines.length > 0 &&
                     displayedLines.map((line, index) => (
                       <ReactMarkdown key={index}>{line}</ReactMarkdown>
-                    ))}
+                  ))} 
+                      */}
 
                   {/* Fallback message if no analysis is available */}
                   {!loading && errorRetrieving && (

@@ -10,6 +10,7 @@ import {
   Text,
   Group,
   Space,
+  Flex,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
@@ -133,6 +134,34 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
   }) {
     setSendingApiKey(true);
 
+    modals.closeAll();
+    modals.open({
+      withCloseButton: false,
+      closeOnClickOutside: false,
+      closeOnEscape: false,
+      title: "Submitting API key...",
+      children: (
+        <Flex
+          style={{
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "1rem",
+          }}
+        >
+          <Loader size="lg" />
+          <Title order={4} style={{ textAlign: "center" }}>
+            {" "}
+            Submitting your API key...{" "}
+          </Title>
+          <Text style={{ textAlign: "center" }}>
+            {" "}
+            The server needs to test your API key to ensure it works. Please be
+            patient!
+          </Text>
+        </Flex>
+      ),
+    });
+
     // Send the API key to the AI service
     try {
       // If the response is successful, close the modal and set the hasApiKey to true
@@ -180,6 +209,9 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
         color: "red",
       });
       setSendingApiKey(false);
+
+      openSendApiKeyModal({ roomId, user, callback });
+    } finally {
     }
   }
 
