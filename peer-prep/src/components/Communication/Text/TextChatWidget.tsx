@@ -981,22 +981,26 @@ export default function TextChatWidget({
                       }
                       setDraftMessage(e.target.value);
                     }}
-                    placeholder="Type a message... (ENTER) to send"
+                    placeholder="Type a message... (CTRL+ENTER) to send"
                     w={"100%"}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" && event.ctrlKey) {
                         // onSendMessage();
                         // add newlinw
-                        setDraftMessage((prev) => prev + "\n");
-                      } else if (event.key === "Enter") {
-                        event.stopPropagation();
-                        // onSendMessage();
                         if (defaultSendTo === "gemini_1.0") {
                           setIsAiChat(true);
                         }
                         onBeforeSendMessage();
+                      } else if (event.key === "Enter") {
+                        event.stopPropagation();
+                        // onSendMessage();
+
+                        // setDraftMessage((prev) => prev + "\n");
                       }
                     }}
+                    autosize={isChatFullscreen}
+                    maxRows={7}
+                    minRows={3}
                     // disabled={messageState === MessageState.SENDING}
                   />
                   <Menu

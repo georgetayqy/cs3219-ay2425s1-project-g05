@@ -600,9 +600,9 @@ export default function SessionPage() {
             radius="md"
             withBorder
             style={{
-              flex: 1,
+              // flex: 1,
               minHeight: "100%",
-              maxWidth: "50%",
+              width: "50%",
               overflow: "auto",
             }}
             className={classes.paper}

@@ -125,6 +125,7 @@
 
     .textBox {
       display: flex;
+      flex-direction: column;
       padding-top: 0.5rem;
       padding-bottom: 0.5rem;
       padding-left: 1rem;
@@ -146,6 +147,17 @@
       position: relative;
 
       color: light-dark(black, white);
+
+      *:not(hr) {
+        margin: 0;
+      }
+      img,
+      video {
+        width: 100%;
+      }
+      p {
+        font-size: 16px;
+      }
     }
     &.send {
       display: flex;
