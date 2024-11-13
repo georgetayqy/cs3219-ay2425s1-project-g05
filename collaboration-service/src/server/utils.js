@@ -436,25 +436,16 @@ const getTemplateQuestion = (url) => {
     return null;
   }
 
-  // remove url splits that result in empty strings
+  // decode to split properly
   url = decodeURIComponent(url);
-  const splitUrl = url.split(/[&|?|/]/).filter((val, x, y) => val.length > 0);
 
-  let templateCode = '';
-  let userId = '';
-
-  // iterate through the url entries and populate accordingly
-  for (const urlEntry of splitUrl) {
-    if (urlEntry.startsWith('templateCode')) {
-      templateCode = urlEntry.split('=')[1];
-    } else if (urlEntry.startsWith('userId')) {
-      userId = urlEntry.split('=')[1];
-    }
-  }
+  // use regex to get the correct component
+  const userId = url.split('userId=')[1];
+  const templateCode = url.split('templateCode=')[1].split('&userId=')[0];
 
   return [
-    templateCode.length == 0 ? null : templateCode,
-    userId.length == 0 ? 'defaultUser' : userId,
+    templateCode?.length == 0 ? null : templateCode,
+    userId?.length == 0 ? 'defaultUser' : userId,
   ];
 };
 
@@ -466,5 +457,5 @@ export {
   WSSharedDoc,
   getYDoc,
   setupWSConnection,
-  deleted
+  deleted,
 };
