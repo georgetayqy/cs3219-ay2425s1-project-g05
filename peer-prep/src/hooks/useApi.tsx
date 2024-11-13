@@ -29,6 +29,7 @@ export default function useApi() {
   const [error, setError] = useState<any | null>(null);
 
   const navigate = useNavigate();
+  const { refresh } = useAuth();
 
   const [user, setUser] = useLocalStorage<User | null>({
     key: "user",
@@ -78,14 +79,14 @@ export default function useApi() {
         credentials: "include",
       });
 
-      // if the response status indicates not logged in, clear data and redirect to login
-      // if (response.status === 401) {
-      //   //
-      //   //
-      //   return;
-      // }
-
       if (response.status === 401 || response.status === 403) {
+        // try to refresh again
+
+        try {
+          const canRefresh = await refresh();
+          console.log({ canRefresh });
+        } catch (e) {}
+
         setUser(null);
         navigate("/login");
 

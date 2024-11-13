@@ -1,7 +1,8 @@
 import { createClient } from 'redis';
 
+console.log("[user-service] connecting to redis with url " + process.env.REDIS_URL);
 const client = createClient({
-    url: process.env.REDIS_URL || 'redis://redis:6379' // Adjust the URL if using Docker or a remote instance
+    url: "redis://localhost:6379" || 'redis://redis:6379' // Adjust the URL if using Docker or a remote instance
 });
 
 client.on("ready", () => console.log("Connected to redis!"));
@@ -23,7 +24,7 @@ export async function printAllKeys() {
 }
 
 export async function addToken(key) {
-    const expiryInSeconds = 60*2
+    const expiryInSeconds = 60 * 2
     const value = 'refreshToken'
     try {
         await client.set(key, value, {

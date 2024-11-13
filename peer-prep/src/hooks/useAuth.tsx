@@ -22,6 +22,7 @@ export interface AuthContextType {
   logout: () => void;
   register: (data: any) => void;
   authStatus: AUTH_STATUS;
+  refresh: () => Promise<boolean>;
 }
 
 const DEFAULT_TEMP_USER: User = {
@@ -40,6 +41,7 @@ const DEFAULT: AuthContextType = {
   logout: () => {},
   register: () => {},
   authStatus: AUTH_STATUS.LOADING,
+  refresh: () => Promise.resolve(false),
 };
 const AuthContext = createContext<AuthContextType>(DEFAULT);
 
@@ -104,6 +106,51 @@ export const AuthProvider = ({
           color: "red",
         });
       });
+  };
+
+  // this function will be called when the access token expires
+  // if you have a refresh token, you can use it to get a new access token
+  // if not, logout
+  // if the refresh token call fails, logout
+  const refresh = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL_USER}/user-service/users/regen`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+      console.log({ response });
+      if (!response.ok) {
+        console.error("ERROR:: Refresh token failed in response.ok");
+        // setUser(null);
+        // navigate("/login");
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      console.error("ERROR:: Refresh token failed", e);
+      // setUser(null);
+      // navigate("/login");
+      return false;
+    }
+
+    // fetchData<ServerResponse<void>>(`/user-service/users/regen`, SERVICE.USER, {
+    //   method: "POST",
+    // })
+    //   .then((response) => {
+    //     console.log(
+    //       `LOG: ✅✅ refresh token used to refresh session successfully`
+    //     );
+    //   })
+    //   .catch((error) => {
+    //     console.error(error);
+
+    //     // notifications.show()
+    //   });
   };
 
   const register = async (data: {
@@ -187,6 +234,7 @@ export const AuthProvider = ({
       logout,
       register,
       authStatus,
+      refresh,
     }),
     [user, authStatus]
   );

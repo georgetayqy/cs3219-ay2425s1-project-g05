@@ -35,7 +35,7 @@ export function verifyAccessToken(token) {
 }
 
 export function generateRefreshToken({ _id, email, displayName, isAdmin, isDeleted }) {
-  return jwt.sign({ userId: _id.toString(), email: email, displayName: displayName, isAdmin: isAdmin, isDeleted }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '2m' });
+  return jwt.sign({ userId: _id.toString(), email: email, displayName: displayName, isAdmin: isAdmin, isDeleted }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '5m' });
 }
 
 export function verifyRefreshToken(token) {

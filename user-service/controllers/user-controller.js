@@ -335,6 +335,8 @@ export async function regenerateAccessToken(req, res) {
 
         return res.status(200).json({ statusCode: 200, message: "Access token refreshed" })
     } catch (error) {
+        console.log(`Error in regenerating token`)
+        console.log(error)
         return res.status(500).json({ statusCode: 500, message: "Unknown server error" })
     }
 }
