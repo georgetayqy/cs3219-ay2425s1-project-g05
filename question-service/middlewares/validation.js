@@ -12,7 +12,7 @@ const joiTestCaseSchema = Joi.object({
     })
     .required()
     .messages({
-      "string.empty": "Test code cannot be empty",
+    "string.empty": "Test code cannot be empty",
       "any.required": "Test code is required",
     }),
   input: Joi.string().required().messages({
@@ -24,7 +24,7 @@ const joiTestCaseSchema = Joi.object({
     "boolean.base": "isPublic must be a boolean",
     "any.required": "isPublic is required",
   }),
-  meta: Joi.any().optional(), // assuming optional for now
+  meta: Joi.object().optional(),
   expectedOutput: Joi.string()
     .trim()
     .min(1)
@@ -42,22 +42,22 @@ const joiTestCaseSchema = Joi.object({
     "Each test case should have testCode, isPublic, and expectedOutput",
 });
 
-const joiDescriptionSchema = Joi.object(
-  {
-    descriptionHtml: Joi.string().trim().min(1).required().messages({
-      "string.empty": "DescriptionHtml is required in description",
-      "string.min": "DescriptionHtml must be at least 1 character long",
-      "any.required": "DescriptionHtml is required in description",
-    }),
-    descriptionText: Joi.string().trim().min(1).required().messages({
-      "string.empty": "DescriptionText is required in description",
-      "string.min": "DescriptionText must be at least 1 character long",
-      "any.required": "DescriptionText is required in description",
-    }),
-  }
-).messages({
-  "object.base": "Description is required as an object with descriptionHtml and descriptionText",
-  "any.required": "Description is required with descriptionHtml and descriptionText",
+const joiDescriptionSchema = Joi.object({
+  descriptionHtml: Joi.string().trim().min(1).required().messages({
+    "string.empty": "DescriptionHtml is required in description",
+    "string.min": "DescriptionHtml must be at least 1 character long",
+    "any.required": "DescriptionHtml is required in description",
+  }),
+  descriptionText: Joi.string().trim().min(1).required().messages({
+    "string.empty": "DescriptionText is required in description",
+    "string.min": "DescriptionText must be at least 1 character long",
+    "any.required": "DescriptionText is required in description",
+  }),
+}).messages({
+  "object.base":
+    "Description is required as an object with descriptionHtml and descriptionText",
+  "any.required":
+    "Description is required with descriptionHtml and descriptionText",
 });
 
 // Schema for question - for create
@@ -69,7 +69,8 @@ const joiQuestionSchema = Joi.object({
   }),
   description: joiDescriptionSchema.required().messages({
     "object.base": "Description must be an object",
-    "any.required": "Description is required with descriptionHtml and descriptionText",
+    "any.required":
+      "Description is required with descriptionHtml and descriptionText",
   }),
   categoriesId: Joi.array()
     .items(
@@ -95,11 +96,11 @@ const joiQuestionSchema = Joi.object({
     "any.required":
       "Test cases are required and should have testCode, isPublic, and expectedOutput",
   }),
-  templateCode: Joi.string().optional().trim().min(1).messages({
+  templateCode: Joi.string().required().trim().min(1).messages({
     "string.min": "Template code cannot be empty",
     "string.empty": "Template code cannot be empty",
   }),
-  solutionCode: Joi.string().optional().trim().min(1).messages({
+  solutionCode: Joi.string().required().trim().min(1).messages({
     "string.min": "Solution cannot be empty",
     "string.empty": "Solution code cannot be empty",
   }),
@@ -124,7 +125,8 @@ const joiPartialQuestionSchema = Joi.object({
       "string.empty": "Title cannot be empty",
     }),
   description: joiDescriptionSchema.optional().messages({
-    "object.base": "Description must be an object with descriptionHtml and descriptionText",
+    "object.base":
+      "Description must be an object with descriptionHtml and descriptionText",
   }),
   categoriesId: Joi.array()
     .items(
