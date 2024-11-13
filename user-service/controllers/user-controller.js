@@ -321,7 +321,10 @@ export async function regenerateAccessToken(req, res) {
         }
 
         // Check if refresh token is in redis
-        if (!tokenExists(refreshToken)) {
+        const exists = await tokenExists(refreshToken);
+        console.log("Token exists: ", exists)
+        if (!exists) {
+            console.log("Refresh token not found in redis")
             return res.status(401).json({ statusCode: 401, message: "Refresh token is not whitelisted" })
         }
 

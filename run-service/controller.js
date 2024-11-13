@@ -273,7 +273,7 @@ async function runTestcase(testcase, code) {
 
     let outputFinal = responseData.stdout ? responseData.stdout : "";
     let testCaseDetailsFinal = {
-      input: responseData.input || "No input description",
+      input: testcase.input || "No input description",
       expectedOutput: testcase.expectedOutput || "No expected output",
       testCaseId: testcase._id,
     };
