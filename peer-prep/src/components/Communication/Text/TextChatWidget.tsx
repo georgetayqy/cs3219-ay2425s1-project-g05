@@ -613,9 +613,7 @@ ${responseText}`;
     setIsAiChat(false);
     setAiButtonType(AiAssistButtonType.GEN_HINTS);
 
-    onBeforeSendMessage();
-
-    simulateClick();
+    // onBeforeSendMessage();
   }
 
   function handleGenerateSolution() {
@@ -627,7 +625,7 @@ ${responseText}`;
     setDraftMessage(prompt);
     setIsAiChat(false);
     setAiButtonType(AiAssistButtonType.GEN_SOLUTION);
-    onBeforeSendMessage();
+    // onBeforeSendMessage();
   }
 
   function handleExplainCode() {
@@ -640,7 +638,7 @@ ${responseText}`;
     setDraftMessage(prompt);
     setIsAiChat(false);
     setAiButtonType(AiAssistButtonType.CODE_EXPLANATION);
-    onBeforeSendMessage();
+    // onBeforeSendMessage();
   }
 
   function handleExplainQuestion() {
@@ -651,7 +649,7 @@ ${responseText}`;
     setDraftMessage(prompt);
     setIsAiChat(false);
     setAiButtonType(AiAssistButtonType.QUESTION_EXPLANATION);
-    onBeforeSendMessage();
+    // onBeforeSendMessage();
   }
 
   const [isChatFullscreen, setIsChatFullscreen] = useState(false);
@@ -881,8 +879,9 @@ ${responseText}`;
                       gradient={{ from: "violet", to: "blue", deg: 135 }}
                       onClick={handleGenerateHints}
                       loading={
-                        messageState === MessageState.SENDING &&
-                        aiButtonType === AiAssistButtonType.GEN_HINTS
+                        messageState === MessageState.SENDING
+                        // &&
+                        // aiButtonType === AiAssistButtonType.GEN_HINTS
                       }
                       disabled={
                         messageState === MessageState.SENDING &&
@@ -909,8 +908,9 @@ ${responseText}`;
                       gradient={{ from: "violet", to: "blue", deg: 135 }}
                       onClick={handleGenerateSolution}
                       loading={
-                        messageState === MessageState.SENDING &&
-                        aiButtonType === AiAssistButtonType.GEN_SOLUTION
+                        messageState === MessageState.SENDING
+                        // &&
+                        // aiButtonType === AiAssistButtonType.GEN_SOLUTION
                       }
                       disabled={
                         messageState === MessageState.SENDING &&
@@ -936,8 +936,9 @@ ${responseText}`;
                       gradient={{ from: "violet", to: "blue", deg: 135 }}
                       onClick={handleExplainCode}
                       loading={
-                        messageState === MessageState.SENDING &&
-                        aiButtonType === AiAssistButtonType.CODE_EXPLANATION
+                        messageState === MessageState.SENDING
+                        // &&
+                        // aiButtonType === AiAssistButtonType.CODE_EXPLANATION
                       }
                       disabled={
                         messageState === MessageState.SENDING &&
@@ -963,8 +964,9 @@ ${responseText}`;
                       gradient={{ from: "violet", to: "blue", deg: 135 }}
                       onClick={handleExplainQuestion}
                       loading={
-                        messageState === MessageState.SENDING &&
-                        aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
+                        messageState === MessageState.SENDING
+                        // &&
+                        // aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
                       }
                       disabled={
                         messageState === MessageState.SENDING &&
@@ -1423,7 +1425,7 @@ function TextMessage({
             {getAvatar(msg.integration)}
             <Box className={`${classes.textBox}`}>
               {" "}
-              {textObjects}
+              <Box style={{ overflow: "hidden" }}>{textObjects}</Box>
               <span className={`${classes.timestamp}`}>
                 {formatTime(new Date(msg.timestamp))}{" "}
               </span>{" "}
@@ -1485,7 +1487,9 @@ function TextMessage({
           )}
           <Box className={`${classes.entry} ${classes.send}`}>
             {/* <Text className={`${classes.textBox}`}> {msg.content} </Text> */}
-            <Box className={classes.textBox}>{textObjects}</Box>
+            <Box className={classes.textBox}>
+              <Box style={{ overflow: "hidden" }}>{textObjects}</Box>
+            </Box>
             <Text
               className={`${classes.timestamp}`}
               onClick={() => console.log(msg)}
