@@ -249,6 +249,9 @@ export default function CreateSessionPage() {
     socket.on("finding-match", onWaitingForMatch);
     socket.on("found-match", onFoundMatch);
     socket.on("no-match", onNoMatch);
+    socket.on('connect_error', (error) => {
+        console.error('Connection error:', error.message);
+    });
 
     return () => {
       // clear up socket
