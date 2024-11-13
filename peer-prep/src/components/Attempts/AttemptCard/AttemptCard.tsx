@@ -166,9 +166,7 @@ const AttemptCard = memo(function AttemptCard({
             </Flex>
             {/* Collaborator Details */}
 
-            <Text className={classes.accordionBodyDescription} lineClamp={64}>
-              {question.description.descriptionText}
-            </Text>
+            <div dangerouslySetInnerHTML={{ __html: question.description.descriptionHtml }}></div>
             {/* </SimpleGrid> */}
           </Flex>
         </Collapse>
