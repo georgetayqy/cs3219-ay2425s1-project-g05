@@ -22,7 +22,7 @@ app.get('/healthz', (request, response) => {
 });
 
 // Automatically delete sessions after 60 minutes of inactivity
-const SESSION_TIMEOUT_MS = 60 * 60 * 1000; 
+const SESSION_TIMEOUT_MS = 60 * 60 * 1000;
 
 // In-memory store for chat sessions. 
 const userSessions = new Map();
@@ -31,7 +31,7 @@ const userSessions = new Map();
 function createNewChatSession(apiKey, userId, roomId) {
   const genAIClient = new GoogleGenerativeAI(apiKey);
   const model = genAIClient.getGenerativeModel({ model: 'gemini-pro' });
-  
+
   const chatSession = model.startChat({
     history: [], // Start with an empty history for each new session
     generationConfig: {
@@ -49,6 +49,7 @@ function createNewChatSession(apiKey, userId, roomId) {
     userChatSessions.set(roomId, chatSession);
     userSessions.set(userId, userChatSessions);
   }
+
 }
 
 // Function to retrieve the chat session for a given user and room
@@ -119,7 +120,11 @@ app.post('/api/gen-ai-service/create-session', async (req, res) => {
 
   try {
     createNewChatSession(apiKey, userId, roomId);
-    
+
+    // try to send a test chat message
+    let chatSession = retrieveChatSession(userId, roomId);
+    const result = await chatSession.sendMessage('Hello, I am here to help you with your coding problems.');
+
     res.status(200).json({
       statusCode: 200,
       message: 'Chat session created successfully',
@@ -127,9 +132,17 @@ app.post('/api/gen-ai-service/create-session', async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating chat session:", error);
+    console.log(error.status)
+    console.log("-0------------")
 
-    let statusCode = 500; 
+    let statusCode = 500;
     let message = 'An error occurred while creating the chat session';
+
+    // delete the session and user from the map
+    // always delete
+    if (userSessions.has(userId)) {
+      userSessions.delete(userId);
+    }
 
     if (error.response) {
       // If the error has a response property, it indicates an HTTP error
@@ -166,10 +179,17 @@ app.post('/api/gen-ai-service/create-session', async (req, res) => {
       }
     }
 
-    res.status(statusCode).json({
-      statusCode,
-      message,
-    });
+    if (error.errorDetails.length) {
+      if (error.errorDetails[0].reason === 'API_KEY_REQUIRED' || error.errorDetails[0].reason === 'API_KEY_INVALID') {
+        message = 'API Key is invalid. Please check your API key and try again.'
+        statusCode = 400;
+      }
+
+      res.status(statusCode).json({
+        statusCode,
+        message,
+      });
+    }
   }
 });
 
@@ -206,8 +226,8 @@ app.post('/api/gen-ai-service/chat', async (req, res) => {
   } catch (error) {
     console.error('Error communicating with Gemini API:', error);
     if (error.message === 'API_KEY_REQUIRED') {
-      return res.status(401).json({
-        statusCode: 401,
+      return res.status(400).json({
+        statusCode: 400,
         message: 'API Key is required to create a new chat session.',
       });
     } else {
@@ -222,7 +242,7 @@ app.post('/api/gen-ai-service/chat', async (req, res) => {
 
 // Analyse failed test cases endpoint
 app.post('/api/gen-ai-service/analyse-failed-test-cases', async (req, res) => {
-  
+
   const { testProgramCode, expectedOutput, actualOutput, solutionCode, question, userId, roomId } = req.body;
 
   if (!testProgramCode || !expectedOutput || !actualOutput || !solutionCode || !question || !userId || !roomId) {
@@ -232,11 +252,11 @@ app.post('/api/gen-ai-service/analyse-failed-test-cases', async (req, res) => {
   }
 
   const prompt = `I have written a piece of code to solve a problem, and I am encountering errors when I run it. Below are the details of the problem, the test program code, the expected output, the actual output, and my current solution code. \n`
-  + `Question: \n ${question} \n Test Program Code: \n ${testProgramCode} \n Expected Output: \n ${expectedOutput} \n Actual Output: \n ${actualOutput} \n Solution code: \n ${solutionCode} \n`
-  + 'I need your help to understand why my solution is not producing the expected output. Please analyze the provided solution code and test program code in detail to identify what might be causing the discrepancies between the actual and expected output. \n'
-  + '- Focus on pinpointing specific bugs or logical errors in the code. \n'
-  + '- Suggest improvements or corrections to fix the failing test cases. \n'
-  + 'Please provide a detailed analysis and step-by-step suggestions on how to fix the errors, but keep it concise while still being clear. Thank you!';
+    + `Question: \n ${question} \n Test Program Code: \n ${testProgramCode} \n Expected Output: \n ${expectedOutput} \n Actual Output: \n ${actualOutput} \n Solution code: \n ${solutionCode} \n`
+    + 'I need your help to understand why my solution is not producing the expected output. Please analyze the provided solution code and test program code in detail to identify what might be causing the discrepancies between the actual and expected output. \n'
+    + '- Focus on pinpointing specific bugs or logical errors in the code. \n'
+    + '- Suggest improvements or corrections to fix the failing test cases. \n'
+    + 'Please provide a detailed analysis and step-by-step suggestions on how to fix the errors, but keep it concise while still being clear. Thank you!';
 
   try {
     let chatSession = retrieveChatSession(userId, roomId);
@@ -254,8 +274,8 @@ app.post('/api/gen-ai-service/analyse-failed-test-cases', async (req, res) => {
   } catch (error) {
     console.error('Error communicating with Gemini API:', error);
     if (error.message === 'API_KEY_REQUIRED') {
-      return res.status(401).json({
-        statusCode: 401,
+      return res.status(400).json({
+        statusCode: 400,
         message: 'API Key is required to create a new chat session.',
       });
     } else {
@@ -279,10 +299,10 @@ app.post('/api/gen-ai-service/analyse-error-logs', async (req, res) => {
       .json({ statusCode: 400, message: 'Logs or solution code are required' });
   }
 
-  const prompt = 'I have written a piece of code, and I am encountering errors when I run it. Below are the error logs and my current solution code. \n' 
-  + `Error logs: \n ${errorLogs} \n Solution code: \n ${solutionCode} \n ` 
-  + 'Please help me understand the errors by analyzing the logs provided. Focus only on identifying what might be causing these errors and provide specific ' 
-  + 'steps or advice on how to fix them. Do not give me a solution to the entire problem, and avoid any hints or explanations related to solving the overall task.';
+  const prompt = 'I have written a piece of code, and I am encountering errors when I run it. Below are the error logs and my current solution code. \n'
+    + `Error logs: \n ${errorLogs} \n Solution code: \n ${solutionCode} \n `
+    + 'Please help me understand the errors by analyzing the logs provided. Focus only on identifying what might be causing these errors and provide specific '
+    + 'steps or advice on how to fix them. Do not give me a solution to the entire problem, and avoid any hints or explanations related to solving the overall task.';
 
 
   try {
@@ -303,8 +323,8 @@ app.post('/api/gen-ai-service/analyse-error-logs', async (req, res) => {
   } catch (error) {
     console.error('Error communicating with Gemini API:', error);
     if (error.message === 'API_KEY_REQUIRED') {
-      return res.status(401).json({
-        statusCode: 401,
+      return res.status(400).json({
+        statusCode: 400,
         message: 'API Key is required to create a new chat session.',
       });
     } else {
@@ -315,6 +335,29 @@ app.post('/api/gen-ai-service/analyse-error-logs', async (req, res) => {
       });
     }
   }
+});
+
+// delete session endpoint
+app.delete('/api/gen-ai-service/delete-session', async (req, res) => {
+  const { userId, roomId } = req.body;
+
+  if (!userId || !roomId) {
+    return res
+      .status(400)
+      .json({ statusCode: 400, message: 'User ID and Room ID are required' });
+  }
+
+  const userChatSessions = userSessions.get(userId);
+
+  if (userChatSessions && userChatSessions.has(roomId)) {
+    userChatSessions.delete(roomId);
+  }
+
+  res.status(200).json({
+    statusCode: 200,
+    message: 'Chat session deleted successfully',
+    data: { userId, roomId },
+  });
 });
 
 app.listen(PORT, () => {

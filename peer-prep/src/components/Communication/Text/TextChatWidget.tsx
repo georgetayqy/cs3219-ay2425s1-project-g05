@@ -170,7 +170,8 @@ export default function TextChatWidget({
   const { user } = useAuth();
   const { colorScheme } = useMantineColorScheme();
 
-  const { hasApiKey, openSendApiKeyModal } = useAi();
+  const { hasApiKey, openSendApiKeyModal, setHasApiKey, deleteApiKey } =
+    useAi();
 
   const [messageState, setMessageState] = useState<MessageState>(
     MessageState.BEFORE_SEND
@@ -296,7 +297,7 @@ export default function TextChatWidget({
         onSendAiMessage();
       } else {
         console.log("user has not keyed in their api key");
-        openSendApiKeyModal({ roomId, user });
+        openSendApiKeyModal({ roomId, user, callback: onSendAiMessage });
       }
     }
   };
@@ -408,7 +409,8 @@ ${responseText}`;
       })
       .catch((e) => {
         console.log("Error chatting with AI", e);
-        const errorMessage = "Error chatting with AI. Please try again.";
+        const errorMessage =
+          "Error chatting with AI. Please enter your API key and try again.";
         handleIntegrationError(integration, errorMessage);
 
         // Adding a slight delay before emitting the error message
@@ -426,6 +428,10 @@ ${responseText}`;
           message: errorMessage,
           color: "red",
         });
+
+        setHasApiKey(false);
+        deleteApiKey({ roomId, user });
+        // openSendApiKeyModal({ roomId, user });
       });
   };
 

@@ -544,7 +544,8 @@ export const TestCasesDisplay = ({
   question: string;
 }) => {
   const { fetchData } = useApi();
-  const { openSendApiKeyModal, hasApiKey } = useAi();
+  const { openSendApiKeyModal, hasApiKey, deleteApiKey, setHasApiKey } =
+    useAi();
 
   const { colorScheme } = useMantineColorScheme();
   const [currentTestCase, setCurrentTestCase] = useState<TestCase | null>(
@@ -676,9 +677,14 @@ export const TestCasesDisplay = ({
           setLoading(false);
           setAnalysisResult("Failed to fetch AI analysis. Please try again.");
           setErrorRetrieving(true);
+          throw res;
         }
       })
       .catch((error) => {
+        // set need enter api key
+        setHasApiKey(false);
+        deleteApiKey({ roomId, user });
+
         // Simulate delay before error handling
         setTimeout(() => {
           console.error("Error fetching AI analysis:", error);
@@ -702,7 +708,10 @@ export const TestCasesDisplay = ({
   const handleFailedTestCaseAnalyseClick = async () => {
     // User must key in their API key first to use the AI service, show modal if they have not
     if (!hasApiKey) {
-      openSendApiKeyModal({ roomId, user });
+      openSendApiKeyModal({
+        roomId,
+        user,
+      });
       return;
     }
 
@@ -765,9 +774,15 @@ export const TestCasesDisplay = ({
           );
           setErrorRetrievingTestCaseAnalysis(true);
           setLoadingTestCaseAnalysis(false);
+
+          throw res;
         }
       })
       .catch((error) => {
+        // set need enter api key
+        setHasApiKey(false);
+        deleteApiKey({ roomId, user });
+
         // Simulate delay before error handling
         setTimeout(() => {
           console.error("Error fetching failed test case analysis:", error);

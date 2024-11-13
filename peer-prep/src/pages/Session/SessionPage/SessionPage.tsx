@@ -442,6 +442,7 @@ export default function SessionPage() {
     hasApiKey,
     setHasApiKey,
     openSendApiKeyModal,
+    deleteApiKey,
   } = useAi();
 
   // Check if user has already sent their API key
@@ -544,6 +545,10 @@ export default function SessionPage() {
       const attempt = response.data.attempt;
       console.log("Attempt", attempt);
 
+      // delete the AI session
+      if (hasApiKey) {
+        deleteApiKey({ roomId, user });
+      }
       // navigate to session summary page
       navigate(`/session/summary/${roomId}`, {
         state: { roomIdReceived: roomId, attemptReceived: attempt },
