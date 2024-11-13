@@ -42,6 +42,7 @@ const AttemptCard = memo(function AttemptCard({
   isClickable = false, // Default to false
 }: AttemptCardProps) {
   const { fetchData } = useApi();
+  const [isDeleted, setIsDeleted] = useState(false);
 
   const navigate = useNavigate();
 
@@ -64,7 +65,8 @@ const AttemptCard = memo(function AttemptCard({
         message: "Attempt deleted successfully",
         color: "green",
       });
-      window.location.reload();
+      setIsDeleted(true);
+      close();
     });
   };
 
@@ -111,7 +113,7 @@ const AttemptCard = memo(function AttemptCard({
   const [opened, { open, close }] = useDisclosure(false);
 
   return (
-    <>
+    <Collapse in={!isDeleted} style={{ width: "100%" }}>
       <Modal opened={opened} onClose={close} title="Confirm deletion" centered>
         <Stack>
           <Box py="lg">Are you sure you want to delete this attempt?</Box>
@@ -131,6 +133,7 @@ const AttemptCard = memo(function AttemptCard({
           </Group>
         </Stack>
       </Modal>
+
       <Flex
         className={`${classes.accordion} ${classes[difficultyString]} ${
           classes[isExpanded ? "expanded" : "collapsed"]
@@ -172,14 +175,14 @@ const AttemptCard = memo(function AttemptCard({
               <Space flex={1} />
 
               {/* <SimpleGrid cols={2}> */}
-              <Flex gap={8}>
+              <Group gap={8}>
                 <Button onClick={handleCardClick} variant="light">
                   View
                 </Button>
                 <Button onClick={open} variant="light" color="red">
                   Delete
                 </Button>
-              </Flex>
+              </Group>
             </Flex>
             {/* Collaborator Details */}
 
@@ -192,7 +195,7 @@ const AttemptCard = memo(function AttemptCard({
           </Flex>
         </Collapse>
       </Flex>
-    </>
+    </Collapse>
   );
 });
 
