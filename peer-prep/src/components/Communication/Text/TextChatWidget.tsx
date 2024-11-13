@@ -30,6 +30,7 @@ import {
   Text,
   Textarea,
   Tooltip,
+  useMantineColorScheme,
 } from "@mantine/core";
 import { createContext, useEffect, useRef, useState } from "react";
 
@@ -167,6 +168,7 @@ export default function TextChatWidget({
   solutionCode,
 }: TextChatWidgetProps) {
   const { user } = useAuth();
+  const { colorScheme } = useMantineColorScheme();
 
   const { hasApiKey, openSendApiKeyModal } = useAi();
 
@@ -1239,6 +1241,7 @@ export default function TextChatWidget({
                         <ActionIcon
                           variant="transparent"
                           onClick={() => onMessageClicked(null)}
+                          color={`${colorScheme === "dark" ? "white" : "cyan"}`}
                         >
                           {/* cancel */}
                           <IconX size="16px" />
