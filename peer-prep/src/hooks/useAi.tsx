@@ -61,7 +61,6 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
     callback?: (...args: any[]) => any;
   }) => {
     modals.open({
-      id: "send-api-key",
       title: "Enter Your Google AI API Key",
       children: (
         <Stack>
@@ -159,14 +158,15 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("API Key sent successfully", response);
       setSendingApiKey(false);
 
-      modals.closeAll();
       setHasApiKey(true);
 
       notifications.show({
-        title: "API key sent successfully",
+        title: "API key set successfully",
         message: "You can now use the AI features.",
         color: "green",
       });
+
+      modals.closeAll();
 
       if (callback) {
         callback();
