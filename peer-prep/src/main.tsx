@@ -6,6 +6,8 @@ import {
   BrowserRouter,
   createBrowserRouter,
   RouterProvider,
+  useLocation,
+  useNavigate,
 } from "react-router-dom";
 import Home from "./pages/Home/HomePage.tsx";
 import LoginOrRegisterPage from "./pages/Login/LoginPage.tsx";
@@ -31,6 +33,7 @@ import SessionPage from "./pages/Session/SessionPage/SessionPage.tsx";
 
 import "@fontsource/inter";
 import { AIProvider } from "./hooks/useAi.tsx";
+import ProtectedSessionWrapper from "./pages/Session/ProtectedSessionWrapper.tsx";
 
 const router = createBrowserRouter([
   {
@@ -125,12 +128,18 @@ const router = createBrowserRouter([
                 element: <SearchingPage />,
               },
               {
-                path: "/session/:roomId",
-                element: <SessionPage />,
-              },
-              {
                 path: "/session/summary/:roomId",
                 element: <SessionSummaryPage />,
+              },
+              {
+                path: "/session/",
+                element: <ProtectedSessionWrapper />,
+                children: [
+                  {
+                    path: ":roomId",
+                    element: <SessionPage />,
+                  },
+                ],
               },
             ],
           },

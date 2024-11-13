@@ -76,6 +76,25 @@ interface HistoryResponse {
   attempt: any;
 }
 
+let dummyQuestion: Question = {
+  _id: "1",
+  title: "",
+  categories: [],
+  difficulty: "EASY",
+  __v: 0,
+  categoriesId: [],
+  description: {
+    descriptionText: "",
+    descriptionHtml: "",
+  },
+  isDeleted: false,
+  link: "",
+  meta: {},
+  solutionCode: "",
+  templateCode: "",
+  testCases: [],
+};
+
 export default function SessionPage() {
   const WEBSOCKET_URL = import.meta.env.VITE_COLLAB_WS_URL || LOCAL_WEBSOCKET;
 
@@ -97,6 +116,8 @@ export default function SessionPage() {
     roomIdReceived: string;
     otherUserIdReceived: string;
   } = location.state || {};
+  console.log({ questionReceived });
+  const question = questionReceived || dummyQuestion;
 
   const roomId = useParams().roomId;
 
@@ -104,27 +125,25 @@ export default function SessionPage() {
 
   // Room ID and Question details from matching of users
   // TODO don't depend on location.state, make request to get question and room details? OR include it in the URL?
-  const [question, setQuestion] = useState(questionReceived);
   const [otherUserId, setOtherUserId] = useState(otherUserIdReceived);
   const [channelId, setChannelId] = useState<string | null>(null);
   const [otherUserDisplayName, setOtherUserDisplayName] = useState("");
   const [otherUserEmail, setOtherUserEmail] = useState("");
 
   // Question details to be displayed
-  const [questionCategories, setQuestionCategories] = useState<
-    QuestionCategory[]
-  >([]);
-  const [questionDifficulty, setQuestionDifficulty] = useState(
-    question.difficulty
-  );
-  const [questionTitle, setQuestionTitle] = useState(question.title);
-  const [questionDescription, setQuestionDescription] = useState(
-    question.description.descriptionHtml
-  );
-  const [leetCodeLink, setLeetCodeLink] = useState(question.link);
+  // todo   QuestionCategory[]
 
-  const [templateCode, setTemplateCode] = useState(question.templateCode);
-  const [attemptCode, setAttemptCode] = useState(question.templateCode);
+  const {
+    difficulty: questionDifficulty,
+    categories: questionCategories,
+    title: questionTitle,
+    description: questionDescription,
+    link: leetCodeLink,
+    templateCode,
+  } = question;
+
+  // todo
+  // const [attemptCode, setAttemptCode] = useState(question.templateCode);
   const latestResultsRef = useRef<TestCaseResult[]>([]);
 
   // when true, don't show modal when # users in room < 2
@@ -615,7 +634,9 @@ export default function SessionPage() {
                     overflowWrap: "break-word",
                     wordBreak: "break-word",
                   }}
-                  dangerouslySetInnerHTML={{ __html: questionDescription }}
+                  dangerouslySetInnerHTML={{
+                    __html: questionDescription.descriptionHtml,
+                  }}
                 ></div>
               </TypographyStylesProvider>
             </ScrollArea>
