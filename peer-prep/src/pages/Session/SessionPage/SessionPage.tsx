@@ -23,6 +23,7 @@ import {
   Textarea,
   Title,
   TypographyStylesProvider,
+  useMantineColorScheme,
 } from "@mantine/core";
 import classes from "./SessionPage.module.css";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
@@ -98,6 +99,8 @@ export default function SessionPage() {
   } = location.state || {};
 
   const roomId = useParams().roomId;
+
+  const { colorScheme } = useMantineColorScheme();
 
   // Room ID and Question details from matching of users
   // TODO don't depend on location.state, make request to get question and room details? OR include it in the URL?
@@ -652,7 +655,7 @@ export default function SessionPage() {
                 endpoint={WEBSOCKET_URL}
                 room={roomId}
                 userId={user._id}
-                theme="dark"
+                theme={`vs-${colorScheme}`}
                 height={"500px"}
                 defaultValue={question.templateCode}
                 currentValueRef={currentValueRef}
