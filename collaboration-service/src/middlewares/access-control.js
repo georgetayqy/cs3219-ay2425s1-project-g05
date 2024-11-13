@@ -34,10 +34,10 @@ function verifyAuthMiddleware(req, res, next) {
   if (!user) {
     return res
       .status(403)
-      .json({ statusCode: 403, message: 'Missing Access Token' });
+      .json({ statusCode: 403, message: 'Invalid Access Token' });
   }
 
-  req.user = { ...user }
+  req.user = { ...user };
 
   return next();
 }
