@@ -4,10 +4,10 @@ import {
   getQuestionById,
   deleteQuestionById,
   updateQuestionById,
-  getFilteredQuestions,
   getQuestionsByDescription,
   getQuestionsByTitleAndDifficulty,
   getDistinctCategories,
+  getRandomQuestionByCategoriesAndDifficulty,
 } from "./repository.js";
 
 const ormCreateQuestion = async (question) => {
@@ -30,14 +30,8 @@ const ormUpdateQuestionById = async (id, question) => {
   return updateQuestionById(id, question);
 };
 
-const ormGetFilteredQuestions = async (query) => {
-  return getFilteredQuestions(query);
-};
-
 const ormFindQuestion = async (query) => {
-  const filteredQuestions = await ormGetFilteredQuestions(query);
-  const randomIndex = Math.floor(Math.random() * filteredQuestions.length);
-  const randomQuestion = filteredQuestions[randomIndex];
+  const randomQuestion = await getRandomQuestionByCategoriesAndDifficulty(query);
   return randomQuestion;
 };
 
@@ -49,7 +43,7 @@ const ormGetQuestionsByTitleAndDifficulty = async (title, difficulty) => {
   return getQuestionsByTitleAndDifficulty(title, difficulty);
 };
 
-const ormGetDistinctCategories = async () => {
+const ormGetDistinctCategoriesId = async () => {
   return getDistinctCategories();
 };
 
@@ -59,9 +53,8 @@ export {
   ormGetQuestionById,
   ormDeleteQuestionById,
   ormUpdateQuestionById,
-  ormGetFilteredQuestions,
   ormFindQuestion,
   ormGetQuestionsByDescription,
   ormGetQuestionsByTitleAndDifficulty,
-  ormGetDistinctCategories,
+  ormGetDistinctCategoriesId,
 };
