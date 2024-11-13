@@ -16,6 +16,7 @@ import {
   Space,
   Text,
   Title,
+  Tooltip,
   useMantineColorScheme,
 } from "@mantine/core";
 import classes from "./TestCasesWrapper.module.css";
@@ -43,9 +44,7 @@ import ReactMarkdown from "react-markdown";
 import { useAi } from "../../hooks/useAi";
 
 type TestCasesWrapperProps = {
-  testCases: TestCase[]; // array of test cases
   channelId: string | null;
-  questionId: string | null;
 
   // to decide if we want to pass down a function from parent instead of passing down solutioncode
   // runAllTestCases: () => void;
@@ -57,7 +56,8 @@ type TestCasesWrapperProps = {
   latestResultsRef: React.MutableRefObject<TestCaseResult[]>;
 
   roomId: string;
-  question: string;
+
+  question: Question;
 };
 
 const STATUS_PARTIAL = 206;
@@ -65,11 +65,12 @@ const STATUS_COMPLETE = 200;
 const STATUS_CONNECTED = 201;
 const STATUS_STARTED = 202;
 
+const BLOCKED_CATEGORY_IDS = [2];
+
 export default function TestCasesWrapper({
-  testCases,
   channelId,
   // runAllTestCases,
-  questionId,
+
   currentValueRef,
 
   userId,
@@ -78,8 +79,17 @@ export default function TestCasesWrapper({
   latestResultsRef,
 
   roomId,
+
   question,
 }: TestCasesWrapperProps) {
+  const questionString = question.description.descriptionText;
+  const questionId = question._id;
+  const testCases = question.testCases;
+
+  const isBlockedFromRunningTestCase = question.categoriesId.some((id) =>
+    BLOCKED_CATEGORY_IDS.includes(id)
+  );
+
   const [latestResults, setLatestResults] = useState<TestCaseResult[]>([]);
 
   const [currentTestCase, setCurrentTestCase] = useState<TestCase | null>(
@@ -124,8 +134,6 @@ export default function TestCasesWrapper({
     setAttempt((prev) => prev + 1);
     attemptRef.current = attemptRef.current + 1;
   }
-
-  console.log(attemptCodeMap, "asdnashjkdhbj");
 
   const onMessage = (event: MessageEvent<string>) => {
     console.log("LOG: event source on message");
@@ -316,7 +324,6 @@ export default function TestCasesWrapper({
       return "red";
     }
   }
-  console.log({ colorScheme });
 
   return (
     <Box className={classes.container}>
@@ -328,10 +335,23 @@ export default function TestCasesWrapper({
         >
           Test Cases ({testCases.length})
         </Title>
-        <Button variant="light" onClick={runTestCases} loading={isRunning}>
-          {" "}
-          Run all testcases{" "}
-        </Button>
+        <Tooltip
+          label={
+            isBlockedFromRunningTestCase
+              ? "Testcase running is disabled for Database questions."
+              : "Run your code on the server. This may take some time!"
+          }
+        >
+          <Button
+            variant="light"
+            onClick={runTestCases}
+            loading={isRunning}
+            disabled={isBlockedFromRunningTestCase}
+          >
+            {" "}
+            Run all testcases{" "}
+          </Button>
+        </Tooltip>
       </Group>
       <TestCasesDisplay
         key={testCaseRunKey}
@@ -342,7 +362,7 @@ export default function TestCasesWrapper({
         testCases={testCases}
         roomId={roomId}
         userId={userId}
-        question={question}
+        question={questionString}
       />
       <>
         {/* <>

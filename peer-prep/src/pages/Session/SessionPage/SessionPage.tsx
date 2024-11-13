@@ -116,7 +116,6 @@ export default function SessionPage() {
     roomIdReceived: string;
     otherUserIdReceived: string;
   } = location.state || {};
-  console.log({ questionReceived });
   const question = questionReceived || dummyQuestion;
 
   const roomId = useParams().roomId;
@@ -149,9 +148,7 @@ export default function SessionPage() {
   // when true, don't show modal when # users in room < 2
   // const [isWaitingForRejoin, setIsWaitingForRejoin] = useState(false);
   const isWaitingForRejoinRef = useRef(false);
-  console.log("LOG: in session page, latestAttempt = ", {
-    latestResultsRef: latestResultsRef.current,
-  });
+
   // don't need to rerender!
   const currentValueRef = useRef("");
   const peopleInRoomFromCollabServiceRef = useRef<number>(0);
@@ -689,15 +686,13 @@ export default function SessionPage() {
             </Paper>
 
             <TestCasesWrapper
-              testCases={question.testCases || []}
               channelId={channelId}
-              questionId={question._id}
               currentValueRef={currentValueRef}
               userId={user._id}
               otherUserId={otherUserId}
               latestResultsRef={latestResultsRef}
               roomId={roomId}
-              question={question.description.descriptionText}
+              question={question}
             />
           </Stack>
         </Flex>
