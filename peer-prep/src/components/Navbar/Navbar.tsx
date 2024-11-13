@@ -192,7 +192,9 @@ export function Navbar() {
                       }
                       // onClick={logout}
                     >
-                      Change password
+                      <Link style={{ textDecoration: "none" }} to="/change-password">
+                        Change Password
+                      </Link>
                     </Menu.Item>
                     <Menu.Item
                       color="red"

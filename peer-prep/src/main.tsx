@@ -34,6 +34,7 @@ import SessionPage from "./pages/Session/SessionPage/SessionPage.tsx";
 import "@fontsource/inter";
 import { AIProvider } from "./hooks/useAi.tsx";
 import ProtectedSessionWrapper from "./pages/Session/ProtectedSessionWrapper.tsx";
+import ChangePasswordPage from "./pages/ChangePassword/ChangePasswordPage.tsx";
 
 const router = createBrowserRouter([
   {
@@ -101,6 +102,10 @@ const router = createBrowserRouter([
           {
             path: "/dashboard",
             element: <DashboardPage />,
+          },
+          {
+            path: "/change-password",
+            element: <ChangePasswordPage />,
           },
           {
             path: "/learn",
