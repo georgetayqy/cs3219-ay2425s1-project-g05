@@ -80,7 +80,7 @@ import { User } from "../../../types/user";
 import GeminiIcon from "../../../assets/integrations/google-gemini-icon.svg";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { CodeHighlight } from "@mantine/code-highlight";
-import { useAI } from "../../../hooks/useAi";
+import { useAi } from "../../../hooks/useAi";
 
 enum ChatState {
   DISCONNECTED,
@@ -155,7 +155,7 @@ interface AiChatResponse {
 export default function TextChatWidget({ roomId, question, solutionCode }: TextChatWidgetProps) {
   const { user } = useAuth();
 
-  const { setApiKeyModalVisible, hasApiKey } = useAI();
+  const { setApiKeyModalVisible, hasApiKey } = useAi();
 
   const [messageState, setMessageState] = useState<MessageState>(
     MessageState.BEFORE_SEND
