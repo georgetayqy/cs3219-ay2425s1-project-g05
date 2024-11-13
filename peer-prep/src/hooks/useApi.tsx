@@ -68,7 +68,7 @@ export default function useApi() {
           throw new Error("Missing base URL!");
       }
 
-      const response = await fetch(`${baseUrl}${url}`, {
+      let response = await fetch(`${baseUrl}${url}`, {
         ...options,
         headers: {
           ...options?.headers,
@@ -83,16 +83,37 @@ export default function useApi() {
         // try to refresh again
 
         try {
-          const canRefresh = await refresh();
-          console.log({ canRefresh });
-        } catch (e) {}
+          const isLoggedInNow = await refresh();
+          console.log({ canRefresh: isLoggedInNow });
 
-        setUser(null);
-        navigate("/login");
+          if (isLoggedInNow) {
+            // continue
+            // try fetchiong again
+            response = await fetch(`${baseUrl}${url}`, {
+              ...options,
+              headers: {
+                ...options?.headers,
+                // "x-api-key": import.meta.env.VITE_API_KEY as string,
+                // bearer token
+                // "Authorization": `Bearer ${accessToken}`,
+              },
+              credentials: "include",
+            });
 
-        throw {
-          message: "Login expired or not logged in. Please log in again!",
-        };
+            if (response.status === 401 || response.status === 403) {
+              throw new Error("Refresh failed");
+            }
+          } else {
+            throw new Error("Refresh failed");
+          }
+        } catch (e) {
+          setUser(null);
+          navigate("/login");
+
+          throw {
+            message: "Login expired or not logged in. Please log in again!",
+          };
+        }
       }
 
       const data: Q = await response.json();

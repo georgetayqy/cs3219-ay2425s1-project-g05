@@ -326,7 +326,13 @@ export async function regenerateAccessToken(req, res) {
         }
 
         // Generate new access token
-        const newAccessToken = generateAccessToken(userRefreshToken);
+        const user = await ormFindUserById(userRefreshToken.userId);
+        if (!user) {
+            return res.status(404).json({ statusCode: 404, message: "User not found" })
+        }
+
+        console.log("User found: ", user)
+        const newAccessToken = generateAccessToken(user);
         if (process.env.NODE_ENV === 'DEV') {
             res.cookie('accessToken', newAccessToken, { httpOnly: true, sameSite: 'none', secure: true });
         } else {
