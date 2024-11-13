@@ -8,6 +8,7 @@ import {
   Flex,
   Group,
   Modal,
+  Space,
   Stack,
   Text,
   Title,
@@ -45,14 +46,20 @@ const AttemptCard = memo(function AttemptCard({
   const navigate = useNavigate();
 
   const handleCardClick = () => {
-    navigate(`/session/summary/${roomId}`, { state: { roomIdReceived: roomId, attemptReceived: attempt } });
+    navigate(`/session/summary/${roomId}`, {
+      state: { roomIdReceived: roomId, attemptReceived: attempt },
+    });
   };
 
   const handleDelete = () => {
-    console.log(roomId)
-    fetchData<ServerResponse<{attempt: UserAttempt}>>(`/history-service/attempt/${roomId}`, SERVICE.HISTORY, {
-      method: "DELETE",
-    }).then((response) => {
+    console.log(roomId);
+    fetchData<ServerResponse<{ attempt: UserAttempt }>>(
+      `/history-service/attempt/${roomId}`,
+      SERVICE.HISTORY,
+      {
+        method: "DELETE",
+      }
+    ).then((response) => {
       notifications.show({
         message: "Attempt deleted successfully",
         color: "green",
@@ -67,31 +74,34 @@ const AttemptCard = memo(function AttemptCard({
 
   useEffect(() => {
     setCompletedAt(formatDateTime(attempt.createdAt));
-    getOtherUser();
+    // getOtherUser();
   }, []);
 
-  const getOtherUser = async () => { 
-    try {
-      fetchData<ServerResponse<UserResponseData>>(
-        `/user-service/users/${attempt.otherUserId}`,
-        SERVICE.USER
-      ).then((response) => {
-        setOtherUserDisplayName(response.data.user.displayName);
-        setOtherUserEmail(response.data.user.email);
-      });
-    } catch (error: any) {
-      console.error("Error getting details of other user:", error);
-      notifications.show({
-        message: error.message,
-        color: "red",
-      });
-    }
-  }
+  // const getOtherUser = async () => {
+  //   try {
+  //     fetchData<ServerResponse<UserResponseData>>(
+  //       `/user-service/users/${attempt.otherUserId}`,
+  //       SERVICE.USER,
+  //       {},
+  //       null,
+  //       true
+  //     ).then((response) => {
+  //       setOtherUserDisplayName(response.data.user.displayName);
+  //       setOtherUserEmail(response.data.user.email);
+  //     });
+  //   } catch (error: any) {
+  //     console.error("Error getting details of other user:", error);
+  //     notifications.show({
+  //       message: error.message,
+  //       color: "red",
+  //     });
+  //   }
+  // };
 
   const formatDateTime = (dateTime: string) => {
     const date = new Date(dateTime);
     return date.toLocaleString();
-  }
+  };
 
   // convert difficulity to lowercase
   const difficultyString = difficulty.toLowerCase();
@@ -143,15 +153,23 @@ const AttemptCard = memo(function AttemptCard({
         <Collapse in={isExpanded}>
           <Flex className={classes.accordionBody}>
             <Flex justify={"space-between"}>
-              <Flex className={classes.collaboratorDetails} align="center" gap="sm" mt="md">
+              {/* <Flex
+                className={classes.collaboratorDetails}
+                align="center"
+                gap="sm"
+                mt="md"
+              >
                 <Avatar radius="xl" size="md" color="blue">
                   {otherUserDisplayName.charAt(0).toUpperCase()}
                 </Avatar>
                 <div>
                   <Text size="sm">{otherUserDisplayName}</Text>
-                  <Text size="xs" color="dimmed">{otherUserEmail}</Text>
+                  <Text size="xs" color="dimmed">
+                    {otherUserEmail}
+                  </Text>
                 </div>
-              </Flex>
+              </Flex> */}
+              <Space flex={1} />
 
               {/* <SimpleGrid cols={2}> */}
               <Flex gap={8}>
@@ -162,11 +180,14 @@ const AttemptCard = memo(function AttemptCard({
                   Delete
                 </Button>
               </Flex>
-
             </Flex>
             {/* Collaborator Details */}
 
-            <div dangerouslySetInnerHTML={{ __html: question.description.descriptionHtml }}></div>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: question.description.descriptionHtml,
+              }}
+            ></div>
             {/* </SimpleGrid> */}
           </Flex>
         </Collapse>

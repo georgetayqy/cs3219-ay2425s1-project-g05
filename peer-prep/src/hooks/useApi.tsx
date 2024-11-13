@@ -3,6 +3,7 @@ import { User } from "../types/user";
 import { useLocalStorage } from "@mantine/hooks";
 import { useAuth } from "./useAuth";
 import { useNavigate } from "react-router-dom";
+import { notifications } from "@mantine/notifications";
 
 export interface ServerResponse<T> {
   statusCode: number;
@@ -40,7 +41,8 @@ export default function useApi() {
     url: string,
     service: SERVICE,
     options?: RequestInit,
-    suppressWarning?: boolean
+    suppressWarning?: boolean,
+    useCache?: boolean
   ) {
     setIsLoading(true);
     try {
@@ -77,6 +79,7 @@ export default function useApi() {
           // "Authorization": `Bearer ${accessToken}`,
         },
         credentials: "include",
+        cache: useCache ? "force-cache" : "default",
       });
 
       if (response.status === 401 || response.status === 403) {
@@ -114,6 +117,20 @@ export default function useApi() {
             message: "Login expired or not logged in. Please log in again!",
           };
         }
+      }
+
+      if (response.status === 429) {
+        // rate limited
+        // notifications.show({
+        //   title: "Rate limited",
+        //   message: "Please try again later.",
+        //   color: "red",
+        //   autoClose: 5000,
+        // });
+        throw {
+          message:
+            "Rate limited. Please do not make too many requests to the serv er.",
+        };
       }
 
       const data: Q = await response.json();
