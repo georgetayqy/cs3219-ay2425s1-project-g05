@@ -125,8 +125,6 @@ export default function TestCasesWrapper({
     attemptRef.current = attemptRef.current + 1;
   }
 
-  console.log(attemptCodeMap, "asdnashjkdhbj");
-
   const onMessage = (event: MessageEvent<string>) => {
     console.log("LOG: event source on message");
     console.log(event);
@@ -316,7 +314,6 @@ export default function TestCasesWrapper({
       return "red";
     }
   }
-  console.log({ colorScheme });
 
   return (
     <Box className={classes.container}>
