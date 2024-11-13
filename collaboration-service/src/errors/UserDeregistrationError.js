@@ -3,9 +3,9 @@ import UserRegistrationError from './UserRegistrationError.js';
 
 class UserDeregistrationError extends UserRegistrationError {
   constructor(message) {
-    super(403, message);
+    super(401, message);
     this.name = 'UserDeregistrationError';
-    this.statusCode = 403;
+    this.statusCode = 401;
   }
 }
 

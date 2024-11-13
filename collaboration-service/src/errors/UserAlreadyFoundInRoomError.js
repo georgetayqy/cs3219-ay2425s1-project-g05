@@ -2,9 +2,9 @@ import BaseError from './BaseError.js';
 
 class UserAlreadyFoundInRoomError extends BaseError {
   constructor(message) {
-    super(403, message);
+    super(401, message);
     this.name = 'UserAlreadyFoundInRoomError';
-    this.statusCode = 403;
+    this.statusCode = 401;
   }
 }
 

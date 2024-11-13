@@ -23,8 +23,8 @@ const createRoom = async (request, response, next) => {
       question === null ||
       question === undefined
     ) {
-      return response.status(403).json({
-        statusCode: 403,
+      return response.status(401).json({
+        statusCode: 401,
         message: 'Unable to create room as no users or questions are defined',
       });
     }
@@ -85,8 +85,8 @@ const getRoomDetails = async (request, response, next) => {
     console.log('users:', users);
 
     if (users === null) {
-      return response.status(403).json({
-        statusCode: 403,
+      return response.status(401).json({
+        statusCode: 401,
         message: 'Room cannot be found',
       });
     }
@@ -175,8 +175,8 @@ const getUserDetails = async (request, response, next) => {
     const roomDetails = LocalClient.getDocByUser(userId);
 
     if (roomDetails === null) {
-      return response.status(403).json({
-        statusCode: 403,
+      return response.status(401).json({
+        statusCode: 401,
         message: 'User ID is invalid',
       });
     }
@@ -211,8 +211,8 @@ const registerUser = async (request, response, next) => {
       userId === undefined ||
       userId === null
     ) {
-      return response.status(403).json({
-        statusCode: 403,
+      return response.status(401).json({
+        statusCode: 401,
         message: 'Cannot register user as userId or roomId is missing',
       });
     }
@@ -251,8 +251,8 @@ const deregisterUser = async (request, response, next) => {
       userId === undefined ||
       userId === null
     ) {
-      return response.status(403).json({
-        statusCode: 403,
+      return response.status(401).json({
+        statusCode: 401,
         message: 'Cannot register user as userId or roomId is missing',
       });
     }
