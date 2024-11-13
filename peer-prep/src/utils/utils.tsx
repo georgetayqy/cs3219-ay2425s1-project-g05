@@ -1,4 +1,5 @@
 import { CodeHighlight } from "@mantine/code-highlight";
+import { Accordion, AccordionItem, Collapse } from "@mantine/core";
 import ReactMarkdown from "react-markdown";
 
 /**
@@ -64,7 +65,7 @@ export function secondsToMsIfappropriate(s: number): string {
   return s < 0.1 ? `${s * 1000} ms` : `${s} s`;
 }
 
-export type FormattableTextOption = "plain" | "code";
+export type FormattableTextOption = "plain" | "code" | "collapse";
 
 export type FormattableText = {
   content: string;
@@ -79,6 +80,7 @@ export function splitTextIntoObjects(text: string): FormattableText[] {
     // Future patterns like bold, underline can be added here
     // bold: /\*\*([^*]+)\*\*/g,
     // underline: /__(.*?)__/g
+    // match [collapse]asdasd[collapse]
   };
 
   let lastIndex = 0;
@@ -182,6 +184,18 @@ export const generateReactObjects = (text: string) => {
       case "plain":
         return <ReactMarkdown key={i}>{textObj.content}</ReactMarkdown>;
         // return <Text key={i}> {textObj.content} </Text>;
+        break;
+      case "collapse":
+        return (
+          <Accordion>
+            <Accordion.Item value="aa">
+              <Accordion.Control>Click to open</Accordion.Control>
+              <Accordion.Panel>
+                <ReactMarkdown>{textObj.content}</ReactMarkdown>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        );
         break;
       default:
         return <ReactMarkdown key={i}>{textObj.content}</ReactMarkdown>;

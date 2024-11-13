@@ -364,7 +364,7 @@ export default function TextChatWidget({
           //   message: responseText,
           //   replyToId: replyToMessage?.messageId,
           // });
-
+          console.log({ aiButtonType });
           let message;
           message = `Q: ${messageToSend}
 
@@ -372,21 +372,24 @@ _________________
 
 **Response from Gemini:**
 ${responseText}`;
-          // if (isAiChat) {
-          //   message = `${messageToSend}\n--------------\n${responseText}`;
-          // } else {
-          //   if (aiButtonType === AiAssistButtonType.GEN_HINTS) {
-          //     message = `Sure! Here are the hints to the question:\n\n${responseText}`;
-          //   } else if (aiButtonType === AiAssistButtonType.GEN_SOLUTION) {
-          //     message = `Sure! Here is the solution to the question:\n\n${responseText}`;
-          //   } else if (aiButtonType === AiAssistButtonType.CODE_EXPLANATION) {
-          //     message = `Sure! Here is the explanation of your current code:\n\n${responseText}`;
-          //   } else if (
-          //     aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
-          //   ) {
-          //     message = `Sure! Here is the explanation of the question:\n\n${responseText}`;
-          //   }
-          // }
+
+          if (aiButtonType === AiAssistButtonType.GEN_HINTS) {
+            message = `**Sure! Here are the hints to the question:**
+            _________________
+            ${responseText}`;
+          } else if (aiButtonType === AiAssistButtonType.GEN_SOLUTION) {
+            message = `**Sure! Here is the solution to the question:**
+            _________________
+            ${responseText}`;
+          } else if (aiButtonType === AiAssistButtonType.CODE_EXPLANATION) {
+            message = `**Sure! Here is the explanation of your current code:**
+            _________________
+            ${responseText}`;
+          } else if (aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION) {
+            message = `**Sure! Here is the explanation of the question:**
+            _________________
+            ${responseText}`;
+          }
 
           socket.emit("chat-message", {
             roomId: roomId,
