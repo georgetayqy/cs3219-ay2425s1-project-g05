@@ -81,6 +81,8 @@ import GeminiIcon from "../../../assets/integrations/google-gemini-icon.svg";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { CodeHighlight } from "@mantine/code-highlight";
 import { useAi } from "../../../hooks/useAi";
+import ReactMarkdown from "react-markdown";
+import { text } from "stream/consumers";
 
 enum ChatState {
   DISCONNECTED,
@@ -152,6 +154,13 @@ interface AiChatResponse {
   reply: string;
 }
 
+enum AiAssistButtonType {
+  GEN_HINTS,
+  GEN_SOLUTION,
+  CODE_EXPLANATION,
+  QUESTION_EXPLANATION,
+}
+
 export default function TextChatWidget({
   roomId,
   question,
@@ -183,6 +192,9 @@ export default function TextChatWidget({
   const [defaultSendTo, setDefaultSendTo] = useState<SendTarget>("person");
   const [isSendToMenuOpen, setIsSendToMenuOpen] = useState(false);
   const [showIntegrations, setShowIntegrations] = useState(true);
+
+  const [isAiChat, setIsAiChat] = useState(false);
+  const [aiButtonType, setAiButtonType] = useState<AiAssistButtonType | null>();
 
   const [integrationErrorState, setIntegrationErrorState] =
     useState<IntegrationError>({});
@@ -260,6 +272,9 @@ export default function TextChatWidget({
     if (e.type === "click") {
       e.stopPropagation();
       e.preventDefault();
+      if (defaultSendTo === "gemini_1.0") {
+        setIsAiChat(true);
+      }
       onBeforeSendMessage();
     } else if (e.type === "contextmenu") {
       e.stopPropagation();
@@ -344,9 +359,26 @@ export default function TextChatWidget({
           //   replyToId: replyToMessage?.messageId,
           // });
 
+          let message;
+          if (isAiChat) {
+            message = `${messageToSend}\n--------------\n${responseText}`;
+          } else {
+            if (aiButtonType === AiAssistButtonType.GEN_HINTS) {
+              message = `Sure! Here are the hints to the question:\n\n${responseText}`;
+            } else if (aiButtonType === AiAssistButtonType.GEN_SOLUTION) {
+              message = `Sure! Here is the solution to the question:\n\n${responseText}`;
+            } else if (aiButtonType === AiAssistButtonType.CODE_EXPLANATION) {
+              message = `Sure! Here is the explanation of your current code:\n\n${responseText}`;
+            } else if (
+              aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
+            ) {
+              message = `Sure! Here is the explanation of the question:\n\n${responseText}`;
+            }
+          }
+
           socket.emit("chat-message", {
             roomId: roomId,
-            message: `${messageToSend}\n--------------\n${responseText}`,
+            message: message,
             replyToId: replyToMessage?.messageId,
             integration: integration,
           });
@@ -542,13 +574,28 @@ export default function TextChatWidget({
     }, 100);
   }
 
+  // Helper function to simulate a click
+  const simulateClick = () => {
+    const event = new MouseEvent("click", { bubbles: true });
+    const sendButton = document.getElementById("sendButtonId");
+    console.log("sendButton", sendButton);
+    if (sendButton) {
+      sendButton.dispatchEvent(event);
+    }
+  };
+
   function handleGenerateHints() {
     const prompt =
       `Can you generate helpful hints for the following coding question?\n\n"${question}"\n\n` +
       `Please provide 3-4 hints that guide the user towards solving the problem without giving away the full solution. ` +
       `Keep the hints concise and focused on the key concepts needed to solve the problem.`;
     setDraftMessage(prompt);
+    setIsAiChat(false);
+    setAiButtonType(AiAssistButtonType.GEN_HINTS);
+
     onBeforeSendMessage();
+
+    simulateClick();
   }
 
   function handleGenerateSolution() {
@@ -558,6 +605,8 @@ export default function TextChatWidget({
       `Can you generate a correct solution for this problem and briefly explain how it differs from my attempt? ` +
       `Please highlight the key changes made to fix any bugs/issues in my original code, while keeping your explanation concise but informative.`;
     setDraftMessage(prompt);
+    setIsAiChat(false);
+    setAiButtonType(AiAssistButtonType.GEN_SOLUTION);
     onBeforeSendMessage();
   }
 
@@ -569,6 +618,8 @@ export default function TextChatWidget({
       `Keep the explanation concise but include important details to help me understand the logic behind my implementation. ` +
       `Also, suggest any best practices or optimizations for better performance or readability, if applicable.`;
     setDraftMessage(prompt);
+    setIsAiChat(false);
+    setAiButtonType(AiAssistButtonType.CODE_EXPLANATION);
     onBeforeSendMessage();
   }
 
@@ -578,6 +629,8 @@ export default function TextChatWidget({
       `Could you provide an explanation of what this question is asking for, including any hidden details, assumptions, or common pitfalls? ` +
       `Keep the explanation concise but make sure all key details are covered to help me fully understand what is being asked.`;
     setDraftMessage(prompt);
+    setIsAiChat(false);
+    setAiButtonType(AiAssistButtonType.QUESTION_EXPLANATION);
     onBeforeSendMessage();
   }
 
@@ -807,7 +860,14 @@ export default function TextChatWidget({
                       variant="gradient"
                       gradient={{ from: "violet", to: "blue", deg: 135 }}
                       onClick={handleGenerateHints}
-                      loading={messageState === MessageState.SENDING}
+                      loading={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType === AiAssistButtonType.GEN_HINTS
+                      }
+                      disabled={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType !== AiAssistButtonType.GEN_HINTS
+                      }
                       style={{
                         marginLeft: "1rem",
                         boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
@@ -823,11 +883,19 @@ export default function TextChatWidget({
                     >
                       Generate Hints
                     </Button>
+
                     <Button
                       variant="gradient"
                       gradient={{ from: "violet", to: "blue", deg: 135 }}
                       onClick={handleGenerateSolution}
-                      loading={messageState === MessageState.SENDING}
+                      loading={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType === AiAssistButtonType.GEN_SOLUTION
+                      }
+                      disabled={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType !== AiAssistButtonType.GEN_SOLUTION
+                      }
                       style={{
                         marginLeft: "1rem",
                         boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
@@ -847,7 +915,14 @@ export default function TextChatWidget({
                       variant="gradient"
                       gradient={{ from: "violet", to: "blue", deg: 135 }}
                       onClick={handleExplainCode}
-                      loading={messageState === MessageState.SENDING}
+                      loading={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType === AiAssistButtonType.CODE_EXPLANATION
+                      }
+                      disabled={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType !== AiAssistButtonType.CODE_EXPLANATION
+                      }
                       style={{
                         marginLeft: "1rem",
                         boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
@@ -867,7 +942,14 @@ export default function TextChatWidget({
                       variant="gradient"
                       gradient={{ from: "violet", to: "blue", deg: 135 }}
                       onClick={handleExplainQuestion}
-                      loading={messageState === MessageState.SENDING}
+                      loading={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
+                      }
+                      disabled={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType !== AiAssistButtonType.QUESTION_EXPLANATION
+                      }
                       style={{
                         marginLeft: "1rem",
                         boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
@@ -907,6 +989,9 @@ export default function TextChatWidget({
                       } else if (event.key === "Enter") {
                         event.stopPropagation();
                         // onSendMessage();
+                        if (defaultSendTo === "gemini_1.0") {
+                          setIsAiChat(true);
+                        }
                         onBeforeSendMessage();
                       }
                     }}
@@ -958,6 +1043,7 @@ export default function TextChatWidget({
                             color="gray"
                             loading={messageState === MessageState.SENDING}
                             onContextMenu={onSendButtonClick}
+                            id="sendButtonId"
                           >
                             {defaultSendTo === "person" ? (
                               <IconSend2 />
@@ -1274,7 +1360,10 @@ function TextMessage({
         );
         break;
       case "plain":
-        return <Text key={i}> {textObj.content} </Text>;
+        return (
+          <ReactMarkdown key={i} children={textObj.content}></ReactMarkdown>
+        );
+        // return <Text key={i}> {textObj.content} </Text>;
         break;
     }
   });
