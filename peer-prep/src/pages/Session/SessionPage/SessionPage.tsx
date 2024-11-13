@@ -686,15 +686,13 @@ export default function SessionPage() {
             </Paper>
 
             <TestCasesWrapper
-              testCases={question.testCases || []}
               channelId={channelId}
-              questionId={question._id}
               currentValueRef={currentValueRef}
               userId={user._id}
               otherUserId={otherUserId}
               latestResultsRef={latestResultsRef}
               roomId={roomId}
-              question={question.description.descriptionText}
+              question={question}
             />
           </Stack>
         </Flex>
