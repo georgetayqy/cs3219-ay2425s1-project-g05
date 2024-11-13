@@ -84,9 +84,11 @@ export default function VideoChatWidget({
 
   // only when this is populated are we ready to make a call (connection wise)
   const [remotePeerIdValue, setRemotePeerIdValue] = useState("");
-  const peerInstance = useRef(null);
+  const peerInstance = useRef<Peer | null>(null);
   const mediaConnection = useRef(null);
 
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
   function init() {
     console.log("DEBUG: auth.user", auth.user);
     if (!auth.user) {
@@ -139,6 +141,8 @@ export default function VideoChatWidget({
         audio: true,
       });
 
+      setLocalStream(stream);
+
       selfVideoRef.current.srcObject = stream;
       selfVideoRef.current.play();
       selfVideoRef.current.muted = true;
@@ -152,6 +156,7 @@ export default function VideoChatWidget({
 
       call.on("close", () => {
         console.log("DEBUG: call closed in receiver");
+
         onEndCall();
       });
     });
@@ -184,6 +189,10 @@ export default function VideoChatWidget({
       audio: true,
     });
 
+    console.log("DEBUG: stream", stream);
+    setLocalStream(stream);
+    console.log("DEBUG: local stream", localStream);
+
     selfVideoRef.current.srcObject = stream;
     selfVideoRef.current.play();
     selfVideoRef.current.muted = true;
@@ -199,6 +208,14 @@ export default function VideoChatWidget({
 
     call.on("close", () => {
       console.log("DEBUG: call closed in caller");
+      console.log("DEBUG: ", {
+        localStream: call.localStream,
+        remoteStream: call.remoteStream,
+        call,
+        mediaConnection: mediaConnection.current,
+      });
+      call.localStream?.getTracks().forEach((track) => track.stop());
+      call.remoteStream?.getTracks().forEach((track) => track.stop());
       onEndCall();
     });
 
@@ -218,6 +235,20 @@ export default function VideoChatWidget({
   };
 
   function onEndCall() {
+    // console.log("DEBUG: call end function");
+    // console.log("DEBUG: ", {
+    //   mediaConnection: mediaConnection.current,
+    //   localStream,
+    // });
+
+    // console.log("DEBUG: localstream.getracks", localStream?.getTracks());
+
+    // stop use of webcam
+    localStream?.getTracks().forEach((t) => (t.enabled = false));
+    localStream?.getTracks().forEach((track) => track.stop());
+
+    setLocalStream(null);
+
     // cleanup
     setCallStatusWrapper(CALL_STATUS.IDLE);
 
