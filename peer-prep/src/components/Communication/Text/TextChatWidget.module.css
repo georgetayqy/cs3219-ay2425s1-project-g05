@@ -124,6 +124,7 @@
     cursor: pointer;
 
     .textBox {
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       padding-top: 0.5rem;
