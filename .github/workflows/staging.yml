@@ -294,7 +294,7 @@ jobs:
             cd ..
 
             cd peer-prep
-            echo $FRONTEND_SECRETS | base64 --decode > .env
+            echo $FRONTEND_SECRETS | base64 --decode > .env.production
             npm install
             npm run build
 
