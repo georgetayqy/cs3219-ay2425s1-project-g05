@@ -25,7 +25,7 @@ export async function printAllKeys() {
 }
 
 export async function addToken(key) {
-    const expiryInSeconds = 60 * 2
+    const expiryInSeconds = 7 * 24 * 60 * 60
     const value = 'refreshToken'
     try {
         await client.set(key, value, {

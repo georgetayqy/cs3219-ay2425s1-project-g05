@@ -45,7 +45,7 @@ type Offer = RTCSessionDescriptionInit;
 
 enum CALL_STATUS {
   IDLE,
-  CALLING,
+  CALLING, // ready to call
   CONNECTED,
   INCOMING,
 }
@@ -68,6 +68,9 @@ export default function VideoChatWidget({
   roomId: string;
 }) {
   const auth = useAuth();
+  const [remotePeerIdFromCall, setRemotePeerIdFromCall] = useState<
+    string | null
+  >(null);
 
   const [callStatus, setCallStatus] = useState<CALL_STATUS>(CALL_STATUS.IDLE);
   const callStatusRef = useRef<CALL_STATUS>(CALL_STATUS.IDLE);
@@ -80,11 +83,12 @@ export default function VideoChatWidget({
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   // only when this is populated are we ready to make a call (connection wise)
-  const [peerId, setPeerId] = useState(null);
   const [remotePeerIdValue, setRemotePeerIdValue] = useState("");
-  const peerInstance = useRef(null);
+  const peerInstance = useRef<Peer | null>(null);
   const mediaConnection = useRef(null);
 
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
   function init() {
     console.log("DEBUG: auth.user", auth.user);
     if (!auth.user) {
@@ -97,11 +101,18 @@ export default function VideoChatWidget({
 
     peer.on("open", (id) => {
       console.log("DEBUG: peer open id set to", id);
-      setPeerId(id);
     });
 
     peer.on("call", async (call) => {
       console.log("DEBUG: call received", call);
+      setRemotePeerIdFromCall(call.peer);
+
+      // setup a listener for when the call ends
+      const conn = peer.connect(call.peer);
+      console.log("DEBUG: conn", conn);
+      conn.on("data", (data) => {
+        console.log(`DEBUG: data received FROM PEERJS: `, data);
+      });
 
       // dont answer if not ready to call
       if (callStatusRef.current !== CALL_STATUS.CALLING) {
@@ -113,10 +124,14 @@ export default function VideoChatWidget({
           } is calling you! Go to the chat room to answer the call.`,
           title: "Incoming call",
           color: "cyan",
-          autoClose: 10000,
+          autoClose: 5000,
         });
 
         setCallStatusWrapper(CALL_STATUS.INCOMING);
+
+        // set otherUser to the user who is calling
+        // user id is the peer id
+
         return;
       }
 
@@ -125,6 +140,8 @@ export default function VideoChatWidget({
         video: true,
         audio: true,
       });
+
+      setLocalStream(stream);
 
       selfVideoRef.current.srcObject = stream;
       selfVideoRef.current.play();
@@ -139,9 +156,11 @@ export default function VideoChatWidget({
 
       call.on("close", () => {
         console.log("DEBUG: call closed in receiver");
+
         onEndCall();
       });
     });
+
     peerInstance.current = peer;
   }
   useEffect(() => {
@@ -154,12 +173,13 @@ export default function VideoChatWidget({
   const call = async () => {
     if (!peerInstance.current) init();
     // remote peer id is the user id
-    if (callStatusRef.current === CALL_STATUS.IDLE) {
-      setCallStatusWrapper(CALL_STATUS.CALLING);
-    }
+    // if (callStatusRef.current === CALL_STATUS.IDLE) {
+    setCallStatusWrapper(CALL_STATUS.CALLING);
+    // }
 
     // call will fail if the other user is not ready to receive the call
-    const remotePeerId = `${roomId}-${otherUser?.userId}`;
+    const remotePeerId =
+      remotePeerIdFromCall || `${roomId}-${otherUser?.userId}`;
 
     console.log("DEBUG: calling", remotePeerId);
     console.log("DEBUG: READY TO CALL");
@@ -168,6 +188,10 @@ export default function VideoChatWidget({
       video: true,
       audio: true,
     });
+
+    console.log("DEBUG: stream", stream);
+    setLocalStream(stream);
+    console.log("DEBUG: local stream", localStream);
 
     selfVideoRef.current.srcObject = stream;
     selfVideoRef.current.play();
@@ -184,13 +208,50 @@ export default function VideoChatWidget({
 
     call.on("close", () => {
       console.log("DEBUG: call closed in caller");
+      console.log("DEBUG: ", {
+        localStream: call.localStream,
+        remoteStream: call.remoteStream,
+        call,
+        mediaConnection: mediaConnection.current,
+      });
+      call.localStream?.getTracks().forEach((track) => track.stop());
+      call.remoteStream?.getTracks().forEach((track) => track.stop());
       onEndCall();
+    });
+
+    const conn = peerInstance.current.connect(remotePeerId);
+
+    // When the connection is open, send a message
+    conn.on("open", () => {
+      console.log("DEBUG: connection open");
+
+      conn.send("Hello, Peer!");
+      peerInstance.current.on("close", () => {
+        console.log("DEBUG: peer connection closed");
+        // when the peer connection is closed, tell the other
+        conn.send({ callStatus: "ended" });
+      });
     });
   };
 
   function onEndCall() {
+    // console.log("DEBUG: call end function");
+    // console.log("DEBUG: ", {
+    //   mediaConnection: mediaConnection.current,
+    //   localStream,
+    // });
+
+    // console.log("DEBUG: localstream.getracks", localStream?.getTracks());
+
+    // stop use of webcam
+    localStream?.getTracks().forEach((t) => (t.enabled = false));
+    localStream?.getTracks().forEach((track) => track.stop());
+
+    setLocalStream(null);
+
     // cleanup
     setCallStatusWrapper(CALL_STATUS.IDLE);
+
     if (selfVideoRef.current) selfVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
@@ -270,6 +331,7 @@ export default function VideoChatWidget({
   useEffect(() => {
     setDomReady(true);
   }, []);
+  if (!otherUser && !remotePeerIdFromCall) return null;
   return (
     <Box>
       <Group gap="xs">

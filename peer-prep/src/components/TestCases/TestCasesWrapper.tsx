@@ -16,6 +16,7 @@ import {
   Space,
   Text,
   Title,
+  Tooltip,
   useMantineColorScheme,
 } from "@mantine/core";
 import classes from "./TestCasesWrapper.module.css";
@@ -27,7 +28,13 @@ import {
   TestCase,
   TestCaseResult,
 } from "../../types/question";
-import { useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import useApi, { ServerResponse, SERVICE } from "../../hooks/useApi";
 import { notifications } from "@mantine/notifications";
 import { EventSourcePolyfill } from "event-source-polyfill";
@@ -43,9 +50,7 @@ import ReactMarkdown from "react-markdown";
 import { useAi } from "../../hooks/useAi";
 
 type TestCasesWrapperProps = {
-  testCases: TestCase[]; // array of test cases
   channelId: string | null;
-  questionId: string | null;
 
   // to decide if we want to pass down a function from parent instead of passing down solutioncode
   // runAllTestCases: () => void;
@@ -57,7 +62,8 @@ type TestCasesWrapperProps = {
   latestResultsRef: React.MutableRefObject<TestCaseResult[]>;
 
   roomId: string;
-  question: string;
+
+  question: Question;
 };
 
 const STATUS_PARTIAL = 206;
@@ -65,287 +71,315 @@ const STATUS_COMPLETE = 200;
 const STATUS_CONNECTED = 201;
 const STATUS_STARTED = 202;
 
-export default function TestCasesWrapper({
-  testCases,
-  channelId,
-  // runAllTestCases,
-  questionId,
-  currentValueRef,
+const BLOCKED_CATEGORY_IDS = [2];
 
-  userId,
-  otherUserId,
+const TestCasesWrapper = forwardRef(
+  (
+    {
+      channelId,
+      // runAllTestCases,
 
-  latestResultsRef,
+      currentValueRef,
 
-  roomId,
-  question,
-}: TestCasesWrapperProps) {
-  const [latestResults, setLatestResults] = useState<TestCaseResult[]>([]);
+      userId,
+      otherUserId,
 
-  const [currentTestCase, setCurrentTestCase] = useState<TestCase | null>(
-    testCases[0]
-  );
-  const { colorScheme } = useMantineColorScheme();
-  const { fetchData } = useApi();
-  // set to false only when receive back full result from SSE
-  const [isRunning, setIsRunning] = useState<boolean>(false);
-  const { start: startRunningTimeout, clear: clearRunningTimeout } = useTimeout(
-    () => {
-      setIsError(true);
-      setIsRunning(false);
-      notifications.show({
-        title: "Error running test cases",
-        message:
-          "There was an unknown error running the test cases. Timed out after 10 seconds. Please try again.",
-        color: "red",
-      });
-    },
-    20000
-  );
+      latestResultsRef,
 
-  const [isError, setIsError] = useState<boolean>(false);
-  const [testCaseRunKey, setTestCaseRunKey] = useState(0);
+      roomId,
 
-  // array of tries for each attempt
-  // const [allResults, setAllResults] = useState<TestCaseResult[][]>([]);
-  const [attemptCodeMap, setAttemptCodeMap] = useState<{
-    [attempt: number]: { code: string; results: TestCaseResult[] };
-  }>({});
+      question,
+    }: TestCasesWrapperProps,
+    ref
+  ) => {
+    const questionString = question.description.descriptionText;
+    const questionId = question._id;
+    const testCases = question.testCases;
 
-  // this is ridiculous, because I don't want to keep registering and
-  // unregistering the listener, we need a Ref to store the attempt
-  // this useState version of attempt is getting stored in the closure of the event listener
-  // a Ref would not have this issue as it is call-by-reference
-  // we need both as I need to update state based on attempt number
-  const [attempt, setAttempt] = useState<number>(0);
-  const attemptRef = useRef<number>(0);
+    const isBlockedFromRunningTestCase = question.categoriesId.some((id) =>
+      BLOCKED_CATEGORY_IDS.includes(id)
+    );
 
-  function incrementAttempt() {
-    setAttempt((prev) => prev + 1);
-    attemptRef.current = attemptRef.current + 1;
-  }
+    const [latestResults, setLatestResults] = useState<TestCaseResult[]>([]);
 
-  console.log(attemptCodeMap, "asdnashjkdhbj");
-
-  const onMessage = (event: MessageEvent<string>) => {
-    console.log("LOG: event source on message");
-    console.log(event);
-    const message: ExecutionResultSchema = JSON.parse(event.data);
-
-    console.log("INFO ✅: Message json formatted ", message);
-
-    switch (message.statusCode) {
-      case STATUS_PARTIAL:
-        const result = (message.data as PartialResult).result;
-        console.log("INFO: One result", result);
-        latestResultsRef.current = [...latestResultsRef.current, result];
-        setLatestResults((prev) => [...prev, result]);
-
-        break;
-      case STATUS_COMPLETE:
-        console.log("INFO: Complete result received");
-        const { results, code } = message.data as FinalResult;
-        // setLatestResults(message.data.);
-
+    const [currentTestCase, setCurrentTestCase] = useState<TestCase | null>(
+      testCases[0]
+    );
+    const { colorScheme } = useMantineColorScheme();
+    const { fetchData } = useApi();
+    // set to false only when receive back full result from SSE
+    const [isRunning, setIsRunning] = useState<boolean>(false);
+    const { start: startRunningTimeout, clear: clearRunningTimeout } =
+      useTimeout(() => {
+        setIsError(true);
         setIsRunning(false);
         notifications.show({
-          message: `All test cases have attempted to execute.`,
+          title: "Error running test cases",
+          message:
+            "There was an unknown error running the test cases. Timed out after 10 seconds. Please try again.",
+          color: "red",
         });
+      }, 20000);
 
-        setLatestResults(results);
-        latestResultsRef.current = results;
+    const [isError, setIsError] = useState<boolean>(false);
+    const [testCaseRunKey, setTestCaseRunKey] = useState(0);
 
-        setAttemptCodeMap((prev) => ({
-          ...prev,
-          [attemptRef.current]: {
-            code,
-            results,
-          },
-        }));
+    // array of tries for each attempt
+    // const [allResults, setAllResults] = useState<TestCaseResult[][]>([]);
+    const [attemptCodeMap, setAttemptCodeMap] = useState<{
+      [attempt: number]: { code: string; results: TestCaseResult[] };
+    }>({});
 
-        // console.log("INFO: Latest results", results);
-        clearRunningTimeout();
+    // this is ridiculous, because I don't want to keep registering and
+    // unregistering the listener, we need a Ref to store the attempt
+    // this useState version of attempt is getting stored in the closure of the event listener
+    // a Ref would not have this issue as it is call-by-reference
+    // we need both as I need to update state based on attempt number
+    const [attempt, setAttempt] = useState<number>(0);
+    const attemptRef = useRef<number>(0);
 
-        console.log("INFO: ✅ Test Cases Ran Successfuly");
-        console.log({ attemptCodeMap });
-
-        // check for TLE
-        // if (results.some((result) => result.isPassed === false && Number(result.time) > 4.96)){
-        //   // time limit exceeded
-        // }
-
-        break;
-      case STATUS_CONNECTED:
-        break;
-      case STATUS_STARTED:
-        notifications.show({
-          message: `Executing ${testCases.length} test cases`,
-        });
-
-        incrementAttempt();
-
-        setIsError(false);
-        setIsRunning(true);
-
-        // latest results should have already been copied into all results
-        setLatestResults([]);
-        latestResultsRef.current = [];
-        startRunningTimeout();
-        break;
-      default:
-        clearRunningTimeout();
-        setIsError(true);
+    function incrementAttempt() {
+      setAttempt((prev) => prev + 1);
+      attemptRef.current = attemptRef.current + 1;
     }
-  };
 
-  const onConnect = (event: Event) => {
-    console.log("LOG: event source on connect");
-    console.log(event);
-  };
+    const onMessage = (event: MessageEvent<string>) => {
+      console.log("LOG: event source on message");
+      console.log(event);
+      const message: ExecutionResultSchema = JSON.parse(event.data);
 
-  const onError = (event: Event) => {
-    console.log("LOG: event source on error");
-    console.log(event);
-  };
-  // ---- effects
-  useEffect(() => {
-    if (!channelId) return;
-    // subscribe to eventsource SSE
-    const eventSource = new EventSourcePolyfill(
-      `${
-        import.meta.env.VITE_API_URL_RUN
-      }/run-service/subscribe/${channelId}?userId=${userId}&otherUserId=${otherUserId}`,
-      {
-        headers: {
-          "Content-Type": "text/event-stream",
-          // "Cache-Control": "no-cache",
-          // Connection: "keep-alive",
-          // "X-Accel-Buffering": "no",
-        },
-        heartbeatTimeout: 1000 * 60 * 60 * 24,
-      }
-    );
+      console.log("INFO ✅: Message json formatted ", message);
 
-    eventSource.onmessage = onMessage;
-    eventSource.onopen = onConnect;
-    eventSource.onerror = onError;
+      switch (message.statusCode) {
+        case STATUS_PARTIAL:
+          const result = (message.data as PartialResult).result;
+          console.log("INFO: One result", result);
+          latestResultsRef.current = [...latestResultsRef.current, result];
+          setLatestResults((prev) => [...prev, result]);
 
-    return () => {
-      // disconnect the event source
-      eventSource.close();
-    };
-  }, [channelId]);
+          break;
+        case STATUS_COMPLETE:
+          console.log("INFO: Complete result received");
+          const { results, code } = message.data as FinalResult;
+          // setLatestResults(message.data.);
 
-  function onTestCaseChange(testCaseId: number) {
-    // find the test case and set it
-    const testCase = testCases.find((testCase) => testCase._id === testCaseId);
-    setCurrentTestCase(testCase);
-  }
-
-  function runTestCases() {
-    console.log("LOG: Current code value", currentValueRef.current);
-    setIsRunning(true);
-    setLatestResults([]);
-    latestResultsRef.current = [];
-    setIsError(false);
-    fetchData<
-      ServerResponse<{
-        testCaseCount: number;
-      }>
-    >(`/run-service/execute/${questionId}`, SERVICE.RUN, {
-      method: "POST",
-      body: JSON.stringify({
-        codeAttempt: currentValueRef.current,
-        channelId,
-        firstUserId: userId,
-        secondUserId: otherUserId,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => {
-        console.log({ response });
-        setTestCaseRunKey((prev) => prev + 1); // Change key to reset the display of test cases
-      })
-      .catch((e) => {
-        console.log("ERROR⚠️: Error running test cases");
-        console.error(e);
-
-        // don't need to set isRunning to false here, we are technically still running the test cases
-        if (e.statusCode === 409) {
-          notifications.show({
-            title: "Test cases already running",
-            message: "Test cases for this question are already running",
-            // color: "red",
-          });
-        } else {
-          notifications.show({
-            title: "Error running test cases",
-            message:
-              "There was an unknown error running the test cases. Please try again.",
-            color: "red",
-          });
-          setIsError(true);
           setIsRunning(false);
+          notifications.show({
+            message: `All test cases have attempted to execute.`,
+          });
+
+          setLatestResults(results);
+          latestResultsRef.current = results;
+
+          setAttemptCodeMap((prev) => ({
+            ...prev,
+            [attemptRef.current]: {
+              code,
+              results,
+            },
+          }));
+
+          // console.log("INFO: Latest results", results);
+          clearRunningTimeout();
+
+          console.log("INFO: ✅ Test Cases Ran Successfuly");
+          console.log({ attemptCodeMap });
+
+          // check for TLE
+          // if (results.some((result) => result.isPassed === false && Number(result.time) > 4.96)){
+          //   // time limit exceeded
+          // }
+
+          break;
+        case STATUS_CONNECTED:
+          break;
+        case STATUS_STARTED:
+          notifications.show({
+            message: `Executing ${testCases.length} test cases`,
+          });
+
+          incrementAttempt();
+
+          setIsError(false);
+          setIsRunning(true);
+
+          // latest results should have already been copied into all results
+          setLatestResults([]);
+          latestResultsRef.current = [];
+          startRunningTimeout();
+          break;
+        default:
+          clearRunningTimeout();
+          setIsError(true);
+      }
+    };
+
+    const onConnect = (event: Event) => {
+      console.log("LOG: event source on connect");
+      console.log(event);
+    };
+
+    const onError = (event: Event) => {
+      console.log("LOG: event source on error");
+      console.log(event);
+    };
+    // ---- effects
+    useEffect(() => {
+      if (!channelId) return;
+      // subscribe to eventsource SSE
+      const eventSource = new EventSourcePolyfill(
+        `${
+          import.meta.env.VITE_API_URL_RUN
+        }/run-service/subscribe/${channelId}?userId=${userId}&otherUserId=${otherUserId}`,
+        {
+          headers: {
+            "Content-Type": "text/event-stream",
+            // "Cache-Control": "no-cache",
+            // Connection: "keep-alive",
+            // "X-Accel-Buffering": "no",
+          },
+          heartbeatTimeout: 1000 * 60 * 60 * 24,
         }
+      );
 
-        // 404: testcases/question not found
-        // 409: testcases for this question and channel already running
-      });
-  }
+      eventSource.onmessage = onMessage;
+      eventSource.onopen = onConnect;
+      eventSource.onerror = onError;
 
-  function getTestCaseResult(
-    testCaseId: string,
-    runNumber: number // unused for now, -1 means latest
-  ): TestCaseResult | undefined {
-    // find the test case and get the result
-    return latestResults.find(
-      (result) => result.testCaseDetails.testCaseId === testCaseId
-    );
-  }
+      return () => {
+        // disconnect the event source
+        eventSource.close();
+      };
+    }, [channelId]);
 
-  function getTestCaseColour(testCaseId: string): ButtonProps["color"] {
-    // if latestresult is fail, return red
-    const result = getTestCaseResult(testCaseId, -1);
-    if (!result) return "gray";
-
-    if (result.isPassed) {
-      return "green";
-    } else {
-      return "red";
+    function onTestCaseChange(testCaseId: number) {
+      // find the test case and set it
+      const testCase = testCases.find(
+        (testCase) => testCase._id === testCaseId
+      );
+      setCurrentTestCase(testCase);
     }
-  }
-  console.log({ colorScheme });
 
-  return (
-    <Box className={classes.container}>
-      <Group style={{ alignItems: "center" }}>
-        <Title
-          flex={1}
-          order={3}
-          style={{ fontSize: "1.5rem", marginRight: "1rem" }}
-        >
-          Test Cases ({testCases.length})
-        </Title>
-        <Button variant="light" onClick={runTestCases} loading={isRunning}>
-          {" "}
-          Run all testcases{" "}
-        </Button>
-      </Group>
-      <TestCasesDisplay
-        key={testCaseRunKey}
-        attempt={attempt}
-        attemptCodeMap={attemptCodeMap}
-        isRunning={isRunning}
-        latestResults={latestResults}
-        testCases={testCases}
-        roomId={roomId}
-        userId={userId}
-        question={question}
-      />
-      <>
-        {/* <>
+    function runTestCases() {
+      console.log("LOG: Current code value", currentValueRef.current);
+      setIsRunning(true);
+      setLatestResults([]);
+      latestResultsRef.current = [];
+      setIsError(false);
+      fetchData<
+        ServerResponse<{
+          testCaseCount: number;
+        }>
+      >(`/run-service/execute/${questionId}`, SERVICE.RUN, {
+        method: "POST",
+        body: JSON.stringify({
+          codeAttempt: currentValueRef.current,
+          channelId,
+          firstUserId: userId,
+          secondUserId: otherUserId,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          console.log({ response });
+          setTestCaseRunKey((prev) => prev + 1); // Change key to reset the display of test cases
+        })
+        .catch((e) => {
+          console.log("ERROR⚠️: Error running test cases");
+          console.error(e);
+
+          // don't need to set isRunning to false here, we are technically still running the test cases
+          if (e.statusCode === 409) {
+            notifications.show({
+              title: "Test cases already running",
+              message: "Test cases for this question are already running",
+              // color: "red",
+            });
+          } else {
+            notifications.show({
+              title: "Error running test cases",
+              message:
+                "There was an unknown error running the test cases. Please try again.",
+              color: "red",
+            });
+            setIsError(true);
+            setIsRunning(false);
+          }
+
+          // 404: testcases/question not found
+          // 409: testcases for this question and channel already running
+        });
+    }
+
+    useImperativeHandle(ref, () => ({
+      runTestCases,
+    }));
+
+    function getTestCaseResult(
+      testCaseId: string,
+      runNumber: number // unused for now, -1 means latest
+    ): TestCaseResult | undefined {
+      // find the test case and get the result
+      return latestResults.find(
+        (result) => result.testCaseDetails.testCaseId === testCaseId
+      );
+    }
+
+    function getTestCaseColour(testCaseId: string): ButtonProps["color"] {
+      // if latestresult is fail, return red
+      const result = getTestCaseResult(testCaseId, -1);
+      if (!result) return "gray";
+
+      if (result.isPassed) {
+        return "green";
+      } else {
+        return "red";
+      }
+    }
+
+    return (
+      <Box className={classes.container}>
+        <Group style={{ alignItems: "center" }}>
+          <Title
+            flex={1}
+            order={3}
+            style={{ fontSize: "1.5rem", marginRight: "1rem" }}
+          >
+            Test Cases ({testCases.length})
+          </Title>
+          <Tooltip
+            label={
+              isBlockedFromRunningTestCase
+                ? "Testcase running is disabled for Database questions."
+                : "Run your code on the server. This may take some time!"
+            }
+          >
+            <Button
+              variant="light"
+              onClick={runTestCases}
+              loading={isRunning}
+              disabled={isBlockedFromRunningTestCase}
+            >
+              {" "}
+              Run all testcases{" "}
+            </Button>
+          </Tooltip>
+        </Group>
+        <TestCasesDisplay
+          key={testCaseRunKey}
+          attempt={attempt}
+          attemptCodeMap={attemptCodeMap}
+          isRunning={isRunning}
+          latestResults={latestResults}
+          testCases={testCases}
+          roomId={roomId}
+          userId={userId}
+          question={questionString}
+        />
+        <>
+          {/* <>
           <Group>
             {testCases.map((testCase, index) => (
               <Button
@@ -517,10 +551,13 @@ export default function TestCasesWrapper({
             </Box>
           )}
         </> */}
-      </>
-    </Box>
-  );
-}
+        </>
+      </Box>
+    );
+  }
+);
+
+export default TestCasesWrapper;
 
 export const TestCasesDisplay = ({
   testCases,

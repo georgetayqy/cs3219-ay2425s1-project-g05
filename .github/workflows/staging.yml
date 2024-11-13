@@ -229,7 +229,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/peerprep-gen-ai-service:${{ github.sha }}
 
   deploy:
-    needs: build
+    needs: test
     environment: staging
     name: Deploy Staging Environment
     runs-on: ubuntu-latest
