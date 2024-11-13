@@ -152,15 +152,18 @@ interface AiChatResponse {
   reply: string;
 }
 
-export default function TextChatWidget({ roomId, question, solutionCode }: TextChatWidgetProps) {
+export default function TextChatWidget({
+  roomId,
+  question,
+  solutionCode,
+}: TextChatWidgetProps) {
   const { user } = useAuth();
 
-  const { setApiKeyModalVisible, hasApiKey } = useAi();
+  const { hasApiKey, openSendApiKeyModal } = useAi();
 
   const [messageState, setMessageState] = useState<MessageState>(
     MessageState.BEFORE_SEND
   );
-  const wasFocusedOnInput = useRef(false);
 
   const [chatState, setChatState] = useState<ChatState>(ChatState.DISCONNECTED);
   const [usersInRoom, setUsersInRoom] = useState<ChatRoomUser[]>([]);
@@ -188,16 +191,6 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // useEffect(() => {
-  //   if (
-  //     wasFocusedOnInput.current &&
-  //     messageState === MessageState.BEFORE_SEND
-  //   ) {
-  //     // re-focus on the input
-  //     inputRef.current?.focus();
-  //   }
-  // }, [messageState, inputRef.current]);
 
   const resetState = () => {
     setReplyToMessage(null);
@@ -282,11 +275,11 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
       onSendMessage();
     } else if (defaultSendTo === "gemini_1.0") {
       if (hasApiKey) {
-        console.log('user already keyed in their api key')
+        console.log("user already keyed in their api key");
         onSendAiMessage();
       } else {
-        console.log('user has not keyed in their api key')
-        setApiKeyModalVisible(true);
+        console.log("user has not keyed in their api key");
+        openSendApiKeyModal({ roomId, user });
       }
     }
   };
@@ -323,7 +316,7 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
 
     setMessageState(MessageState.SENDING);
 
-    console.log('sending message to AI');
+    console.log("sending message to AI");
     fetchData<ServerResponse<AiChatResponse>>(
       `/gen-ai-service/chat`,
       SERVICE.AI,
@@ -338,29 +331,46 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
           roomId: roomId,
         }),
       }
-    ).then((res) => {
-      console.log("AI response", res);
+    )
+      .then((res) => {
+        console.log("AI response", res);
 
-      if (res.statusCode === 200) {
-        const responseText = res.data.reply;
-        setMessageState(MessageState.SENDING);
-        // socket.emit("chat-message", {
-        //   roomId: roomId,
-        //   message: responseText,
-        //   replyToId: replyToMessage?.messageId,
-        // });
+        if (res.statusCode === 200) {
+          const responseText = res.data.reply;
+          setMessageState(MessageState.SENDING);
+          // socket.emit("chat-message", {
+          //   roomId: roomId,
+          //   message: responseText,
+          //   replyToId: replyToMessage?.messageId,
+          // });
 
-        socket.emit("chat-message", {
-          roomId: roomId,
-          message: `${messageToSend}\n--------------\n${responseText}`,
-          replyToId: replyToMessage?.messageId,
-          integration: integration,
-        });
-      } else {
-        const errorMessage = res.message || "Error chatting with AI";
+          socket.emit("chat-message", {
+            roomId: roomId,
+            message: `${messageToSend}\n--------------\n${responseText}`,
+            replyToId: replyToMessage?.messageId,
+            integration: integration,
+          });
+        } else {
+          const errorMessage = res.message || "Error chatting with AI";
+          handleIntegrationError(integration, errorMessage);
+
+          // Emit error message to the chat widget
+          // Adding a slight delay before emitting the error message
+          setTimeout(() => {
+            socket.emit("chat-message", {
+              roomId: roomId,
+              message: `⚠️ ${errorMessage}`,
+              replyToId: replyToMessage?.messageId,
+              integration: integration,
+            });
+          }, 1500);
+        }
+      })
+      .catch((e) => {
+        console.log("Error chatting with AI", e);
+        const errorMessage = "Error chatting with AI. Please try again.";
         handleIntegrationError(integration, errorMessage);
 
-        // Emit error message to the chat widget
         // Adding a slight delay before emitting the error message
         setTimeout(() => {
           socket.emit("chat-message", {
@@ -370,29 +380,14 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
             integration: integration,
           });
         }, 1500);
-      }
-    }).catch((e) => {
-      console.log("Error chatting with AI", e);
-      const errorMessage = "Error chatting with AI. Please try again.";
-      handleIntegrationError(integration, errorMessage);
 
-      // Adding a slight delay before emitting the error message
-      setTimeout(() => {
-        socket.emit("chat-message", {
-          roomId: roomId,
-          message: `⚠️ ${errorMessage}`,
-          replyToId: replyToMessage?.messageId,
-          integration: integration,
+        notifications.show({
+          title: "Error chatting with AI",
+          message: errorMessage,
+          color: "red",
         });
-      }, 1500);
-
-      notifications.show({
-        title: "Error chatting with AI",
-        message: errorMessage,
-        color: "red",
       });
-    });
-  }
+  };
 
   const handleIntegrationError = (
     integrationId: string,
@@ -548,16 +543,16 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
   }
 
   function handleGenerateHints() {
-    const prompt = 
-    `Can you generate helpful hints for the following coding question?\n\n"${question}"\n\n` +
-    `Please provide 3-4 hints that guide the user towards solving the problem without giving away the full solution. ` +
-    `Keep the hints concise and focused on the key concepts needed to solve the problem.`;
+    const prompt =
+      `Can you generate helpful hints for the following coding question?\n\n"${question}"\n\n` +
+      `Please provide 3-4 hints that guide the user towards solving the problem without giving away the full solution. ` +
+      `Keep the hints concise and focused on the key concepts needed to solve the problem.`;
     setDraftMessage(prompt);
     onBeforeSendMessage();
   }
 
   function handleGenerateSolution() {
-    const prompt = 
+    const prompt =
       `I have attempted a solution for this coding question:\n\n"${question}"\n\n` +
       `Here is my current code:\n\n"${solutionCode}"\n\n` +
       `Can you generate a correct solution for this problem and briefly explain how it differs from my attempt? ` +
@@ -567,7 +562,7 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
   }
 
   function handleExplainCode() {
-    const prompt = 
+    const prompt =
       `I have written the following solution:\n\n"${solutionCode}"\n\n` +
       `Can you explain this code step by step, focusing on what each part is doing? ` +
       `Highlight any potential issues, bugs, or areas for improvement. ` +
@@ -578,14 +573,14 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
   }
 
   function handleExplainQuestion() {
-    const prompt = 
+    const prompt =
       `I am having trouble understanding the following LeetCode question:\n\n"${question}"\n\n` +
       `Could you provide an explanation of what this question is asking for, including any hidden details, assumptions, or common pitfalls? ` +
       `Keep the explanation concise but make sure all key details are covered to help me fully understand what is being asked.`;
     setDraftMessage(prompt);
     onBeforeSendMessage();
   }
-  
+
   const [isChatFullscreen, setIsChatFullscreen] = useState(false);
   // const { x, y } = useMouse();
   // const [preferredWidth, setPreferredWidth] = useLocalStorage<number>({
@@ -807,70 +802,86 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
             {chatState === ChatState.CONNECTED ? (
               <>
                 {defaultSendTo === "gemini_1.0" && (
-                  <div style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
+                  <div style={{ overflowX: "auto", whiteSpace: "nowrap" }}>
                     <Button
-                        variant="gradient"
-                        gradient={{ from: "violet", to: "blue", deg: 135 }}
-                        onClick={handleGenerateHints}
-                        loading={messageState === MessageState.SENDING}
-                        style={{
-                            marginLeft: "1rem",
-                            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
-                            borderRadius: '12px',
-                            transition: 'all 0.3s ease',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      variant="gradient"
+                      gradient={{ from: "violet", to: "blue", deg: 135 }}
+                      onClick={handleGenerateHints}
+                      loading={messageState === MessageState.SENDING}
+                      style={{
+                        marginLeft: "1rem",
+                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
                     >
-                        Generate Hints 
+                      Generate Hints
                     </Button>
                     <Button
-                        variant="gradient"
-                        gradient={{ from: "violet", to: "blue", deg: 135 }}
-                        onClick={handleGenerateSolution}
-                        loading={messageState === MessageState.SENDING}
-                        style={{
-                            marginLeft: "1rem",
-                            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
-                            borderRadius: '12px',
-                            transition: 'all 0.3s ease',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      variant="gradient"
+                      gradient={{ from: "violet", to: "blue", deg: 135 }}
+                      onClick={handleGenerateSolution}
+                      loading={messageState === MessageState.SENDING}
+                      style={{
+                        marginLeft: "1rem",
+                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
                     >
-                        Generate Solution
+                      Generate Solution
                     </Button>
                     <Button
-                        variant="gradient"
-                        gradient={{ from: "violet", to: "blue", deg: 135 }}
-                        onClick={handleExplainCode}
-                        loading={messageState === MessageState.SENDING}
-                        style={{
-                            marginLeft: "1rem",
-                            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
-                            borderRadius: '12px',
-                            transition: 'all 0.3s ease',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      variant="gradient"
+                      gradient={{ from: "violet", to: "blue", deg: 135 }}
+                      onClick={handleExplainCode}
+                      loading={messageState === MessageState.SENDING}
+                      style={{
+                        marginLeft: "1rem",
+                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
                     >
-                        Explain Code 
+                      Explain Code
                     </Button>
                     <Button
-                        variant="gradient"
-                        gradient={{ from: "violet", to: "blue", deg: 135 }}
-                        onClick={handleExplainQuestion}
-                        loading={messageState === MessageState.SENDING}
-                        style={{
-                            marginLeft: "1rem",
-                            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
-                            borderRadius: '12px',
-                            transition: 'all 0.3s ease',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      variant="gradient"
+                      gradient={{ from: "violet", to: "blue", deg: 135 }}
+                      onClick={handleExplainQuestion}
+                      loading={messageState === MessageState.SENDING}
+                      style={{
+                        marginLeft: "1rem",
+                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
                     >
-                        Explain Question 
+                      Explain Question
                     </Button>
                   </div>
                 )}
@@ -1031,7 +1042,11 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
                             <Badge
                               // size="xl"
                               variant="gradient"
-                              gradient={{ from: "violet", to: "blue", deg: 135 }}
+                              gradient={{
+                                from: "violet",
+                                to: "blue",
+                                deg: 135,
+                              }}
                               radius={"xs"}
                               style={{ cursor: "pointer" }}
                             >

@@ -266,7 +266,7 @@ export default function TestCasesWrapper({
     })
       .then((response) => {
         console.log({ response });
-        setTestCaseRunKey(prev => prev + 1); // Change key to reset the display of test cases
+        setTestCaseRunKey((prev) => prev + 1); // Change key to reset the display of test cases
       })
       .catch((e) => {
         console.log("ERROR⚠️: Error running test cases");
@@ -317,7 +317,6 @@ export default function TestCasesWrapper({
     }
   }
   console.log({ colorScheme });
-
 
   return (
     <Box className={classes.container}>
@@ -545,7 +544,7 @@ export const TestCasesDisplay = ({
   question: string;
 }) => {
   const { fetchData } = useApi();
-  const { setApiKeyModalVisible, hasApiKey } = useAi();
+  const { openSendApiKeyModal, hasApiKey } = useAi();
 
   const { colorScheme } = useMantineColorScheme();
   const [currentTestCase, setCurrentTestCase] = useState<TestCase | null>(
@@ -557,16 +556,20 @@ export const TestCasesDisplay = ({
   // FOR FAILED TEST CASE ANALYSIS
   const [openedTestCaseAnalysis, setOpenedTestCaseAnalysis] = useState(false);
   const [loadingTestCaseAnalysis, setLoadingTestCaseAnalysis] = useState(false);
-  const [generatedTestCaseAnalysis, setGeneratedTestCaseAnalysis] = useState(false);
+  const [generatedTestCaseAnalysis, setGeneratedTestCaseAnalysis] =
+    useState(false);
 
-  const [displayedLinesTestCaseAnalysis, setDisplayedLinesTestCaseAnalysis] = useState([]);
-  const [analysisResultTestCaseAnalysis, setAnalysisResultTestCaseAnalysis] = useState(null);
-  const [errorRetrievingTestCaseAnalysis, setErrorRetrievingTestCaseAnalysis] = useState(false);
+  const [displayedLinesTestCaseAnalysis, setDisplayedLinesTestCaseAnalysis] =
+    useState([]);
+  const [analysisResultTestCaseAnalysis, setAnalysisResultTestCaseAnalysis] =
+    useState(null);
+  const [errorRetrievingTestCaseAnalysis, setErrorRetrievingTestCaseAnalysis] =
+    useState(false);
 
   // FOR ERROR LOGS ANALYSIS
   const [opened, setOpened] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [dots, setDots] = useState('');
+  const [dots, setDots] = useState("");
   const [generated, setGenerated] = useState(false);
 
   const [displayedLines, setDisplayedLines] = useState([]);
@@ -615,11 +618,12 @@ export const TestCasesDisplay = ({
     setDisplayedLines([]);
     setGenerated(false);
   }, [testCases]);
-  
+
+  const { user } = useAuth();
   const handleAnalyseClick = async () => {
     // User must key in their API key first to use the AI service, show modal if they have not
     if (!hasApiKey) {
-      setApiKeyModalVisible(true);
+      openSendApiKeyModal({ roomId, user });
       return;
     }
 
@@ -632,11 +636,12 @@ export const TestCasesDisplay = ({
     setErrorRetrieving(false);
 
     // Retrieve solution code and error logs to send to AI
-    const solutionCode = attemptCodeMap[attempt]?.code || '';
-    const errorLogs = getTestCaseResult(currentTestCase._id.toString(), 1)?.stderr || '';
+    const solutionCode = attemptCodeMap[attempt]?.code || "";
+    const errorLogs =
+      getTestCaseResult(currentTestCase._id.toString(), 1)?.stderr || "";
 
-    console.log('Solution code:', solutionCode);
-    console.log('Error logs:', errorLogs);
+    console.log("Solution code:", solutionCode);
+    console.log("Error logs:", errorLogs);
 
     // Send the prompt to the AI for analysis
     fetchData<ServerResponse<AiChatResponse>>(
@@ -654,32 +659,34 @@ export const TestCasesDisplay = ({
           roomId,
         }),
       }
-    ).then((res) => {
-      if (res.statusCode === 200) {
-        console.log('AI Analysis:', res.data.reply);
-        setAnalysisResult(res.data.reply);
+    )
+      .then((res) => {
+        if (res.statusCode === 200) {
+          console.log("AI Analysis:", res.data.reply);
+          setAnalysisResult(res.data.reply);
 
-        const lines = res.data.reply.trim().split('\n');
-        displayLines(lines);
+          const lines = res.data.reply.trim().split("\n");
+          displayLines(lines);
 
-        setGenerated(true);
-        setLoading(false);
-        setAnalysisResult(res.data.reply);
-      } else {
-        console.error('Error fetching AI analysis:', res.data.reply);
-        setLoading(false);
-        setAnalysisResult('Failed to fetch AI analysis. Please try again.');
-        setErrorRetrieving(true);
-      }
-    }).catch((error) => {
-      // Simulate delay before error handling
-      setTimeout(() => {
-        console.error('Error fetching AI analysis:', error);
-        setAnalysisResult('Failed to fetch AI analysis. Please try again.');
-        setErrorRetrieving(true);
-        setLoading(false);
-      }, 1500);  // 1.5 second delay before handling the error
-    });
+          setGenerated(true);
+          setLoading(false);
+          setAnalysisResult(res.data.reply);
+        } else {
+          console.error("Error fetching AI analysis:", res.data.reply);
+          setLoading(false);
+          setAnalysisResult("Failed to fetch AI analysis. Please try again.");
+          setErrorRetrieving(true);
+        }
+      })
+      .catch((error) => {
+        // Simulate delay before error handling
+        setTimeout(() => {
+          console.error("Error fetching AI analysis:", error);
+          setAnalysisResult("Failed to fetch AI analysis. Please try again.");
+          setErrorRetrieving(true);
+          setLoading(false);
+        }, 1500); // 1.5 second delay before handling the error
+      });
   };
 
   // Function to display AI analysis line by line
@@ -695,7 +702,7 @@ export const TestCasesDisplay = ({
   const handleFailedTestCaseAnalyseClick = async () => {
     // User must key in their API key first to use the AI service, show modal if they have not
     if (!hasApiKey) {
-      setApiKeyModalVisible(true);
+      openSendApiKeyModal({ roomId, user });
       return;
     }
 
@@ -709,13 +716,14 @@ export const TestCasesDisplay = ({
 
     const testProgramCode = currentTestCase.testCode;
     const expectedOutput = currentTestCase.expectedOutput;
-    const actualOutput = getTestCaseResult(currentTestCase._id.toString(), 1)?.stdout || '';
-    const solutionCode = attemptCodeMap[attempt]?.code || '';
+    const actualOutput =
+      getTestCaseResult(currentTestCase._id.toString(), 1)?.stdout || "";
+    const solutionCode = attemptCodeMap[attempt]?.code || "";
 
-    console.log('Test program code:', testProgramCode);
-    console.log('Expected output:', expectedOutput);
-    console.log('Actual output:', actualOutput);
-    console.log('Solution code:', solutionCode);
+    console.log("Test program code:", testProgramCode);
+    console.log("Expected output:", expectedOutput);
+    console.log("Actual output:", actualOutput);
+    console.log("Solution code:", solutionCode);
 
     // Make the API request to fetch failed test case analysis
     fetchData<ServerResponse<AiChatResponse>>(
@@ -736,37 +744,49 @@ export const TestCasesDisplay = ({
           roomId,
         }),
       }
-    ).then((res) => {
-      if (res.statusCode === 200) {
-        console.log('AI Analysis:', res.data.reply);
-        setAnalysisResultTestCaseAnalysis(res.data.reply);
+    )
+      .then((res) => {
+        if (res.statusCode === 200) {
+          console.log("AI Analysis:", res.data.reply);
+          setAnalysisResultTestCaseAnalysis(res.data.reply);
 
-        const lines = res.data.reply.trim().split('\n');
-        displayFailedTestCaseLines(lines);
-        setAnalysisResultTestCaseAnalysis(res.data.reply);
-        setLoadingTestCaseAnalysis(false);
-      } else {
-        console.log('got problem with ai analysis');
-        console.error('Error fetching failed test case analysis:', res.data.reply);
-        setAnalysisResultTestCaseAnalysis('Failed to fetch failed test case analysis. Please try again.');
-        setErrorRetrievingTestCaseAnalysis(true);
-        setLoadingTestCaseAnalysis(false);
-      }
-    }).catch((error) => {
-      // Simulate delay before error handling
-      setTimeout(() => {
-        console.error('Error fetching failed test case analysis:', error);
-        setAnalysisResultTestCaseAnalysis('Failed to fetch failed test case analysis. Please try again.');
-        setErrorRetrievingTestCaseAnalysis(true);
-        setLoadingTestCaseAnalysis(false);
-      }, 1500);  // 1.5 second delay before handling the error
-    });
+          const lines = res.data.reply.trim().split("\n");
+          displayFailedTestCaseLines(lines);
+          setAnalysisResultTestCaseAnalysis(res.data.reply);
+          setLoadingTestCaseAnalysis(false);
+        } else {
+          console.log("got problem with ai analysis");
+          console.error(
+            "Error fetching failed test case analysis:",
+            res.data.reply
+          );
+          setAnalysisResultTestCaseAnalysis(
+            "Failed to fetch failed test case analysis. Please try again."
+          );
+          setErrorRetrievingTestCaseAnalysis(true);
+          setLoadingTestCaseAnalysis(false);
+        }
+      })
+      .catch((error) => {
+        // Simulate delay before error handling
+        setTimeout(() => {
+          console.error("Error fetching failed test case analysis:", error);
+          setAnalysisResultTestCaseAnalysis(
+            "Failed to fetch failed test case analysis. Please try again."
+          );
+          setErrorRetrievingTestCaseAnalysis(true);
+          setLoadingTestCaseAnalysis(false);
+        }, 1500); // 1.5 second delay before handling the error
+      });
   };
 
   const displayFailedTestCaseLines = (lines: string[]) => {
     let index = 0;
     const interval = setInterval(() => {
-      setDisplayedLinesTestCaseAnalysis((prevLines) => [...prevLines, lines[index]]);
+      setDisplayedLinesTestCaseAnalysis((prevLines) => [
+        ...prevLines,
+        lines[index],
+      ]);
       index++;
       if (index >= lines.length) clearInterval(interval);
     }, 500);
@@ -779,10 +799,10 @@ export const TestCasesDisplay = ({
     let interval;
     if (loading) {
       interval = setInterval(() => {
-        setDots((prev) => (prev.length >= 3 ? '' : prev + '.'));
-      }, 500); 
+        setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
+      }, 500);
     } else {
-      setDots('');
+      setDots("");
     }
     return () => clearInterval(interval);
   }, [loading]);
@@ -791,10 +811,10 @@ export const TestCasesDisplay = ({
     let interval;
     if (loadingTestCaseAnalysis) {
       interval = setInterval(() => {
-        setDots((prev) => (prev.length >= 3 ? '' : prev + '.'));
-      }, 500); 
+        setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
+      }, 500);
     } else {
-      setDots('');
+      setDots("");
     }
     return () => clearInterval(interval);
   }, [loadingTestCaseAnalysis]);
@@ -917,66 +937,94 @@ export const TestCasesDisplay = ({
               ? "No output yet, please run the test case to view output"
               : getTestCaseResult(currentTestCase._id.toString(), 1).stdout}
           </Code>
-          {!getTestCaseResult(currentTestCase._id.toString(), 1)?.isPassed && getTestCaseResult(currentTestCase._id.toString(), 1)?.stdout && (
-            <>
-              <Button
-                onClick={handleFailedTestCaseAnalyseClick}
-                mt={8}
-                disabled={loadingTestCaseAnalysis}
-                variant="gradient" 
-                gradient={{ from: "violet", to: "blue", deg: 135 }}
-                style={{
-                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)', 
-                  borderRadius: '12px', 
-                  transition: 'all 0.3s ease',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'} 
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <>
-                  {loadingTestCaseAnalysis && <Loader size="xs" mr={8} color="grey" />}
-                  {generatedTestCaseAnalysis && !loadingTestCaseAnalysis ? 
-                    'Re-analyse Failing TC with Google Gemini' : 
-                    'Analyse Failing TC with Google Gemini'}
-                  <Badge
-                    variant="gradient"
-                    gradient={{ from: "violet", to: "blue", deg: 135 }}
-                    radius={"xs"}
-                    style={{ cursor: "pointer", marginLeft: '8px' }} 
+          {!getTestCaseResult(currentTestCase._id.toString(), 1)?.isPassed &&
+            getTestCaseResult(currentTestCase._id.toString(), 1)?.stdout && (
+              <>
+                <Button
+                  onClick={handleFailedTestCaseAnalyseClick}
+                  mt={8}
+                  disabled={loadingTestCaseAnalysis}
+                  variant="gradient"
+                  gradient={{ from: "violet", to: "blue", deg: 135 }}
+                  style={{
+                    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                    borderRadius: "12px",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.transform = "scale(1.05)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
+                >
+                  <>
+                    {loadingTestCaseAnalysis && (
+                      <Loader size="xs" mr={8} color="grey" />
+                    )}
+                    {generatedTestCaseAnalysis && !loadingTestCaseAnalysis
+                      ? "Re-analyse Failing TC with Google Gemini"
+                      : "Analyse Failing TC with Google Gemini"}
+                    <Badge
+                      variant="gradient"
+                      gradient={{ from: "violet", to: "blue", deg: 135 }}
+                      radius={"xs"}
+                      style={{ cursor: "pointer", marginLeft: "8px" }}
+                    >
+                      AI
+                    </Badge>
+                  </>
+                </Button>
+                {openedTestCaseAnalysis && generatedTestCaseAnalysis && (
+                  <Button
+                    onClick={() => setOpenedTestCaseAnalysis(false)}
+                    mt={8}
+                    ml={8}
                   >
-                    AI
-                  </Badge>
-                </>
-              </Button>
-              {openedTestCaseAnalysis && generatedTestCaseAnalysis && (
-                <Button onClick={() => setOpenedTestCaseAnalysis(false)} mt={8} ml={8}>Hide</Button>
-              )}
-              {!openedTestCaseAnalysis && generatedTestCaseAnalysis && (
-                <Button onClick={() => setOpenedTestCaseAnalysis(true)} mt={8} ml={8}>Show</Button>
-              )}
+                    Hide
+                  </Button>
+                )}
+                {!openedTestCaseAnalysis && generatedTestCaseAnalysis && (
+                  <Button
+                    onClick={() => setOpenedTestCaseAnalysis(true)}
+                    mt={8}
+                    ml={8}
+                  >
+                    Show
+                  </Button>
+                )}
 
-              <Card shadow="sm" padding="lg" mt="md" radius="md" withBorder display={openedTestCaseAnalysis ? 'block' : 'none'}>
-                <Box>
-                  {loadingTestCaseAnalysis && (
-                    <Text mt="xs">Analysing failing test case{dots}</Text>
-                  )}
+                <Card
+                  shadow="sm"
+                  padding="lg"
+                  mt="md"
+                  radius="md"
+                  withBorder
+                  display={openedTestCaseAnalysis ? "block" : "none"}
+                >
+                  <Box>
+                    {loadingTestCaseAnalysis && (
+                      <Text mt="xs">Analysing failing test case{dots}</Text>
+                    )}
 
-                  {/* TODO: display code in code block */}
-                  {/* Display AI analysis result line by line */}
-                  {!loadingTestCaseAnalysis && analysisResultTestCaseAnalysis && displayedLinesTestCaseAnalysis.length > 0 && (
-                    displayedLinesTestCaseAnalysis.map((line, index) => (
-                      <ReactMarkdown key={index}>{line}</ReactMarkdown>
-                    ))
-                  )}
+                    {/* TODO: display code in code block */}
+                    {/* Display AI analysis result line by line */}
+                    {!loadingTestCaseAnalysis &&
+                      analysisResultTestCaseAnalysis &&
+                      displayedLinesTestCaseAnalysis.length > 0 &&
+                      displayedLinesTestCaseAnalysis.map((line, index) => (
+                        <ReactMarkdown key={index}>{line}</ReactMarkdown>
+                      ))}
 
-                  {/* Fallback message if no analysis is available */}
-                  {!loadingTestCaseAnalysis && errorRetrievingTestCaseAnalysis && (
-                    <Text>No analysis available. Please try again.</Text>
-                  )}
-                </Box>
-              </Card>
-            </>
-          )}
+                    {/* Fallback message if no analysis is available */}
+                    {!loadingTestCaseAnalysis &&
+                      errorRetrievingTestCaseAnalysis && (
+                        <Text>No analysis available. Please try again.</Text>
+                      )}
+                  </Box>
+                </Card>
+              </>
+            )}
 
           <Box mt={"xs"}>
             <Text style={{ fontWeight: "700" }}> Error logs: </Text>
@@ -996,45 +1044,61 @@ export const TestCasesDisplay = ({
                 variant="gradient"
                 gradient={{ from: "violet", to: "blue", deg: 135 }}
                 style={{
-                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
-                  borderRadius: '12px',
-                  transition: 'all 0.3s ease',
+                  boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                  borderRadius: "12px",
+                  transition: "all 0.3s ease",
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.05)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
               >
                 <>
                   {loading && <Loader size="xs" mr={8} color="grey" />}
-                  {generated && !loading ? 'Re-analyse Errors with Google Gemini' : 'Analyse Errors with Google Gemini'}
+                  {generated && !loading
+                    ? "Re-analyse Errors with Google Gemini"
+                    : "Analyse Errors with Google Gemini"}
                   <Badge
                     variant="gradient"
                     gradient={{ from: "violet", to: "blue", deg: 135 }}
                     radius={"xs"}
-                    style={{ cursor: "pointer", marginLeft: '8px' }}
+                    style={{ cursor: "pointer", marginLeft: "8px" }}
                   >
                     AI
                   </Badge>
                 </>
               </Button>
               {opened && generated && (
-                <Button onClick={() => setOpened(false)} mt={8} ml={8}>Hide</Button>
+                <Button onClick={() => setOpened(false)} mt={8} ml={8}>
+                  Hide
+                </Button>
               )}
               {!opened && generated && (
-                <Button onClick={() => setOpened(true)} mt={8} ml={8}>Show</Button>
+                <Button onClick={() => setOpened(true)} mt={8} ml={8}>
+                  Show
+                </Button>
               )}
 
-              <Card shadow="sm" padding="lg" mt="md" radius="md" withBorder display={opened ? 'block' : 'none'}>
+              <Card
+                shadow="sm"
+                padding="lg"
+                mt="md"
+                radius="md"
+                withBorder
+                display={opened ? "block" : "none"}
+              >
                 <Box>
-                  {loading && (
-                    <Text mt="xs">Analysing error logs{dots}</Text>
-                  )}
+                  {loading && <Text mt="xs">Analysing error logs{dots}</Text>}
 
                   {/* Display AI analysis result line by line */}
-                  {!loading && analysisResult && displayedLines.length > 0 && (
+                  {!loading &&
+                    analysisResult &&
+                    displayedLines.length > 0 &&
                     displayedLines.map((line, index) => (
                       <ReactMarkdown key={index}>{line}</ReactMarkdown>
-                    ))
-                  )}
+                    ))}
 
                   {/* Fallback message if no analysis is available */}
                   {!loading && errorRetrieving && (

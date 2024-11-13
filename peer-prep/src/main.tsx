@@ -158,9 +158,7 @@ createRoot(document.getElementById("root")!).render(
   // <StrictMode>
   <MantineProvider theme={theme}>
     <Notifications />
-    <AIProvider>
-      <RouterProvider router={router}></RouterProvider>
-    </AIProvider>
+    <RouterProvider router={router}></RouterProvider>
   </MantineProvider>
 
   // </StrictMode>
