@@ -170,7 +170,8 @@ export default function TextChatWidget({
   const { user } = useAuth();
   const { colorScheme } = useMantineColorScheme();
 
-  const { hasApiKey, openSendApiKeyModal } = useAi();
+  const { hasApiKey, openSendApiKeyModal, setHasApiKey, deleteApiKey } =
+    useAi();
 
   const [messageState, setMessageState] = useState<MessageState>(
     MessageState.BEFORE_SEND
@@ -296,7 +297,7 @@ export default function TextChatWidget({
         onSendAiMessage();
       } else {
         console.log("user has not keyed in their api key");
-        openSendApiKeyModal({ roomId, user });
+        openSendApiKeyModal({ roomId, user, callback: onSendAiMessage });
       }
     }
   };
@@ -362,21 +363,27 @@ export default function TextChatWidget({
           // });
 
           let message;
-          if (isAiChat) {
-            message = `${messageToSend}\n--------------\n${responseText}`;
-          } else {
-            if (aiButtonType === AiAssistButtonType.GEN_HINTS) {
-              message = `Sure! Here are the hints to the question:\n\n${responseText}`;
-            } else if (aiButtonType === AiAssistButtonType.GEN_SOLUTION) {
-              message = `Sure! Here is the solution to the question:\n\n${responseText}`;
-            } else if (aiButtonType === AiAssistButtonType.CODE_EXPLANATION) {
-              message = `Sure! Here is the explanation of your current code:\n\n${responseText}`;
-            } else if (
-              aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
-            ) {
-              message = `Sure! Here is the explanation of the question:\n\n${responseText}`;
-            }
-          }
+          message = `Q: ${messageToSend}
+
+_________________
+
+**Response from Gemini:**
+${responseText}`;
+          // if (isAiChat) {
+          //   message = `${messageToSend}\n--------------\n${responseText}`;
+          // } else {
+          //   if (aiButtonType === AiAssistButtonType.GEN_HINTS) {
+          //     message = `Sure! Here are the hints to the question:\n\n${responseText}`;
+          //   } else if (aiButtonType === AiAssistButtonType.GEN_SOLUTION) {
+          //     message = `Sure! Here is the solution to the question:\n\n${responseText}`;
+          //   } else if (aiButtonType === AiAssistButtonType.CODE_EXPLANATION) {
+          //     message = `Sure! Here is the explanation of your current code:\n\n${responseText}`;
+          //   } else if (
+          //     aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
+          //   ) {
+          //     message = `Sure! Here is the explanation of the question:\n\n${responseText}`;
+          //   }
+          // }
 
           socket.emit("chat-message", {
             roomId: roomId,
@@ -402,7 +409,8 @@ export default function TextChatWidget({
       })
       .catch((e) => {
         console.log("Error chatting with AI", e);
-        const errorMessage = "Error chatting with AI. Please try again.";
+        const errorMessage =
+          "Error chatting with AI. Please enter your API key and try again.";
         handleIntegrationError(integration, errorMessage);
 
         // Adding a slight delay before emitting the error message
@@ -420,6 +428,10 @@ export default function TextChatWidget({
           message: errorMessage,
           color: "red",
         });
+
+        setHasApiKey(false);
+        deleteApiKey({ roomId, user });
+        // openSendApiKeyModal({ roomId, user });
       });
   };
 
@@ -1327,6 +1339,7 @@ function TextMessage({
       );
     }
   }
+  console.log({ msg });
 
   const messageContentSplit = splitTextIntoObjects(msg.content);
   console.log({ messageContentSplit });
@@ -1418,6 +1431,8 @@ function TextMessage({
                   style={{
                     textOverflow: "ellipsis",
                     overflow: "hidden",
+                    // clamp to 1 line
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {
@@ -1488,6 +1503,7 @@ function TextMessage({
                   style={{
                     textOverflow: "ellipsis",
                     overflow: "hidden",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {
@@ -1564,6 +1580,7 @@ function splitTextIntoObjects(text: string): FormattableText[] {
     lastIndex = endIndex;
   };
 
+  console.log({ text });
   // Loop through each pattern type
   for (const [type, pattern] of Object.entries(patterns)) {
     // Reset lastIndex for each pattern search
@@ -1575,7 +1592,7 @@ function splitTextIntoObjects(text: string): FormattableText[] {
   }
 
   // Add any remaining plain text after the last match
-  if (lastIndex < text.length) {
+  if (!text || lastIndex < text.length) {
     result.push({
       content: text.slice(lastIndex),
       type: "plain",

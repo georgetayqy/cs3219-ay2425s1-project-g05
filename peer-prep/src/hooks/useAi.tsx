@@ -31,10 +31,13 @@ interface AIContextType {
   openSendApiKeyModal: ({
     roomId,
     user,
+    callback,
   }: {
     roomId: string;
     user: User;
+    callback?: (...args: any[]) => any;
   }) => void;
+  deleteApiKey: ({ roomId, user }: { roomId: string; user: User }) => void;
 }
 
 const AIContext = createContext<AIContextType | undefined>(undefined);
@@ -51,12 +54,13 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
   const openSendApiKeyModal = ({
     roomId,
     user,
+    callback,
   }: {
     roomId: string;
     user: User;
+    callback?: (...args: any[]) => any;
   }) => {
     modals.open({
-      id: "send-api-key",
       title: "Enter Your Google AI API Key",
       children: (
         <Stack>
@@ -76,7 +80,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSendApiKey({ roomId, user });
+              handleSendApiKey({ roomId, user, callback });
             }}
           >
             <Stack>
@@ -118,7 +122,15 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  function handleSendApiKey({ roomId, user }: { roomId: string; user: User }) {
+  async function handleSendApiKey({
+    roomId,
+    user,
+    callback,
+  }: {
+    roomId: string;
+    user: User;
+    callback?: (...args: any[]) => any;
+  }) {
     setSendingApiKey(true);
 
     // Send the API key to the AI service
@@ -127,7 +139,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
       const apiKey = apiKeyInput.current.value;
       console.log("api key!! = ", apiKey);
 
-      fetchData<
+      const response = await fetchData<
         ServerResponse<{
           userId: string;
           roomId: string;
@@ -142,19 +154,23 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
           roomId: roomId,
           apiKey: apiKey,
         }),
-      }).then((response) => {
-        console.log("API Key sent successfully", response);
-        setSendingApiKey(false);
-
-        modals.closeAll();
-        setHasApiKey(true);
-
-        notifications.show({
-          title: "API key sent successfully",
-          message: "You can now use the AI features.",
-          color: "green",
-        });
       });
+      console.log("API Key sent successfully", response);
+      setSendingApiKey(false);
+
+      setHasApiKey(true);
+
+      notifications.show({
+        title: "API key set successfully",
+        message: "You can now use the AI features.",
+        color: "green",
+      });
+
+      modals.closeAll();
+
+      if (callback) {
+        callback();
+      }
     } catch (error: any) {
       // If there is an error, show a notification with the error message and keep the modal open for the user to try again
       console.error("Error sending API key", error);
@@ -167,6 +183,44 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }
 
+  function deleteApiKey({ roomId, user }: { roomId: string; user: User }) {
+    fetchData<ServerResponse<{ userId: string; roomId: string }>>(
+      `/gen-ai-service/delete-session`,
+      SERVICE.AI,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          roomId: roomId,
+        }),
+      }
+    )
+      .then((response) => {
+        console.log("API Key deleted successfully", response);
+        setHasApiKey(false);
+
+        // notifications.show({
+        //   title: "API key deleted successfully",
+        //   message: "You can no longer use the AI features.",
+        //   color: "green",
+        // });
+      })
+      .catch((error) => {
+        console.error("Error deleting API key", error);
+        // notifications.show({
+        //   title: "Error deleting API key, please try again",
+        //   message: error.message,
+        //   color: "red",
+        // });
+      });
+  }
+  useEffect(() => {
+    // onunload, delete the api key
+  }, []);
+
   return (
     <AIContext.Provider
       value={{
@@ -175,6 +229,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
         hasApiKey,
         setHasApiKey,
         openSendApiKeyModal,
+        deleteApiKey,
       }}
     >
       {children}
