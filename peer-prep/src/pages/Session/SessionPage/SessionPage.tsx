@@ -141,6 +141,8 @@ export default function SessionPage() {
     templateCode,
   } = question;
 
+  const testCaseWrapperRef = useRef<HTMLDivElement>(null);
+
   // todo
   // const [attemptCode, setAttemptCode] = useState(question.templateCode);
   const latestResultsRef = useRef<TestCaseResult[]>([]);
@@ -469,7 +471,8 @@ export default function SessionPage() {
       });
   }, []);
 
-  const handleEndSession = async () => {
+  const handleEndSession = async (e?) => {
+    e?.stopPropagation();
     // call history service to create an attempt
     try {
       const {
@@ -488,6 +491,50 @@ export default function SessionPage() {
         latestResultsRef: latestResultsRef.current,
       });
 
+      if (!latestResultsRef.current.length) {
+        // notifications.show({
+        //   title: "No test cases run",
+        //   message: "Please run the test cases before ending the session.",
+        //   color: "red",
+        // });
+        // run test caess
+        // @ts-ignore
+        testCaseWrapperRef.current.runTestCases();
+
+        modals.open({
+          withCloseButton: false,
+          closeOnClickOutside: false,
+          closeOnEscape: false,
+          title: "Running test cases...",
+          children: (
+            <Flex
+              style={{
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "1rem",
+              }}
+            >
+              <Loader size="lg" />
+              <Title order={4} style={{ textAlign: "center" }}>
+                {" "}
+                Running test cases...{" "}
+              </Title>
+              <Text style={{ textAlign: "center" }}>
+                {" "}
+                You will be redirected to the Session page automatically when
+                all test cases have finished running.{" "}
+              </Text>
+            </Flex>
+          ),
+        });
+      }
+      while (latestResultsRef.current.length === 0) {
+        console.log("WAITING FOR RESULTS");
+        await sleep(500);
+      }
+      modals.closeAll();
+
+      console.log("LOG: latestResults = ", latestResultsRef.current);
       const results: TestCaseResultDb[] = latestResultsRef.current.map(
         (result) => {
           return {
@@ -686,6 +733,7 @@ export default function SessionPage() {
             </Paper>
 
             <TestCasesWrapper
+              ref={testCaseWrapperRef}
               channelId={channelId}
               currentValueRef={currentValueRef}
               userId={user._id}
@@ -699,4 +747,9 @@ export default function SessionPage() {
       </Box>
     </ModalsProvider>
   );
+}
+
+// temp sleep function for await
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
