@@ -422,7 +422,7 @@ export default function SessionPage() {
   // Check if user has already sent their API key
   useEffect(() => {
     fetchData<ServerResponse<{ hasActiveSession: boolean }>>(
-      `/ai-chat-service/check-active-session`,
+      `/gen-ai-service/check-active-session`,
       SERVICE.AI,
       {
         method: "POST",
@@ -504,7 +504,7 @@ export default function SessionPage() {
         userId: string;
         roomId: string;
       }>>(
-        `/ai-chat-service/create-session`,
+        `/gen-ai-service/create-session`,
         SERVICE.AI,
         {
           method: "POST",

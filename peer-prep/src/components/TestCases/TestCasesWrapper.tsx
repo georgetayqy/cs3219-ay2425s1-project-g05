@@ -640,7 +640,7 @@ export const TestCasesDisplay = ({
 
     // Send the prompt to the AI for analysis
     fetchData<ServerResponse<AiChatResponse>>(
-      `/ai-chat-service/analyse-error-logs`,
+      `/gen-ai-service/analyse-error-logs`,
       SERVICE.AI,
       {
         method: "POST",
@@ -719,7 +719,7 @@ export const TestCasesDisplay = ({
 
     // Make the API request to fetch failed test case analysis
     fetchData<ServerResponse<AiChatResponse>>(
-      `/ai-chat-service/analyse-failed-test-cases`,
+      `/gen-ai-service/analyse-failed-test-cases`,
       SERVICE.AI,
       {
         method: "POST",

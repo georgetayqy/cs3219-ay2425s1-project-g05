@@ -325,7 +325,7 @@ export default function TextChatWidget({ roomId, question, solutionCode }: TextC
 
     console.log('sending message to AI');
     fetchData<ServerResponse<AiChatResponse>>(
-      `/ai-chat-service/chat`,
+      `/gen-ai-service/chat`,
       SERVICE.AI,
       {
         method: "POST",

@@ -17,7 +17,7 @@ app.use(loggingMiddleware);
 // Test Route for Health Checks
 app.get('/healthz', (request, response) => {
   response.status(200).json({
-    message: 'Connected to the /healthz route of the ai-chat-service',
+    message: 'Connected to the /healthz route of the gen-ai-service',
   });
 });
 
@@ -76,7 +76,7 @@ setInterval(() => {
 
 
 // Endpoint to check if active chat session exists
-app.post('/api/ai-chat-service/check-active-session', async (req, res) => {
+app.post('/api/gen-ai-service/check-active-session', async (req, res) => {
   const { userId, roomId } = req.body;
 
   if (!userId || !roomId) {
@@ -97,7 +97,7 @@ app.post('/api/ai-chat-service/check-active-session', async (req, res) => {
 
 
 // Create chat session endpoint
-app.post('/api/ai-chat-service/create-session', async (req, res) => {
+app.post('/api/gen-ai-service/create-session', async (req, res) => {
   console.log('creating sessionnn')
 
   const { userId, roomId, apiKey } = req.body;
@@ -174,7 +174,7 @@ app.post('/api/ai-chat-service/create-session', async (req, res) => {
 });
 
 // Chat endpoint
-app.post('/api/ai-chat-service/chat', async (req, res) => {
+app.post('/api/gen-ai-service/chat', async (req, res) => {
   const { message, userId, roomId } = req.body;
 
   if (!message || !userId || !roomId) {
@@ -221,7 +221,7 @@ app.post('/api/ai-chat-service/chat', async (req, res) => {
 });
 
 // Analyse failed test cases endpoint
-app.post('/api/ai-chat-service/analyse-failed-test-cases', async (req, res) => {
+app.post('/api/gen-ai-service/analyse-failed-test-cases', async (req, res) => {
   
   const { testProgramCode, expectedOutput, actualOutput, solutionCode, question, userId, roomId } = req.body;
 
@@ -269,7 +269,7 @@ app.post('/api/ai-chat-service/analyse-failed-test-cases', async (req, res) => {
 })
 
 // Analyse error logs endpoint
-app.post('/api/ai-chat-service/analyse-error-logs', async (req, res) => {
+app.post('/api/gen-ai-service/analyse-error-logs', async (req, res) => {
 
   const { errorLogs, solutionCode, userId, roomId } = req.body;
 
