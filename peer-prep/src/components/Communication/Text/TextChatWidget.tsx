@@ -362,21 +362,27 @@ export default function TextChatWidget({
           // });
 
           let message;
-          if (isAiChat) {
-            message = `${messageToSend}\n--------------\n${responseText}`;
-          } else {
-            if (aiButtonType === AiAssistButtonType.GEN_HINTS) {
-              message = `Sure! Here are the hints to the question:\n\n${responseText}`;
-            } else if (aiButtonType === AiAssistButtonType.GEN_SOLUTION) {
-              message = `Sure! Here is the solution to the question:\n\n${responseText}`;
-            } else if (aiButtonType === AiAssistButtonType.CODE_EXPLANATION) {
-              message = `Sure! Here is the explanation of your current code:\n\n${responseText}`;
-            } else if (
-              aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
-            ) {
-              message = `Sure! Here is the explanation of the question:\n\n${responseText}`;
-            }
-          }
+          message = `Q: ${messageToSend}
+
+_________________
+
+**Response from Gemini:**
+${responseText}`;
+          // if (isAiChat) {
+          //   message = `${messageToSend}\n--------------\n${responseText}`;
+          // } else {
+          //   if (aiButtonType === AiAssistButtonType.GEN_HINTS) {
+          //     message = `Sure! Here are the hints to the question:\n\n${responseText}`;
+          //   } else if (aiButtonType === AiAssistButtonType.GEN_SOLUTION) {
+          //     message = `Sure! Here is the solution to the question:\n\n${responseText}`;
+          //   } else if (aiButtonType === AiAssistButtonType.CODE_EXPLANATION) {
+          //     message = `Sure! Here is the explanation of your current code:\n\n${responseText}`;
+          //   } else if (
+          //     aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
+          //   ) {
+          //     message = `Sure! Here is the explanation of the question:\n\n${responseText}`;
+          //   }
+          // }
 
           socket.emit("chat-message", {
             roomId: roomId,
@@ -1327,6 +1333,7 @@ function TextMessage({
       );
     }
   }
+  console.log({ msg });
 
   const messageContentSplit = splitTextIntoObjects(msg.content);
   console.log({ messageContentSplit });
@@ -1418,6 +1425,8 @@ function TextMessage({
                   style={{
                     textOverflow: "ellipsis",
                     overflow: "hidden",
+                    // clamp to 1 line
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {
@@ -1488,6 +1497,7 @@ function TextMessage({
                   style={{
                     textOverflow: "ellipsis",
                     overflow: "hidden",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {
@@ -1564,6 +1574,7 @@ function splitTextIntoObjects(text: string): FormattableText[] {
     lastIndex = endIndex;
   };
 
+  console.log({ text });
   // Loop through each pattern type
   for (const [type, pattern] of Object.entries(patterns)) {
     // Reset lastIndex for each pattern search
@@ -1575,7 +1586,7 @@ function splitTextIntoObjects(text: string): FormattableText[] {
   }
 
   // Add any remaining plain text after the last match
-  if (lastIndex < text.length) {
+  if (!text || lastIndex < text.length) {
     result.push({
       content: text.slice(lastIndex),
       type: "plain",
