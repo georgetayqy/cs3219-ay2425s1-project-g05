@@ -74,7 +74,11 @@ import {
   useTimeout,
 } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { formatTime } from "../../../utils/utils";
+import {
+  formatTime,
+  generateReactObjects,
+  splitTextIntoObjects,
+} from "../../../utils/utils";
 import VideoChatWidget from "../Video/VideoChatWidget";
 import { User } from "../../../types/user";
 
@@ -82,7 +86,6 @@ import GeminiIcon from "../../../assets/integrations/google-gemini-icon.svg";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { CodeHighlight } from "@mantine/code-highlight";
 import { useAi } from "../../../hooks/useAi";
-import ReactMarkdown from "react-markdown";
 import { text } from "stream/consumers";
 
 enum ChatState {
@@ -1341,52 +1344,7 @@ function TextMessage({
   }
   console.log({ msg });
 
-  const messageContentSplit = splitTextIntoObjects(msg.content);
-  console.log({ messageContentSplit });
-
-  const textObjects = messageContentSplit.map((textObj, i) => {
-    switch (textObj.type) {
-      case "code":
-        // look in textObj.content for the matching language
-        const languages = {
-          js: /\b(javascript|js|function|const|let|=>|console\.log|document)\b/,
-          python: /\b(python|def|print\(|import|class|lambda|self)\b/,
-          java: /\b(java|public\s+class|System\.out\.print|void\s+main|new\s+[A-Z])/,
-          c: /\b(cpp|#include|int\s+main|printf|scanf)\b/,
-          html: /<html>|<body>|<\/html>|<\/body>/,
-          css: /\b(color:|background-color:|font-size:|margin:|padding:)\b/,
-          sql: /\b(sql|SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)\b/,
-          // Add more languages and patterns here as needed
-        };
-
-        let codeLang = "";
-
-        // Check each language pattern against the text
-        for (const [language, pattern] of Object.entries(languages)) {
-          if (pattern.test(textObj.content)) {
-            codeLang = language;
-          }
-        }
-        return (
-          <CodeHighlight
-            code={textObj.content}
-            language={codeLang}
-            copyLabel="Copy"
-            copiedLabel="Copied"
-            key={i}
-            onClick={(e) => e.stopPropagation()}
-          />
-          // <Code block>{textObj.content}</Code>
-        );
-        break;
-      case "plain":
-        return (
-          <ReactMarkdown key={i} children={textObj.content}></ReactMarkdown>
-        );
-        // return <Text key={i}> {textObj.content} </Text>;
-        break;
-    }
-  });
+  const textObjects = generateReactObjects(msg.content);
   return (
     <Box
       id={msg.messageId}
@@ -1462,7 +1420,6 @@ function TextMessage({
             {getAvatar(msg.integration)}
             <Box className={`${classes.textBox}`}>
               {" "}
-              {/* {msg.content}{" "} */}
               {textObjects}
               <span className={`${classes.timestamp}`}>
                 {formatTime(new Date(msg.timestamp))}{" "}
@@ -1538,66 +1495,4 @@ function TextMessage({
       )}
     </Box>
   );
-}
-
-type FormattableTextOption = "plain" | "code";
-
-type FormattableText = {
-  content: string;
-  type: FormattableTextOption;
-};
-function splitTextIntoObjects(text: string): FormattableText[] {
-  const result = [];
-
-  // Define patterns for different types, making it easy to expand in the future
-  const patterns = {
-    code: /```([^`]*)```/g,
-    // Future patterns like bold, underline can be added here
-    // bold: /\*\*([^*]+)\*\*/g,
-    // underline: /__(.*?)__/g
-  };
-
-  let lastIndex = 0;
-  let match;
-
-  // Function to process a pattern match
-  const processMatch = (match, type, startIndex, endIndex) => {
-    // Add any plain text before the matched pattern
-    if (startIndex > lastIndex) {
-      result.push({
-        content: text.slice(lastIndex, startIndex),
-        type: "plain",
-      });
-    }
-
-    // Add the matched content as the specified type
-    result.push({
-      content: match.trim() + "\n",
-      type: type,
-    });
-
-    // Update lastIndex to continue after this matched pattern
-    lastIndex = endIndex;
-  };
-
-  console.log({ text });
-  // Loop through each pattern type
-  for (const [type, pattern] of Object.entries(patterns)) {
-    // Reset lastIndex for each pattern search
-    lastIndex = 0;
-
-    while ((match = pattern.exec(text)) !== null) {
-      processMatch(match[1], type, match.index, pattern.lastIndex);
-    }
-  }
-
-  // Add any remaining plain text after the last match
-  if (!text || lastIndex < text.length) {
-    result.push({
-      content: text.slice(lastIndex),
-      type: "plain",
-    });
-  }
-
-  return result;
 }
