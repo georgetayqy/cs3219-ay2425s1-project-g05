@@ -1,5 +1,6 @@
 import {
   Accordion,
+  Anchor,
   Avatar,
   Badge,
   Box,
@@ -8,7 +9,11 @@ import {
   Container,
   Flex,
   Group,
+  Input,
+  Loader,
+  Modal,
   Paper,
+  PasswordInput,
   Rating,
   ScrollArea,
   SimpleGrid,
@@ -18,6 +23,7 @@ import {
   Textarea,
   Title,
   TypographyStylesProvider,
+  useMantineColorScheme,
 } from "@mantine/core";
 import classes from "./SessionPage.module.css";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
@@ -37,6 +43,7 @@ import { UserResponseData } from "../../../types/user";
 
 import { TestCaseResult as TestCaseResultDb } from "../../../types/attempts";
 import AlertBox from "../../../components/Alert/AlertBox";
+import { AIProvider, useAi } from "../../../hooks/useAi";
 
 type QuestionCategory =
   | "ALGORITHMS"
@@ -69,6 +76,25 @@ interface HistoryResponse {
   attempt: any;
 }
 
+let dummyQuestion: Question = {
+  _id: "1",
+  title: "",
+  categories: [],
+  difficulty: "EASY",
+  __v: 0,
+  categoriesId: [],
+  description: {
+    descriptionText: "",
+    descriptionHtml: "",
+  },
+  isDeleted: false,
+  link: "",
+  meta: {},
+  solutionCode: "",
+  templateCode: "",
+  testCases: [],
+};
+
 export default function SessionPage() {
   const WEBSOCKET_URL = import.meta.env.VITE_COLLAB_WS_URL || LOCAL_WEBSOCKET;
 
@@ -90,32 +116,34 @@ export default function SessionPage() {
     roomIdReceived: string;
     otherUserIdReceived: string;
   } = location.state || {};
+  console.log({ questionReceived });
+  const question = questionReceived || dummyQuestion;
 
   const roomId = useParams().roomId;
 
+  const { colorScheme } = useMantineColorScheme();
+
   // Room ID and Question details from matching of users
   // TODO don't depend on location.state, make request to get question and room details? OR include it in the URL?
-  const [question, setQuestion] = useState(questionReceived);
   const [otherUserId, setOtherUserId] = useState(otherUserIdReceived);
   const [channelId, setChannelId] = useState<string | null>(null);
   const [otherUserDisplayName, setOtherUserDisplayName] = useState("");
   const [otherUserEmail, setOtherUserEmail] = useState("");
 
   // Question details to be displayed
-  const [questionCategories, setQuestionCategories] = useState<
-    QuestionCategory[]
-  >([]);
-  const [questionDifficulty, setQuestionDifficulty] = useState(
-    question.difficulty
-  );
-  const [questionTitle, setQuestionTitle] = useState(question.title);
-  const [questionDescription, setQuestionDescription] = useState(
-    question.description.descriptionHtml
-  );
-  const [leetCodeLink, setLeetCodeLink] = useState(question.link);
+  // todo   QuestionCategory[]
 
-  const [templateCode, setTemplateCode] = useState(question.templateCode);
-  const [attemptCode, setAttemptCode] = useState(question.templateCode);
+  const {
+    difficulty: questionDifficulty,
+    categories: questionCategories,
+    title: questionTitle,
+    description: questionDescription,
+    link: leetCodeLink,
+    templateCode,
+  } = question;
+
+  // todo
+  // const [attemptCode, setAttemptCode] = useState(question.templateCode);
   const latestResultsRef = useRef<TestCaseResult[]>([]);
 
   // when true, don't show modal when # users in room < 2
@@ -408,6 +436,42 @@ export default function SessionPage() {
     });
   };
 
+  const {
+    isApiKeyModalVisible,
+    setApiKeyModalVisible,
+    hasApiKey,
+    setHasApiKey,
+    openSendApiKeyModal,
+    deleteApiKey,
+  } = useAi();
+
+  // Check if user has already sent their API key
+  useEffect(() => {
+    fetchData<ServerResponse<{ hasActiveSession: boolean }>>(
+      `/gen-ai-service/check-active-session`,
+      SERVICE.AI,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          roomId: roomId,
+        }),
+      }
+    )
+      .then((response) => {
+        console.log("LOG: hasActiveSession = ", response.data.hasActiveSession);
+        if (response.data.hasActiveSession) {
+          setHasApiKey(true);
+        }
+      })
+      .catch((error: any) => {
+        console.error("Error checking active session", error);
+      });
+  }, []);
+
   const handleEndSession = async () => {
     // call history service to create an attempt
     try {
@@ -481,6 +545,10 @@ export default function SessionPage() {
       const attempt = response.data.attempt;
       console.log("Attempt", attempt);
 
+      // delete the AI session
+      if (hasApiKey) {
+        deleteApiKey({ roomId, user });
+      }
       // navigate to session summary page
       navigate(`/session/summary/${roomId}`, {
         state: { roomIdReceived: roomId, attemptReceived: attempt },
@@ -507,7 +575,11 @@ export default function SessionPage() {
 
   return (
     <ModalsProvider>
-      <TextChatWidget roomId={roomId} />
+      <TextChatWidget
+        roomId={roomId}
+        question={question.description.descriptionHtml}
+        solutionCode={currentValueRef.current}
+      />
       <Box className={classes.wrapper}>
         {/* Collaborator Details */}
         <Group mb="md" style={{ alignItems: "center" }}>
@@ -533,9 +605,9 @@ export default function SessionPage() {
             radius="md"
             withBorder
             style={{
-              flex: 1,
+              // flex: 1,
               minHeight: "100%",
-              maxWidth: "50%",
+              width: "50%",
               overflow: "auto",
             }}
             className={classes.paper}
@@ -567,7 +639,9 @@ export default function SessionPage() {
                     overflowWrap: "break-word",
                     wordBreak: "break-word",
                   }}
-                  dangerouslySetInnerHTML={{ __html: questionDescription }}
+                  dangerouslySetInnerHTML={{
+                    __html: questionDescription.descriptionHtml,
+                  }}
                 ></div>
               </TypographyStylesProvider>
             </ScrollArea>
@@ -607,7 +681,7 @@ export default function SessionPage() {
                 endpoint={WEBSOCKET_URL}
                 room={roomId}
                 userId={user._id}
-                theme="dark"
+                theme={`vs-${colorScheme}`}
                 height={"500px"}
                 defaultValue={question.templateCode}
                 currentValueRef={currentValueRef}
@@ -622,6 +696,8 @@ export default function SessionPage() {
               userId={user._id}
               otherUserId={otherUserId}
               latestResultsRef={latestResultsRef}
+              roomId={roomId}
+              question={question.description.descriptionText}
             />
           </Stack>
         </Flex>

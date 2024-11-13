@@ -7,8 +7,10 @@ import {
   Button,
   ButtonProps,
   Code,
+  Divider,
   Flex,
   Group,
+  Modal,
   Paper,
   ScrollArea,
   Select,
@@ -40,18 +42,19 @@ import {
   TestCaseResult,
   UserAttempt,
 } from "../../../types/attempts";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { UserResponseData } from "../../../types/user";
 import { CodeHighlight } from "@mantine/code-highlight";
 import { kBtoMb, secondsToMsIfappropriate } from "../../../utils/utils";
+import { useDisclosure } from "@mantine/hooks";
 
 export default function SessionSummaryPage() {
   const { fetchData } = useApi();
 
   const location = useLocation();
-  const { roomIdReceived, attemptReceived } = location.state || {};
+  const { attemptReceived } = location.state || {};
+  const { roomId } = useParams();
 
-  const [roomId, setRoomId] = useState(roomIdReceived);
   const [attempt, setAttempt] = useState<UserAttempt>(attemptReceived);
 
   // Attempt data to display
@@ -69,56 +72,56 @@ export default function SessionSummaryPage() {
   const [testCaseResults, setTestCaseResults] = useState<TestCaseResult[]>([]);
   const [privateTestsPassed, setPrivateTestsPassed] = useState(true);
 
+  const navigate = useNavigate();
   // Retrieve session summary and details of other user on page load
   useEffect(() => {
-    getSessionSummary();
-    getOtherUser();
+    getSessionSummary()
+      .then(() => getOtherUser())
+      .catch(console.error);
   }, []);
+
+  const [opened, { open, close }] = useDisclosure(false);
 
   const getSessionSummary = async () => {
     try {
-      fetchData<ServerResponse<AttemptData>>(
+      const response = await fetchData<ServerResponse<AttemptData>>(
         `/history-service/attempt/${roomId}`,
         SERVICE.HISTORY
-      ).then((response) => {
-        getQuestion(response.data.attempt[0].question._id);
-        console.log("LOG: Attempt data: ", { data: response.data });
-        const attempt = response.data.attempt[0];
-        setAttempt(attempt);
+      );
+      console.log("LOG: Attempt data: ", { data: response.data });
+      const attempt = response.data.attempt[0];
+      setAttempt(attempt);
 
-        const question = attempt.question as Question;
-        setQuestionTitle(question.title);
-        setQuestionDescription(question.description.descriptionHtml);
+      const question = attempt.question as Question;
+      setQuestionTitle(question.title);
+      setQuestionDescription(question.description.descriptionHtml);
 
-        setCompletedAt(formatDateTime(attempt.createdAt));
-        if (attempt.notes !== " ") {
-          setNotes(attempt.notes);
-        }
+      setCompletedAt(formatDateTime(attempt.createdAt));
+      if (attempt.notes !== " ") {
+        setNotes(attempt.notes);
+      }
 
-        setUserSolution(attempt.attemptCode);
+      setUserSolution(attempt.attemptCode);
 
-        setTestCaseResults(attempt.testCaseResults);
-        setPrivateTestsPassed(
-          calculateSummary(attempt.testCaseResults).failed === 0
-        );
-      });
+      setTestCaseResults(attempt.testCaseResults);
+      setPrivateTestsPassed(
+        calculateSummary(attempt.testCaseResults).failed === 0
+      );
     } catch (error: any) {
       console.error("Error getting session summary:", error);
       notifications.show({
+        title: "Error",
         message: error.message,
         color: "red",
       });
-    }
-  };
 
-  const getQuestion = (qnId: string) => {
-    fetchData<ServerResponse<Question>>(
-      `/question-service/id/${qnId}`,
-      SERVICE.QUESTION
-    ).then((response) => {
-      console.log({ response });
-      const question = response.data;
-    });
+      if (error.statusCode === 404) {
+        // attempt not found
+        navigate("/dashboard", { replace: true });
+      }
+
+      throw error;
+    }
   };
 
   const getOtherUser = async () => {
@@ -203,10 +206,55 @@ export default function SessionSummaryPage() {
     },
   };
 
+  const handleDelete = () => {
+    console.log(roomId);
+    fetchData<ServerResponse<{ attempt: UserAttempt }>>(
+      `/history-service/attempt/${roomId}`,
+      SERVICE.HISTORY,
+      {
+        method: "DELETE",
+      }
+    ).then((response) => {
+      notifications.show({
+        message: "Attempt deleted successfully",
+        color: "green",
+      });
+
+      close();
+      navigate("/dashboard", { replace: true });
+    });
+  };
+
   return (
     <Flex className={classes.wrapper}>
-      <Stack align="flex-start">
-        <Title>Congratulations 🎉</Title>
+      <Modal opened={opened} onClose={close} title="Confirm deletion" centered>
+        <Stack>
+          <Box py="lg">Are you sure you want to delete this attempt?</Box>
+          <Divider />
+          <Group justify="end">
+            <Button size="sm" variant="subtle" color="gray" onClick={close}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              color="red"
+              onClick={() => handleDelete()}
+              variant="filled"
+            >
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+      <Stack align="flex-start" style={{ width: "100%" }}>
+        <Group gap={8} style={{ width: "100%" }}>
+          <Title>Congratulations 🎉</Title>
+          <Space flex={1} />
+
+          <Button onClick={open} variant="light" color="red">
+            Delete
+          </Button>
+        </Group>
         <Text color="dimmed">Completed on {completedAt} </Text>
 
         {/* Collaborator Details */}

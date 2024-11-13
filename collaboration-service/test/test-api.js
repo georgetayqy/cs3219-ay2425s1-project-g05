@@ -3,12 +3,30 @@ import { app } from '../server.js';
 import request from 'supertest';
 import LocalClient from '../src/session/client.js';
 import { deleted } from '../src/server/utils.js';
+import { config } from 'dotenv';
+import jwt from 'jsonwebtoken';
+
+// get the configs needed for test cases
+config();
+
+// generate a temporary jwt token to test
+const token = jwt.sign(
+  {
+    userId: 'user1',
+    email: 'email@email.com',
+    displayName: 'display',
+    isAdmin: true,
+    isDeleted: false,
+  },
+  process.env.ACCESS_TOKEN_SECRET
+);
 
 describe('Collaboration Service API', () => {
   describe('Test healthz Endpoint', () => {
     it('connected succcessfully', async function () {
       const result = await request(app)
         .get('/healthz')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(200)
         .expect('Content-Type', /json/);
       assert.equal(
@@ -25,6 +43,7 @@ describe('Collaboration Service API', () => {
     it('with missing users', async function () {
       const result = await request(app)
         .post('/api/collaboration-service/create-room')
+        .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question' })
         .expect(403)
         .expect('Content-Type', /json/);
@@ -38,6 +57,7 @@ describe('Collaboration Service API', () => {
     it('with missing question', async function () {
       const result = await request(app)
         .post('/api/collaboration-service/create-room')
+        .set({ Cookie: `accessToken=${token}` })
         .send({ users: ['user1', 'user2'] })
         .expect(403)
         .expect('Content-Type', /json/);
@@ -51,18 +71,21 @@ describe('Collaboration Service API', () => {
     it('with users in seperate rooms', async function () {
       const first = await request(app)
         .post('/api/collaboration-service/create-room')
+        .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question 1', users: ['userabc', 'userdef'] })
         .expect(200)
         .expect('Content-Type', /json/);
 
       const second = await request(app)
         .post('/api/collaboration-service/create-room')
+        .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question 2', users: ['userhij', 'userkmn'] })
         .expect(200)
         .expect('Content-Type', /json/);
 
       const test = await request(app)
         .post('/api/collaboration-service/create-room')
+        .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question 2', users: ['userabc', 'userkmn'] })
         .expect(403)
         .expect('Content-Type', /json/);
@@ -73,6 +96,7 @@ describe('Collaboration Service API', () => {
     it('with valid data', async function () {
       const result = await request(app)
         .post('/api/collaboration-service/create-room')
+        .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question 1', users: ['user1', 'user2'] })
         .expect(200)
         .expect('Content-Type', /json/);
@@ -87,6 +111,7 @@ describe('Collaboration Service API', () => {
     it('missing room', async function () {
       const result = await request(app)
         .delete('/api/collaboration-service/rooms')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(404)
         .expect('Content-Type', /json/);
 
@@ -96,6 +121,7 @@ describe('Collaboration Service API', () => {
     it('invalid room', async function () {
       const result = await request(app)
         .delete('/api/collaboration-service/rooms?roomId=123123213123123')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(404)
         .expect('Content-Type', /json/);
 
@@ -105,6 +131,7 @@ describe('Collaboration Service API', () => {
     it('valid room', async function () {
       const first = await request(app)
         .post('/api/collaboration-service/create-room')
+        .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question 1', users: ['user1', 'user2'] })
         .expect(200)
         .expect('Content-Type', /json/);
@@ -113,6 +140,7 @@ describe('Collaboration Service API', () => {
 
       const result = await request(app)
         .delete(`/api/collaboration-service/rooms?roomId=${roomId}`)
+        .set({ Cookie: `accessToken=${token}` })
         .expect(200)
         .expect('Content-Type', /json/);
 
@@ -126,6 +154,7 @@ describe('Collaboration Service API', () => {
     it('missing roomId', async function () {
       const result = await request(app)
         .get('/api/collaboration-service/rooms')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(404)
         .expect('Content-Type', /html/);
     });
@@ -133,6 +162,7 @@ describe('Collaboration Service API', () => {
     it('invalid roomId', async function () {
       const result = await request(app)
         .get('/api/collaboration-service/rooms/asdnasdsa')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(403)
         .expect('Content-Type', /json/);
 
@@ -142,12 +172,14 @@ describe('Collaboration Service API', () => {
     it('valid roomId', async function () {
       const create = await request(app)
         .post('/api/collaboration-service/create-room')
+        .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question 1', users: ['user1', 'user2'] })
         .expect(200)
         .expect('Content-Type', /json/);
 
       const result = await request(app)
         .get(`/api/collaboration-service/rooms/${create.body.data.roomId}`)
+        .set({ Cookie: `accessToken=${token}` })
         .expect(200)
         .expect('Content-Type', /json/);
 
@@ -159,6 +191,7 @@ describe('Collaboration Service API', () => {
     it('can get non-existent room', async () => {
       const result = await request(app)
         .get('/api/collaboration-service/rooms/status/123123123')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(200)
         .expect('Content-Type', /json/);
 
@@ -169,6 +202,7 @@ describe('Collaboration Service API', () => {
       deleted.add('abde123');
       const result = await request(app)
         .get('/api/collaboration-service/rooms/status/abde123')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(200)
         .expect('Content-Type', /json/);
 
@@ -181,6 +215,7 @@ describe('Collaboration Service API', () => {
     it('cannot delete non-existent room', async () => {
       const result = await request(app)
         .post('/api/collaboration-service/rooms/status/123123123')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(404)
         .expect('Content-Type', /json/);
 
@@ -191,6 +226,7 @@ describe('Collaboration Service API', () => {
       LocalClient.docToUser.set('abde123', ['user1', 'user2']);
       const result = await request(app)
         .post('/api/collaboration-service/rooms/status/abde123')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(200)
         .expect('Content-Type', /json/);
 
@@ -205,6 +241,7 @@ describe('Collaboration Service API', () => {
     it('missing roomId', async function () {
       const result = await request(app)
         .get('/api/collaboration-service/users')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(403)
         .expect('Content-Type', /json/);
 
@@ -214,6 +251,7 @@ describe('Collaboration Service API', () => {
     it('invalid roomId', async function () {
       const result = await request(app)
         .get('/api/collaboration-service/users?userId=asdnasdsa')
+        .set({ Cookie: `accessToken=${token}` })
         .expect(403)
         .expect('Content-Type', /json/);
 
@@ -223,12 +261,14 @@ describe('Collaboration Service API', () => {
     it('valid roomId', async function () {
       const create = await request(app)
         .post('/api/collaboration-service/create-room')
+        .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question 1', users: ['user1', 'user2'] })
         .expect(200)
         .expect('Content-Type', /json/);
 
       const result = await request(app)
         .get(`/api/collaboration-service/users?userId=user1`)
+        .set({ Cookie: `accessToken=${token}` })
         .expect(200)
         .expect('Content-Type', /json/);
 

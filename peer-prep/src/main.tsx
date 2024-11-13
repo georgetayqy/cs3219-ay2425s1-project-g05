@@ -6,6 +6,8 @@ import {
   BrowserRouter,
   createBrowserRouter,
   RouterProvider,
+  useLocation,
+  useNavigate,
 } from "react-router-dom";
 import Home from "./pages/Home/HomePage.tsx";
 import LoginOrRegisterPage from "./pages/Login/LoginPage.tsx";
@@ -30,7 +32,9 @@ import ReadQuestionPage from "./pages/Questions/ReadQuestionPage/ReadQuestionPag
 import SessionPage from "./pages/Session/SessionPage/SessionPage.tsx";
 
 import "@fontsource/inter";
-import TempSessionPage from "./pages/Session/Temp/TempSessionPage.tsx";
+import { AIProvider } from "./hooks/useAi.tsx";
+import ProtectedSessionWrapper from "./pages/Session/ProtectedSessionWrapper.tsx";
+import ChangePasswordPage from "./pages/ChangePassword/ChangePasswordPage.tsx";
 
 const router = createBrowserRouter([
   {
@@ -105,6 +109,10 @@ const router = createBrowserRouter([
             element: <DashboardPage />,
           },
           {
+            path: "/change-password",
+            element: <ChangePasswordPage />,
+          },
+          {
             path: "/learn",
             element: <Button>learn!</Button>,
           },
@@ -130,12 +138,18 @@ const router = createBrowserRouter([
                 element: <SearchingPage />,
               },
               {
-                path: "/session/:roomId",
-                element: <SessionPage />,
-              },
-              {
                 path: "/session/summary/:roomId",
                 element: <SessionSummaryPage />,
+              },
+              {
+                path: "/session/",
+                element: <ProtectedSessionWrapper />,
+                children: [
+                  {
+                    path: ":roomId",
+                    element: <SessionPage />,
+                  },
+                ],
               },
             ],
           },

@@ -23,14 +23,16 @@ import {
   Menu,
   Radio,
   rem,
+  Select,
   Space,
   Stack,
   Switch,
   Text,
   Textarea,
   Tooltip,
+  useMantineColorScheme,
 } from "@mantine/core";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 
 import classes from "./TextChatWidget.module.css";
 import { useAuth } from "../../../hooks/useAuth";
@@ -79,6 +81,9 @@ import { User } from "../../../types/user";
 import GeminiIcon from "../../../assets/integrations/google-gemini-icon.svg";
 import useApi, { ServerResponse, SERVICE } from "../../../hooks/useApi";
 import { CodeHighlight } from "@mantine/code-highlight";
+import { useAi } from "../../../hooks/useAi";
+import ReactMarkdown from "react-markdown";
+import { text } from "stream/consumers";
 
 enum ChatState {
   DISCONNECTED,
@@ -130,6 +135,8 @@ type IntegrationError = {
 
 interface TextChatWidgetProps {
   roomId: string;
+  question: string;
+  solutionCode: string;
 }
 type IntegrationId = "gemini_1.0";
 type SendTarget = "person" | IntegrationId;
@@ -148,13 +155,27 @@ interface AiChatResponse {
   reply: string;
 }
 
-export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
+enum AiAssistButtonType {
+  GEN_HINTS,
+  GEN_SOLUTION,
+  CODE_EXPLANATION,
+  QUESTION_EXPLANATION,
+}
+
+export default function TextChatWidget({
+  roomId,
+  question,
+  solutionCode,
+}: TextChatWidgetProps) {
   const { user } = useAuth();
+  const { colorScheme } = useMantineColorScheme();
+
+  const { hasApiKey, openSendApiKeyModal, setHasApiKey, deleteApiKey } =
+    useAi();
 
   const [messageState, setMessageState] = useState<MessageState>(
     MessageState.BEFORE_SEND
   );
-  const wasFocusedOnInput = useRef(false);
 
   const [chatState, setChatState] = useState<ChatState>(ChatState.DISCONNECTED);
   const [usersInRoom, setUsersInRoom] = useState<ChatRoomUser[]>([]);
@@ -175,6 +196,9 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
   const [isSendToMenuOpen, setIsSendToMenuOpen] = useState(false);
   const [showIntegrations, setShowIntegrations] = useState(true);
 
+  const [isAiChat, setIsAiChat] = useState(false);
+  const [aiButtonType, setAiButtonType] = useState<AiAssistButtonType | null>();
+
   const [integrationErrorState, setIntegrationErrorState] =
     useState<IntegrationError>({});
 
@@ -182,16 +206,6 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // useEffect(() => {
-  //   if (
-  //     wasFocusedOnInput.current &&
-  //     messageState === MessageState.BEFORE_SEND
-  //   ) {
-  //     // re-focus on the input
-  //     inputRef.current?.focus();
-  //   }
-  // }, [messageState, inputRef.current]);
 
   const resetState = () => {
     setReplyToMessage(null);
@@ -244,7 +258,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     if (roomId.trim() === "") return;
     console.log(`Room ID: ${roomId}`);
 
-    socket.emit("joinRoom", {
+    socket.emit("join-room", {
       roomId,
       user: {
         userId: user._id,
@@ -261,6 +275,9 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     if (e.type === "click") {
       e.stopPropagation();
       e.preventDefault();
+      if (defaultSendTo === "gemini_1.0") {
+        setIsAiChat(true);
+      }
       onBeforeSendMessage();
     } else if (e.type === "contextmenu") {
       e.stopPropagation();
@@ -275,7 +292,13 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     if (defaultSendTo === "person") {
       onSendMessage();
     } else if (defaultSendTo === "gemini_1.0") {
-      onSendAiMessage();
+      if (hasApiKey) {
+        console.log("user already keyed in their api key");
+        onSendAiMessage();
+      } else {
+        console.log("user has not keyed in their api key");
+        openSendApiKeyModal({ roomId, user, callback: onSendAiMessage });
+      }
     }
   };
   const onSendMessage = () => {
@@ -311,20 +334,23 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
 
     setMessageState(MessageState.SENDING);
 
-    try {
-      fetchData<ServerResponse<AiChatResponse>>(
-        `/ai-chat-service/chat`,
-        SERVICE.AI,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message: messageToSend,
-          }),
-        }
-      ).then((res) => {
+    console.log("sending message to AI");
+    fetchData<ServerResponse<AiChatResponse>>(
+      `/gen-ai-service/chat`,
+      SERVICE.AI,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: messageToSend,
+          userId: user._id,
+          roomId: roomId,
+        }),
+      }
+    )
+      .then((res) => {
         console.log("AI response", res);
 
         if (res.statusCode === 200) {
@@ -336,28 +362,77 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
           //   replyToId: replyToMessage?.messageId,
           // });
 
+          let message;
+          message = `Q: ${messageToSend}
+
+_________________
+
+**Response from Gemini:**
+${responseText}`;
+          // if (isAiChat) {
+          //   message = `${messageToSend}\n--------------\n${responseText}`;
+          // } else {
+          //   if (aiButtonType === AiAssistButtonType.GEN_HINTS) {
+          //     message = `Sure! Here are the hints to the question:\n\n${responseText}`;
+          //   } else if (aiButtonType === AiAssistButtonType.GEN_SOLUTION) {
+          //     message = `Sure! Here is the solution to the question:\n\n${responseText}`;
+          //   } else if (aiButtonType === AiAssistButtonType.CODE_EXPLANATION) {
+          //     message = `Sure! Here is the explanation of your current code:\n\n${responseText}`;
+          //   } else if (
+          //     aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
+          //   ) {
+          //     message = `Sure! Here is the explanation of the question:\n\n${responseText}`;
+          //   }
+          // }
+
           socket.emit("chat-message", {
             roomId: roomId,
-            message: `${messageToSend}\n--------------\n${responseText}`,
+            message: message,
             replyToId: replyToMessage?.messageId,
             integration: integration,
           });
         } else {
           const errorMessage = res.message || "Error chatting with AI";
           handleIntegrationError(integration, errorMessage);
-        }
-      });
-    } catch (e) {
-      const errorMessage =
-        "Error sending message. Please check your internet connection.";
-      handleIntegrationError(integration, errorMessage);
 
-      notifications.show({
-        title: "Error chatting with AI",
-        message: errorMessage,
-        color: "red",
+          // Emit error message to the chat widget
+          // Adding a slight delay before emitting the error message
+          setTimeout(() => {
+            socket.emit("chat-message", {
+              roomId: roomId,
+              message: `⚠️ ${errorMessage}`,
+              replyToId: replyToMessage?.messageId,
+              integration: integration,
+            });
+          }, 1500);
+        }
+      })
+      .catch((e) => {
+        console.log("Error chatting with AI", e);
+        const errorMessage =
+          "Error chatting with AI. Please enter your API key and try again.";
+        handleIntegrationError(integration, errorMessage);
+
+        // Adding a slight delay before emitting the error message
+        setTimeout(() => {
+          socket.emit("chat-message", {
+            roomId: roomId,
+            message: `⚠️ ${errorMessage}`,
+            replyToId: replyToMessage?.messageId,
+            integration: integration,
+          });
+        }, 1500);
+
+        notifications.show({
+          title: "Error chatting with AI",
+          message: errorMessage,
+          color: "red",
+        });
+
+        setHasApiKey(false);
+        deleteApiKey({ roomId, user });
+        // openSendApiKeyModal({ roomId, user });
       });
-    }
   };
 
   const handleIntegrationError = (
@@ -511,6 +586,66 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
     setTimeout(() => {
       setRenderVideo(true);
     }, 100);
+  }
+
+  // Helper function to simulate a click
+  const simulateClick = () => {
+    const event = new MouseEvent("click", { bubbles: true });
+    const sendButton = document.getElementById("sendButtonId");
+    console.log("sendButton", sendButton);
+    if (sendButton) {
+      sendButton.dispatchEvent(event);
+    }
+  };
+
+  function handleGenerateHints() {
+    const prompt =
+      `Can you generate helpful hints for the following coding question?\n\n"${question}"\n\n` +
+      `Please provide 3-4 hints that guide the user towards solving the problem without giving away the full solution. ` +
+      `Keep the hints concise and focused on the key concepts needed to solve the problem.`;
+    setDraftMessage(prompt);
+    setIsAiChat(false);
+    setAiButtonType(AiAssistButtonType.GEN_HINTS);
+
+    onBeforeSendMessage();
+
+    simulateClick();
+  }
+
+  function handleGenerateSolution() {
+    const prompt =
+      `I have attempted a solution for this coding question:\n\n"${question}"\n\n` +
+      `Here is my current code:\n\n"${solutionCode}"\n\n` +
+      `Can you generate a correct solution for this problem and briefly explain how it differs from my attempt? ` +
+      `Please highlight the key changes made to fix any bugs/issues in my original code, while keeping your explanation concise but informative.`;
+    setDraftMessage(prompt);
+    setIsAiChat(false);
+    setAiButtonType(AiAssistButtonType.GEN_SOLUTION);
+    onBeforeSendMessage();
+  }
+
+  function handleExplainCode() {
+    const prompt =
+      `I have written the following solution:\n\n"${solutionCode}"\n\n` +
+      `Can you explain this code step by step, focusing on what each part is doing? ` +
+      `Highlight any potential issues, bugs, or areas for improvement. ` +
+      `Keep the explanation concise but include important details to help me understand the logic behind my implementation. ` +
+      `Also, suggest any best practices or optimizations for better performance or readability, if applicable.`;
+    setDraftMessage(prompt);
+    setIsAiChat(false);
+    setAiButtonType(AiAssistButtonType.CODE_EXPLANATION);
+    onBeforeSendMessage();
+  }
+
+  function handleExplainQuestion() {
+    const prompt =
+      `I am having trouble understanding the following LeetCode question:\n\n"${question}"\n\n` +
+      `Could you provide an explanation of what this question is asking for, including any hidden details, assumptions, or common pitfalls? ` +
+      `Keep the explanation concise but make sure all key details are covered to help me fully understand what is being asked.`;
+    setDraftMessage(prompt);
+    setIsAiChat(false);
+    setAiButtonType(AiAssistButtonType.QUESTION_EXPLANATION);
+    onBeforeSendMessage();
   }
 
   const [isChatFullscreen, setIsChatFullscreen] = useState(false);
@@ -694,6 +829,7 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
               <VideoChatWidget
                 onVideoCallDisconnect={onVideoCallDisconnect}
                 otherUser={otherUser}
+                roomId={roomId}
               />
             )}
             <ActionIcon
@@ -731,284 +867,406 @@ export default function TextChatWidget({ roomId }: TextChatWidgetProps) {
           </Box>
           <Box className={classes.chatFooter}>
             {chatState === ChatState.CONNECTED ? (
-              <Flex className={classes.chatInput}>
-                <Textarea
-                  ref={inputRef}
-                  value={draftMessage}
-                  onChange={(e) => {
-                    if (messageState === MessageState.SENDING) {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      return;
-                    }
-                    setDraftMessage(e.target.value);
-                  }}
-                  placeholder="Type a message... (ENTER) to send"
-                  w={"100%"}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === "Enter" &&
-                      (event.ctrlKey || event.shiftKey)
-                    ) {
-                      // onSendMessage();
-                      // add newlinw
-                      setDraftMessage((prev) => prev + "\n");
-                    } else if (event.key === "Enter") {
-                      event.stopPropagation();
-                      // onSendMessage();
-                      onBeforeSendMessage();
-                    }
-                  }}
-                  autosize={isChatFullscreen}
-                  maxRows={7}
-                  minRows={3}
-                  // disabled={messageState === MessageState.SENDING}
-                />
-                <Menu
-                  shadow="md"
-                  width={300}
-                  opened={isSendToMenuOpen}
-                  onChange={setIsSendToMenuOpen}
-                >
-                  <Radio.Group
-                    value={defaultSendTo}
-                    // NOTE: The values in all Radio MUST be one of the values of the type
-                    // @ts-ignore
-                    onChange={setDefaultSendTo}
-                    name="defaultSendTo"
-                    // label="Select your favorite framework/library"
-                    // description="This is anonymous"
-                    // withAsterisk
-                  >
-                    <Box
+              <>
+                {defaultSendTo === "gemini_1.0" && (
+                  <div style={{ overflowX: "auto", whiteSpace: "nowrap" }}>
+                    <Button
+                      variant="gradient"
+                      gradient={{ from: "violet", to: "blue", deg: 135 }}
+                      onClick={handleGenerateHints}
+                      loading={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType === AiAssistButtonType.GEN_HINTS
+                      }
+                      disabled={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType !== AiAssistButtonType.GEN_HINTS
+                      }
                       style={{
-                        position: "relative",
+                        marginLeft: "1rem",
+                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
                       }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
                     >
-                      <Menu.Target>
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "0",
-                            right: "0",
-                            width: "100%",
-                            bottom: "0",
-                          }}
-                        ></div>
-                      </Menu.Target>
-                      <Tooltip
-                        label={`Right-click opens additional options for sending messages!`}
-                        multiline
-                        w={200}
-                        position="right"
-                      >
-                        <ActionIcon
-                          variant="subtle"
-                          onClick={onSendButtonClick}
-                          style={{ padding: "6px" }}
-                          size={"lg"}
-                          color="gray"
-                          loading={messageState === MessageState.SENDING}
-                          onContextMenu={onSendButtonClick}
-                        >
-                          {defaultSendTo === "person" ? (
-                            <IconSend2 />
-                          ) : (
-                            <IconMailAi />
-                          )}
-                        </ActionIcon>
-                      </Tooltip>
-                    </Box>
-                    <Menu.Dropdown>
-                      <Menu.Label>
-                        <Group>
-                          {" "}
-                          <div style={{ flex: 1 }}>
-                            Default send target{" "}
-                          </div>{" "}
-                          <div>
-                            {" "}
-                            <Kbd>ENTER</Kbd> to send{" "}
-                          </div>
-                        </Group>
-                      </Menu.Label>
-                      <Menu.Item
-                        leftSection={
-                          <Avatar
-                            src={""}
-                            radius="xl"
-                            size={"sm"}
-                            name={otherUser?.name}
-                            color={"initials"}
-                            // size={"md"}
-                            // autoContrast={false}
-                          />
-                        }
-                        rightSection={
-                          <Group>
-                            <Box onClick={(e) => e.stopPropagation()}>
-                              <Radio value="person" />
-                            </Box>
-                          </Group>
-                        }
-                        // onClick={onSendMessage}
-                        onClick={() => {
-                          setDefaultSendTo("person");
-                          setIsSendToMenuOpen(false);
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          {otherUser?.name || "Other users"}
-                        </div>
-                      </Menu.Item>
+                      Generate Hints
+                    </Button>
 
-                      {/* <Menu.Divider /> */}
-                      <Menu.Item
-                        leftSection={
-                          <Avatar
-                            src={GeminiIcon}
-                            radius="xl"
-                            name={"Gemini"}
-                            // color={"blue"}
-                            size={"sm"}
-                          />
+                    <Button
+                      variant="gradient"
+                      gradient={{ from: "violet", to: "blue", deg: 135 }}
+                      onClick={handleGenerateSolution}
+                      loading={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType === AiAssistButtonType.GEN_SOLUTION
+                      }
+                      disabled={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType !== AiAssistButtonType.GEN_SOLUTION
+                      }
+                      style={{
+                        marginLeft: "1rem",
+                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
+                    >
+                      Generate Solution
+                    </Button>
+                    <Button
+                      variant="gradient"
+                      gradient={{ from: "violet", to: "blue", deg: 135 }}
+                      onClick={handleExplainCode}
+                      loading={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType === AiAssistButtonType.CODE_EXPLANATION
+                      }
+                      disabled={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType !== AiAssistButtonType.CODE_EXPLANATION
+                      }
+                      style={{
+                        marginLeft: "1rem",
+                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
+                    >
+                      Explain Code
+                    </Button>
+                    <Button
+                      variant="gradient"
+                      gradient={{ from: "violet", to: "blue", deg: 135 }}
+                      onClick={handleExplainQuestion}
+                      loading={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType === AiAssistButtonType.QUESTION_EXPLANATION
+                      }
+                      disabled={
+                        messageState === MessageState.SENDING &&
+                        aiButtonType !== AiAssistButtonType.QUESTION_EXPLANATION
+                      }
+                      style={{
+                        marginLeft: "1rem",
+                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
+                    >
+                      Explain Question
+                    </Button>
+                  </div>
+                )}
+                <Flex className={classes.chatInput}>
+                  <Textarea
+                    ref={inputRef}
+                    value={draftMessage}
+                    onChange={(e) => {
+                      if (messageState === MessageState.SENDING) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        return;
+                      }
+                      setDraftMessage(e.target.value);
+                    }}
+                    placeholder="Type a message... (CTRL+ENTER) to send"
+                    w={"100%"}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && event.ctrlKey) {
+                        // onSendMessage();
+                        // add newlinw
+                        if (defaultSendTo === "gemini_1.0") {
+                          setIsAiChat(true);
                         }
-                        rightSection={
-                          <Box onClick={(e) => e.stopPropagation()}>
-                            <Radio value="gemini_1.0" />
-                          </Box>
-                        }
-                        // onClick={onSendAiMessage}
-                        onClick={() => {
-                          setDefaultSendTo("gemini_1.0");
-                          setIsSendToMenuOpen(false);
+                        onBeforeSendMessage();
+                      } else if (event.key === "Enter") {
+                        event.stopPropagation();
+                        // onSendMessage();
+
+                        // setDraftMessage((prev) => prev + "\n");
+                      }
+                    }}
+                    autosize={isChatFullscreen}
+                    maxRows={7}
+                    minRows={3}
+                    // disabled={messageState === MessageState.SENDING}
+                  />
+                  <Menu
+                    shadow="md"
+                    width={300}
+                    opened={isSendToMenuOpen}
+                    onChange={setIsSendToMenuOpen}
+                  >
+                    <Radio.Group
+                      value={defaultSendTo}
+                      // NOTE: The values in all Radio MUST be one of the values of the type
+                      // @ts-ignore
+                      onChange={setDefaultSendTo}
+                      name="defaultSendTo"
+                      // label="Select your favorite framework/library"
+                      // description="This is anonymous"
+                      // withAsterisk
+                    >
+                      <Box
+                        style={{
+                          position: "relative",
                         }}
                       >
-                        <Group
-                          style={{
-                            gap: "8px",
-                            alignItems: "center",
-                          }}
+                        <Menu.Target>
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "0",
+                              right: "0",
+                              width: "100%",
+                              bottom: "0",
+                            }}
+                          ></div>
+                        </Menu.Target>
+                        <Tooltip
+                          label={`Right-click opens additional options for sending messages!`}
+                          multiline
+                          w={200}
+                          position="right"
                         >
-                          Google Gemini{" "}
-                          <Badge
-                            // size="xl"
-                            variant="gradient"
-                            gradient={{ from: "violet", to: "blue", deg: 135 }}
-                            radius={"xs"}
-                            style={{ cursor: "pointer" }}
+                          <ActionIcon
+                            variant="subtle"
+                            onClick={onSendButtonClick}
+                            style={{ padding: "6px" }}
+                            size={"lg"}
+                            color="gray"
+                            loading={messageState === MessageState.SENDING}
+                            onContextMenu={onSendButtonClick}
+                            id="sendButtonId"
                           >
-                            AI
-                          </Badge>
-                        </Group>
-                      </Menu.Item>
-                      {/* <Menu.Item
-                      leftSection={
-                        <IconMessageCircle
-                          style={{ width: rem(14), height: rem(14) }}
-                        />
-                      }
-                    >
-                      Messages
-                    </Menu.Item>
-                    <Menu.Item
-                      leftSection={
-                        <IconPhoto
-                          style={{ width: rem(14), height: rem(14) }}
-                        />
-                      }
-                    >
-                      Gallery
-                    </Menu.Item>
-                    <Menu.Item
-                      leftSection={
-                        <IconSearch
-                          style={{ width: rem(14), height: rem(14) }}
-                        />
-                      }
-                      rightSection={
-                        <Text size="xs" c="dimmed">
-                          ⌘K
-                        </Text>
-                      }
-                    >
-                      Search
-                    </Menu.Item> */}
+                            {defaultSendTo === "person" ? (
+                              <IconSend2 />
+                            ) : (
+                              <IconMailAi />
+                            )}
+                          </ActionIcon>
+                        </Tooltip>
+                      </Box>
+                      <Menu.Dropdown>
+                        <Menu.Label>
+                          <Group>
+                            {" "}
+                            <div style={{ flex: 1 }}>
+                              Default send target{" "}
+                            </div>{" "}
+                            <div>
+                              {" "}
+                              <Kbd>ENTER</Kbd> to send{" "}
+                            </div>
+                          </Group>
+                        </Menu.Label>
+                        <Menu.Item
+                          leftSection={
+                            <Avatar
+                              src={""}
+                              radius="xl"
+                              size={"sm"}
+                              name={otherUser?.name}
+                              color={"initials"}
+                              // size={"md"}
+                              // autoContrast={false}
+                            />
+                          }
+                          rightSection={
+                            <Group>
+                              <Box onClick={(e) => e.stopPropagation()}>
+                                <Radio value="person" />
+                              </Box>
+                            </Group>
+                          }
+                          // onClick={onSendMessage}
+                          onClick={() => {
+                            setDefaultSendTo("person");
+                            setIsSendToMenuOpen(false);
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            {otherUser?.name || "Other users"}
+                          </div>
+                        </Menu.Item>
 
-                      {/* <Menu.Divider /> */}
-
-                      {/* <Menu.Label>Danger zone</Menu.Label>
-                    <Menu.Item
-                      leftSection={
-                        <IconArrowsLeftRight
-                          style={{ width: rem(14), height: rem(14) }}
-                        />
-                      }
-                    >
-                      Transfer my data
-                    </Menu.Item>
-                    <Menu.Item
-                      color="red"
-                      leftSection={
-                        <IconTrash
-                          style={{ width: rem(14), height: rem(14) }}
-                        />
-                      }
-                    >
-                      Delete my account
-                    </Menu.Item> */}
-                    </Menu.Dropdown>
-                  </Radio.Group>
-                </Menu>
-
-                <Box className={classes.additions}>
-                  {unreadMessages > 0 && (
-                    <Flex
-                      className={classes.unread}
-                      onClick={() => {
-                        chatEndRef.current?.scrollIntoView({
-                          behavior: "smooth",
-                        });
-
-                        setUnreadMessages(0);
-                      }}
-                    >
-                      <IconArrowNarrowDown size="12px" />
-                      <Text style={{ grow: 1, fontSize: "0.8rem" }}>
-                        {" "}
-                        {unreadMessages} new messages{" "}
-                      </Text>
-                      <IconArrowNarrowDown size="12px" />
-                    </Flex>
-                  )}
-
-                  {replyToMessage && (
-                    <Flex className={classes.replyTo}>
-                      {" "}
-                      <Center>
-                        <IconCornerUpRight
-                          size="12px"
-                          style={{ flexShrink: 0 }}
-                        />
-                      </Center>
-                      <Text className={classes.replyToText} truncate="end">
-                        Replying to{" "}
-                        <span style={{ fontWeight: "800" }}>
-                          {replyToMessage.content}
-                        </span>
-                      </Text>
-                      <Space flex={1} />
-                      <ActionIcon
-                        variant="transparent"
-                        onClick={() => onMessageClicked(null)}
+                        {/* <Menu.Divider /> */}
+                        <Menu.Item
+                          leftSection={
+                            <Avatar
+                              src={GeminiIcon}
+                              radius="xl"
+                              name={"Gemini"}
+                              // color={"blue"}
+                              size={"sm"}
+                            />
+                          }
+                          rightSection={
+                            <Box onClick={(e) => e.stopPropagation()}>
+                              <Radio value="gemini_1.0" />
+                            </Box>
+                          }
+                          // onClick={onSendAiMessage}
+                          onClick={() => {
+                            setDefaultSendTo("gemini_1.0");
+                            setIsSendToMenuOpen(false);
+                          }}
+                        >
+                          <Group
+                            style={{
+                              gap: "8px",
+                              alignItems: "center",
+                            }}
+                          >
+                            Google Gemini{" "}
+                            <Badge
+                              // size="xl"
+                              variant="gradient"
+                              gradient={{
+                                from: "violet",
+                                to: "blue",
+                                deg: 135,
+                              }}
+                              radius={"xs"}
+                              style={{ cursor: "pointer" }}
+                            >
+                              AI
+                            </Badge>
+                          </Group>
+                        </Menu.Item>
+                        {/* <Menu.Item
+                        leftSection={
+                          <IconMessageCircle
+                            style={{ width: rem(14), height: rem(14) }}
+                          />
+                        }
                       >
-                        {/* cancel */}
-                        <IconX size="16px" />
-                      </ActionIcon>
-                    </Flex>
-                  )}
-                </Box>
-              </Flex>
+                        Messages
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={
+                          <IconPhoto
+                            style={{ width: rem(14), height: rem(14) }}
+                          />
+                        }
+                      >
+                        Gallery
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={
+                          <IconSearch
+                            style={{ width: rem(14), height: rem(14) }}
+                          />
+                        }
+                        rightSection={
+                          <Text size="xs" c="dimmed">
+                            ⌘K
+                          </Text>
+                        }
+                      >
+                        Search
+                      </Menu.Item> */}
+
+                        {/* <Menu.Divider /> */}
+
+                        {/* <Menu.Label>Danger zone</Menu.Label>
+                      <Menu.Item
+                        leftSection={
+                          <IconArrowsLeftRight
+                            style={{ width: rem(14), height: rem(14) }}
+                          />
+                        }
+                      >
+                        Transfer my data
+                      </Menu.Item>
+                      <Menu.Item
+                        color="red"
+                        leftSection={
+                          <IconTrash
+                            style={{ width: rem(14), height: rem(14) }}
+                          />
+                        }
+                      >
+                        Delete my account
+                      </Menu.Item> */}
+                      </Menu.Dropdown>
+                    </Radio.Group>
+                  </Menu>
+
+                  <Box className={classes.additions}>
+                    {unreadMessages > 0 && (
+                      <Flex
+                        className={classes.unread}
+                        onClick={() => {
+                          chatEndRef.current?.scrollIntoView({
+                            behavior: "smooth",
+                          });
+
+                          setUnreadMessages(0);
+                        }}
+                      >
+                        <IconArrowNarrowDown size="12px" />
+                        <Text style={{ grow: 1, fontSize: "0.8rem" }}>
+                          {" "}
+                          {unreadMessages} new messages{" "}
+                        </Text>
+                        <IconArrowNarrowDown size="12px" />
+                      </Flex>
+                    )}
+
+                    {replyToMessage && (
+                      <Flex className={classes.replyTo}>
+                        {" "}
+                        <Center>
+                          <IconCornerUpRight
+                            size="12px"
+                            style={{ flexShrink: 0 }}
+                          />
+                        </Center>
+                        <Text className={classes.replyToText} truncate="end">
+                          Replying to{" "}
+                          <span style={{ fontWeight: "800" }}>
+                            {replyToMessage.content}
+                          </span>
+                        </Text>
+                        <Space flex={1} />
+                        <ActionIcon
+                          variant="transparent"
+                          onClick={() => onMessageClicked(null)}
+                          color={`${colorScheme === "dark" ? "white" : "cyan"}`}
+                        >
+                          {/* cancel */}
+                          <IconX size="16px" />
+                        </ActionIcon>
+                      </Flex>
+                    )}
+                  </Box>
+                </Flex>
+              </>
             ) : (
               <Center style={{ width: "100%", padding: "1rem" }}>
                 <Button
@@ -1081,6 +1339,7 @@ function TextMessage({
       );
     }
   }
+  console.log({ msg });
 
   const messageContentSplit = splitTextIntoObjects(msg.content);
   console.log({ messageContentSplit });
@@ -1121,7 +1380,10 @@ function TextMessage({
         );
         break;
       case "plain":
-        return <Text key={i}> {textObj.content} </Text>;
+        return (
+          <ReactMarkdown key={i} children={textObj.content}></ReactMarkdown>
+        );
+        // return <Text key={i}> {textObj.content} </Text>;
         break;
     }
   });
@@ -1169,6 +1431,8 @@ function TextMessage({
                   style={{
                     textOverflow: "ellipsis",
                     overflow: "hidden",
+                    // clamp to 1 line
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {
@@ -1239,6 +1503,7 @@ function TextMessage({
                   style={{
                     textOverflow: "ellipsis",
                     overflow: "hidden",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {
@@ -1315,6 +1580,7 @@ function splitTextIntoObjects(text: string): FormattableText[] {
     lastIndex = endIndex;
   };
 
+  console.log({ text });
   // Loop through each pattern type
   for (const [type, pattern] of Object.entries(patterns)) {
     // Reset lastIndex for each pattern search
@@ -1326,7 +1592,7 @@ function splitTextIntoObjects(text: string): FormattableText[] {
   }
 
   // Add any remaining plain text after the last match
-  if (lastIndex < text.length) {
+  if (!text || lastIndex < text.length) {
     result.push({
       content: text.slice(lastIndex),
       type: "plain",

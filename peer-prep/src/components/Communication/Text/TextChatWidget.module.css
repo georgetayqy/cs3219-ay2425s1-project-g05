@@ -109,7 +109,10 @@
     transition: background-color ease-out 0.2s;
   }
   .isSelected {
-    background-color: light-dark(var(--mantine-color-cyan-0));
+    background-color: light-dark(
+      var(--mantine-color-cyan-0),
+      var(--mantine-color-dark-6)
+    );
   }
 
   .entry {
@@ -121,6 +124,8 @@
     cursor: pointer;
 
     .textBox {
+      display: flex;
+      flex-direction: column;
       padding-top: 0.5rem;
       padding-bottom: 0.5rem;
       padding-left: 1rem;
@@ -142,6 +147,22 @@
       position: relative;
 
       color: light-dark(black, white);
+
+      *:not(hr) {
+        margin: 0;
+      }
+      img,
+      video {
+        width: 100%;
+      }
+      p {
+        font-size: 16px;
+      }
+      li,
+      ul,
+      ol {
+        font-size: 16px;
+      }
     }
     &.send {
       display: flex;
@@ -238,7 +259,8 @@
     position: absolute;
     /* height: 30px; */
     /* top: calc(-0.5rem - 30px); */
-    bottom: 84px;
+    /* bottom: 84px; */
+    top: -37px;
     /* left: 0; */
 
     /* padding: 0.5rem; */
@@ -264,10 +286,19 @@
       align-items: center;
       width: 100%;
 
-      background-color: var(--mantine-color-cyan-0);
-      color: var(--mantine-color-cyan-6);
+      background-color: light-dark(
+        var(--mantine-color-cyan-0),
+        var(--mantine-color-dark-6)
+      );
+      color: light-dark(
+        var(--mantine-color-cyan-6),
+        var(--mantine-color-light-5)
+      );
       .replyToText {
-        color: var(--mantine-color-cyan-8);
+        color: light-dark(
+          var(--mantine-color-cyan-8),
+          var(--mantine-color-light-5)
+        );
         /* font-weight: ; */
         flex-shrink: 1;
         font-size: 0.8rem;
@@ -277,8 +308,14 @@
     }
 
     .unread {
-      background-color: var(--mantine-color-yellow-0);
-      color: var(--mantine-color-yellow-6);
+      background-color: light-dark(
+        var(--mantine-color-yellow-0),
+        var(--mantine-color-dark-6)
+      );
+      color: light-dark(
+        var(--mantine-color-yellow-6),
+        var(--mantine-color-light-5)
+      );
 
       width: 100%;
       gap: 16px;
@@ -299,10 +336,10 @@
 
 :root[data-mantine-color-scheme="dark"] {
   .chatHeader {
-    background: var(--mantine-color-dark-7);
+    background: var(--mantine-color-dark-6);
   }
   .chatContentColored {
-    background: var(--mantine-color-dark-7);
+    background: var(--mantine-color-dark-6);
   }
   .chatContents {
     background: var(--mantine-color-dark-8);
@@ -310,6 +347,12 @@
   .chatFooter {
     background: var(--mantine-color-dark-7);
   }
+}
+
+.button:hover {
+  background: linear-gradient(135deg, #8f94fb, #4e54c8);
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .collapse {
@@ -326,4 +369,8 @@
   background-color: var(--mantine-color-gray-2);
   /* cursor: e-resize; */
   z-index: 50;
+}
+
+p {
+  margin: 0;
 }
