@@ -463,28 +463,28 @@ export default function SessionPage() {
               handleSendApiKey(); 
             }}
           >
-          <PasswordInput
-              label="API Key"
-              placeholder="Your Google AI API Key"
-              mt="md"
-              required
-              size="md"
-              ref={apiKeyInput}
-          />
-          {sendingApiKey ? (
-            <Center>
-              <Loader />
-            </Center>
-          ) : (
-            <Button
-              variant="gradient"
-              gradient={{ from: 'blue', to: 'cyan' }}
-              type="submit"
-              style={{ marginTop: '15px' }}
-            >
-              Send API Key
-            </Button>
-          )}
+            <PasswordInput
+                label="API Key"
+                placeholder="Your Google AI API Key"
+                mt="md"
+                required
+                size="md"
+                ref={apiKeyInput}
+            />
+            {sendingApiKey ? (
+              <Center>
+                <Loader />
+              </Center>
+            ) : (
+              <Button
+                variant="gradient"
+                gradient={{ from: 'blue', to: 'cyan' }}
+                type="submit"
+                style={{ marginTop: '15px' }}
+              >
+                Send API Key
+              </Button>
+            )}
           </form>
         </Stack>
       ),
