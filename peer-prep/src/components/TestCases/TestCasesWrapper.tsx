@@ -40,7 +40,7 @@ import { CodeHighlight } from "@mantine/code-highlight";
 import "@mantine/code-highlight/styles.css";
 import { useAuth } from "../../hooks/useAuth";
 import ReactMarkdown from "react-markdown";
-import { useAI } from "../../hooks/useAI";
+import { useAi } from "../../hooks/useAi";
 
 type TestCasesWrapperProps = {
   testCases: TestCase[]; // array of test cases
@@ -545,7 +545,7 @@ export const TestCasesDisplay = ({
   question: string;
 }) => {
   const { fetchData } = useApi();
-  const { setApiKeyModalVisible, hasApiKey } = useAI();
+  const { setApiKeyModalVisible, hasApiKey } = useAi();
 
   const { colorScheme } = useMantineColorScheme();
   const [currentTestCase, setCurrentTestCase] = useState<TestCase | null>(

@@ -42,7 +42,7 @@ import { UserResponseData } from "../../../types/user";
 
 import { TestCaseResult as TestCaseResultDb } from "../../../types/attempts";
 import AlertBox from "../../../components/Alert/AlertBox";
-import { AIProvider, useAI } from "../../../hooks/useAi";
+import { AIProvider, useAi } from "../../../hooks/useAi";
 
 type QuestionCategory =
   | "ALGORITHMS"
@@ -414,7 +414,7 @@ export default function SessionPage() {
     });
   };
 
-  const { isApiKeyModalVisible, setApiKeyModalVisible, hasApiKey, setHasApiKey } = useAI();
+  const { isApiKeyModalVisible, setApiKeyModalVisible, hasApiKey, setHasApiKey } = useAi();
 
   const apiKeyInput = useRef<HTMLInputElement>(null);
   const [sendingApiKey, setSendingApiKey] = useState(false);
