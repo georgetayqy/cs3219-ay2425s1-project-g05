@@ -34,6 +34,7 @@ import {
   IconCircleXFilled,
   IconDatabase,
   IconHourglassEmpty,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import CodeEditorWithLanguageSelector from "../../../components/Questions/CodeEditor/CodeEditor";
@@ -48,6 +49,7 @@ import { CodeHighlight } from "@mantine/code-highlight";
 import { kBtoMb, secondsToMsIfappropriate } from "../../../utils/utils";
 import { useDisclosure } from "@mantine/hooks";
 
+const BLOCKED_CATEGORY_IDS = [2];
 export default function SessionSummaryPage() {
   const { fetchData } = useApi();
 
@@ -56,6 +58,10 @@ export default function SessionSummaryPage() {
   const { roomId } = useParams();
 
   const [attempt, setAttempt] = useState<UserAttempt>(attemptReceived);
+
+  const isBlockedFromRunningTestCase = attempt?.question.categoriesId?.some(
+    (id) => BLOCKED_CATEGORY_IDS.includes(id)
+  );
 
   // Attempt data to display
   const [completedAt, setCompletedAt] = useState("");
@@ -349,38 +355,49 @@ export default function SessionSummaryPage() {
         )}
       </Paper>
 
-      <Paper radius="md" withBorder className={classes.testCases}>
-        <Title order={4}>Test Case Summary</Title>
-        <Text>
-          Passed: {passed}, Failed: {failed}
-        </Text>
-        <Box
-          // my="md"
-          p="md"
-          // withBorder
-          // className={privateTestsPassed ? classes.ptcPassed : classes.ptcFailed}
+      {isBlockedFromRunningTestCase ? (
+        <Alert
+          variant="light"
+          color="orange"
+          title="Test case results not available"
+          icon={<IconInfoCircle />}
+          style={{ width: "100%" }}
         >
-          {privateTestsPassed ? (
-            <Alert
-              variant="light"
-              color="green"
-              title="All private test cases passed"
-              icon={<IconCircleCheckFilled />}
-            >
-              Details for private test cases are hidden.
-            </Alert>
-          ) : (
-            <Alert
-              variant="light"
-              color="red"
-              title="Some private test cases failed"
-              icon={<IconCircleXFilled />}
-            >
-              Details for private test cases are hidden.
-            </Alert>
-          )}
-        </Box>
-        {/* <Accordion multiple mt={10}>
+          Testcase running is disabled for Database questions.
+        </Alert>
+      ) : (
+        <Paper radius="md" withBorder className={classes.testCases}>
+          <Title order={4}>Test Case Summary</Title>
+          <Text>
+            Passed: {passed}, Failed: {failed}
+          </Text>
+          <Box
+            // my="md"
+            p="md"
+            // withBorder
+            // className={privateTestsPassed ? classes.ptcPassed : classes.ptcFailed}
+          >
+            {privateTestsPassed ? (
+              <Alert
+                variant="light"
+                color="green"
+                title="All private test cases passed"
+                icon={<IconCircleCheckFilled />}
+              >
+                Details for private test cases are hidden.
+              </Alert>
+            ) : (
+              <Alert
+                variant="light"
+                color="red"
+                title="Some private test cases failed"
+                icon={<IconCircleXFilled />}
+              >
+                Details for private test cases are hidden.
+              </Alert>
+            )}
+          </Box>
+          {/* <Accordion multiple mt={10}>
           {testCaseResults.map((result, index) => (
             <Accordion.Item key={index} value={result._id}>
               <Accordion.Control
@@ -406,8 +423,9 @@ export default function SessionSummaryPage() {
             </Accordion.Item>
           ))}
         </Accordion> */}
-        <TestCasesDisplay testCaseResults={testCaseResults} />
-      </Paper>
+          <TestCasesDisplay testCaseResults={testCaseResults} />
+        </Paper>
+      )}
     </Flex>
   );
 }
