@@ -45,7 +45,7 @@ describe('Collaboration Service API', () => {
         .post('/api/collaboration-service/create-room')
         .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question' })
-        .expect(401)
+        .expect(400)
         .expect('Content-Type', /json/);
 
       assert.equal(
@@ -59,7 +59,7 @@ describe('Collaboration Service API', () => {
         .post('/api/collaboration-service/create-room')
         .set({ Cookie: `accessToken=${token}` })
         .send({ users: ['user1', 'user2'] })
-        .expect(401)
+        .expect(400)
         .expect('Content-Type', /json/);
 
       assert.equal(
@@ -87,7 +87,7 @@ describe('Collaboration Service API', () => {
         .post('/api/collaboration-service/create-room')
         .set({ Cookie: `accessToken=${token}` })
         .send({ question: 'question 2', users: ['userabc', 'userkmn'] })
-        .expect(401)
+        .expect(400)
         .expect('Content-Type', /json/);
 
       assert.equal(test.body.message, 'Users belong in seperate rooms');
@@ -163,7 +163,7 @@ describe('Collaboration Service API', () => {
       const result = await request(app)
         .get('/api/collaboration-service/rooms/asdnasdsa')
         .set({ Cookie: `accessToken=${token}` })
-        .expect(401)
+        .expect(400)
         .expect('Content-Type', /json/);
 
       assert.equal(result.body.message, 'Room cannot be found');
@@ -242,7 +242,7 @@ describe('Collaboration Service API', () => {
       const result = await request(app)
         .get('/api/collaboration-service/users')
         .set({ Cookie: `accessToken=${token}` })
-        .expect(401)
+        .expect(400)
         .expect('Content-Type', /json/);
 
       assert.equal(result.body.message, 'User ID is invalid');
@@ -252,7 +252,7 @@ describe('Collaboration Service API', () => {
       const result = await request(app)
         .get('/api/collaboration-service/users?userId=asdnasdsa')
         .set({ Cookie: `accessToken=${token}` })
-        .expect(401)
+        .expect(400)
         .expect('Content-Type', /json/);
 
       assert.equal(result.body.message, 'User ID is invalid');

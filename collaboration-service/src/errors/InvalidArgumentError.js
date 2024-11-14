@@ -4,7 +4,7 @@ class InvalidArgumentError extends BaseError {
   constructor(message) {
     super(500, message);
     this.name = 'InvalidArgumentError';
-    this.statusCode = 403;
+    this.statusCode = 400;
   }
 }
 

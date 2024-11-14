@@ -2,9 +2,9 @@ import BaseError from './BaseError.js';
 
 class UserRegistrationError extends BaseError {
   constructor(message) {
-    super(401, message);
+    super(400, message);
     this.name = 'UserRegistrationError';
-    this.statusCode = 401;
+    this.statusCode = 400;
   }
 }
 
