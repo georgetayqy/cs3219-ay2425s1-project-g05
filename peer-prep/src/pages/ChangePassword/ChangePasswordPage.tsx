@@ -58,7 +58,7 @@ function getStrength(password: string) {
 
 export default function ChangePasswordPage() {
   const navigate = useNavigate();
-  
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -78,7 +78,7 @@ export default function ChangePasswordPage() {
     requirement.re.test(newPassword)
   );
 
-const bars = Array(4)
+  const bars = Array(4)
     .fill(0)
     .map((_, index) => (
       <Progress
@@ -117,7 +117,7 @@ const bars = Array(4)
       };
 
       // Call the backend using the fetchData hook
-      const response = await fetchData<ServerResponse<{user: User}>>(
+      const response = await fetchData<ServerResponse<{ user: User }>>(
         "/user-service/users/changePassword",
         SERVICE.USER,
         {
@@ -126,7 +126,10 @@ const bars = Array(4)
             "Content-Type": "application/json",
           },
           body: JSON.stringify(requestBody),
-        }
+        },
+        false,
+        false,
+        true
       );
 
       // Show success message if password change is successful
@@ -167,7 +170,6 @@ const bars = Array(4)
     }
   };
 
-
   return (
     <Center>
       <form
@@ -189,7 +191,7 @@ const bars = Array(4)
             onChange={(event) => setCurrentPassword(event.currentTarget.value)}
             mt="md"
             size="md"
-            style={{ width: '500px' }} 
+            style={{ width: "500px" }}
           />
 
           <PasswordInput
@@ -200,7 +202,7 @@ const bars = Array(4)
             size="md"
             onChange={(event) => setNewPassword(event.currentTarget.value)}
             value={newPassword}
-            style={{ width: '500px' }} 
+            style={{ width: "500px" }}
             visible={newPasswordVisible}
             onVisibilityChange={toggle}
           />
@@ -208,11 +210,11 @@ const bars = Array(4)
           <Box
             mt="xs"
             style={{
-              display: 'flex',
-              gap: '5px',
-              width: '100%',
-              overflow: 'visible',
-              maxWidth: '500px',
+              display: "flex",
+              gap: "5px",
+              width: "100%",
+              overflow: "visible",
+              maxWidth: "500px",
             }}
           >
             {bars}
@@ -228,10 +230,12 @@ const bars = Array(4)
             onChange={(event) => setConfirmPassword(event.currentTarget.value)}
             mt="md"
             size="md"
-            style={{ width: '500px' }}
+            style={{ width: "500px" }}
             visible={newPasswordVisible}
             onVisibilityChange={toggle}
-            error={confirmPassword.length > 0 && confirmPassword !== newPassword}
+            error={
+              confirmPassword.length > 0 && confirmPassword !== newPassword
+            }
           />
 
           <Button
