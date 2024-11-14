@@ -42,7 +42,8 @@ export default function useApi() {
     service: SERVICE,
     options?: RequestInit,
     suppressWarning?: boolean,
-    useCache?: boolean
+    useCache?: boolean,
+    bypassAuth?: boolean
   ) {
     setIsLoading(true);
     try {
@@ -82,40 +83,42 @@ export default function useApi() {
         cache: useCache ? "force-cache" : "default",
       });
 
-      if (response.status === 401 || response.status === 403) {
-        // try to refresh again
+      if (!bypassAuth) {
+        if (response.status === 401 || response.status === 403) {
+          // try to refresh again
 
-        try {
-          const isLoggedInNow = await refresh();
-          console.log({ canRefresh: isLoggedInNow });
+          try {
+            const isLoggedInNow = await refresh();
+            console.log({ canRefresh: isLoggedInNow });
 
-          if (isLoggedInNow) {
-            // continue
-            // try fetchiong again
-            response = await fetch(`${baseUrl}${url}`, {
-              ...options,
-              headers: {
-                ...options?.headers,
-                // "x-api-key": import.meta.env.VITE_API_KEY as string,
-                // bearer token
-                // "Authorization": `Bearer ${accessToken}`,
-              },
-              credentials: "include",
-            });
+            if (isLoggedInNow) {
+              // continue
+              // try fetchiong again
+              response = await fetch(`${baseUrl}${url}`, {
+                ...options,
+                headers: {
+                  ...options?.headers,
+                  // "x-api-key": import.meta.env.VITE_API_KEY as string,
+                  // bearer token
+                  // "Authorization": `Bearer ${accessToken}`,
+                },
+                credentials: "include",
+              });
 
-            if (response.status === 401 || response.status === 403) {
+              if (response.status === 401 || response.status === 403) {
+                throw new Error("Refresh failed");
+              }
+            } else {
               throw new Error("Refresh failed");
             }
-          } else {
-            throw new Error("Refresh failed");
-          }
-        } catch (e) {
-          setUser(null);
-          navigate("/login");
+          } catch (e) {
+            setUser(null);
+            navigate("/login");
 
-          throw {
-            message: "Login expired or not logged in. Please log in again!",
-          };
+            throw {
+              message: "Login expired or not logged in. Please log in again!",
+            };
+          }
         }
       }
 

@@ -85,7 +85,10 @@ export const AuthProvider = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-      }
+      },
+      false,
+      false,
+      true
     )
       .then((response) => {
         // ok!
